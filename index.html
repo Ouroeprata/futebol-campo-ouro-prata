@@ -1,40 +1,9 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0b6b45">
-<link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css">
-<title>Futebol Campo Manager</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b5d3b"><title>Futebol Campo • Ouro e Prata</title>
+<link rel="stylesheet" href="/src/style.css">
 </head>
-<body>
-<header class="topbar">
-  <div>
-    <h1>⚽ Futebol Campo Manager</h1>
-    <small>Gestão de campeonato, súmula e estatísticas</small>
-  </div>
-  <button id="resetDemo" class="ghost">Restaurar demonstração</button>
-</header>
-
-<div class="layout">
-<aside class="sidebar">
-  <button data-view="dashboard" class="nav active">🏠 Painel</button>
-  <button data-view="teams" class="nav">👕 Times</button>
-  <button data-view="players" class="nav">🧑 Atletas</button>
-  <button data-view="matches" class="nav">⚽ Jogos</button>
-  <button data-view="live" class="nav">🔴 Súmula ao vivo</button>
-  <button data-view="groups" class="nav">📊 Grupos</button>
-  <button data-view="ranking" class="nav">🏆 Classificação geral</button>
-  <button data-view="referees" class="nav">🧑‍⚖️ Árbitros</button>
-  <button data-view="stats" class="nav">📈 Estatísticas</button>
-  <button data-view="settings" class="nav">⚙️ Configuração</button>
-</aside>
-
-<main id="app"></main>
-</div>
-
-<div id="toast"></div>
-<script src="app.js"></script>
-</body>
+<body><div id="app"></div><script type="module" src="/src/main.js"></script></body>
 </html>
