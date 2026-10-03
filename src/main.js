@@ -20,35 +20,12 @@ const fmtDate = v => v ? new Date(v).toLocaleString('pt-BR',{dateStyle:'short',t
 const canOperate = () => !!state.session && ['admin','organizador','arbitro','operador'].includes(state.profile?.role)
 const roleLabel = r => ({admin:'Administrador',organizador:'Organizador',arbitro:'Árbitro',operador:'Operador',publico:'Público'})[r] || 'Público'
 
-async function loadProfile(session){
-  if(!session) return null
-  const profileRes = await supabase.from('profiles').select('id,full_name,role,phone,created_at').eq('id', session.user.id).maybeSingle()
-  if(profileRes.data) return profileRes.data
-  const rpcRes = await supabase.rpc('get_my_profile')
-  if(!rpcRes.error && Array.isArray(rpcRes.data) && rpcRes.data.length) return rpcRes.data[0]
-  console.warn('Não foi possível carregar o perfil do usuário.', {
-    userId: session.user.id,
-    profileError: profileRes.error?.message || null,
-    rpcError: rpcRes.error?.message || null
-  })
-  return null
-}
-
 async function load(){
   state.loading = true
   const sessionRes = await supabase.auth.getSession()
   state.session = sessionRes.data.session
   if(state.session){
-    const userRes = await supabase.auth.getUser()
-    if(userRes.error || !userRes.data.user){
-      console.warn('Sessão inválida ou expirada.', userRes.error?.message || '')
-      await supabase.auth.signOut()
-      state.session = null
-      state.profile = null
-    } else {
-      state.session = {...state.session, user:userRes.data.user}
-      state.profile = await loadProfile(state.session)
-    }
+    state.profile = (await supabase.from('profiles').select('*').eq('id', state.session.user.id).maybeSingle()).data
   } else state.profile = null
   const q = async t => (await supabase.from(t).select('*')).data || []
   state.competition = (await supabase.from('competitions').select('*').eq('name','2ª Copa das Nações Ouro/Prata/Diamante').maybeSingle()).data
