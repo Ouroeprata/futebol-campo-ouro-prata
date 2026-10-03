@@ -20,12 +20,35 @@ const fmtDate = v => v ? new Date(v).toLocaleString('pt-BR',{dateStyle:'short',t
 const canOperate = () => !!state.session && ['admin','organizador','arbitro','operador'].includes(state.profile?.role)
 const roleLabel = r => ({admin:'Administrador',organizador:'Organizador',arbitro:'Árbitro',operador:'Operador',publico:'Público'})[r] || 'Público'
 
+async function loadProfile(session){
+  if(!session) return null
+  const profileRes = await supabase.from('profiles').select('id,full_name,role,phone,created_at').eq('id', session.user.id).maybeSingle()
+  if(profileRes.data) return profileRes.data
+  const rpcRes = await supabase.rpc('get_my_profile')
+  if(!rpcRes.error && Array.isArray(rpcRes.data) && rpcRes.data.length) return rpcRes.data[0]
+  console.warn('Não foi possível carregar o perfil do usuário.', {
+    userId: session.user.id,
+    profileError: profileRes.error?.message || null,
+    rpcError: rpcRes.error?.message || null
+  })
+  return null
+}
+
 async function load(){
   state.loading = true
   const sessionRes = await supabase.auth.getSession()
   state.session = sessionRes.data.session
   if(state.session){
-    state.profile = (await supabase.from('profiles').select('*').eq('id', state.session.user.id).maybeSingle()).data
+    const userRes = await supabase.auth.getUser()
+    if(userRes.error || !userRes.data.user){
+      console.warn('Sessão inválida ou expirada.', userRes.error?.message || '')
+      await supabase.auth.signOut()
+      state.session = null
+      state.profile = null
+    } else {
+      state.session = {...state.session, user:userRes.data.user}
+      state.profile = await loadProfile(state.session)
+    }
   } else state.profile = null
   const q = async t => (await supabase.from(t).select('*')).data || []
   state.competition = (await supabase.from('competitions').select('*').eq('name','2ª Copa das Nações Ouro/Prata/Diamante').maybeSingle()).data
@@ -133,6 +156,10 @@ function crudModal(type,id=null){
   if(type==='referee') body=`${common}<h2>${current?'Alterar árbitro':'Novo árbitro'}</h2><input id="fName" value="${val('name')}" placeholder="Nome do árbitro" required><input id="fReg" value="${val('registration')}" placeholder="Registro"><input id="fPhone" value="${val('phone')}" placeholder="Telefone"><div class="modal-actions"><button class="secondary" data-close>❌ Cancelar</button><button class="primary" data-save-crud="referee" data-id="${id||''}">💾 Salvar</button></div>`;
   if(type==='match') body=`${common}<h2>${current?'Alterar jogo':'Novo jogo'}</h2><select id="fHome">${state.teams.map(t=>`<option value="${t.id}" ${current?.home_team_id===t.id?'selected':''}>${flag(t.name)} ${esc(t.name)}</option>`).join('')}</select><select id="fAway">${state.teams.map(t=>`<option value="${t.id}" ${current?.away_team_id===t.id?'selected':''}>${flag(t.name)} ${esc(t.name)}</option>`).join('')}</select><select id="fMatchGroup"><option value="">Sem grupo</option>${state.groups.slice().sort((a,b)=>a.position-b.position).map(g=>`<option value="${g.id}" ${current?.group_id===g.id?'selected':''}>${esc(g.name)}</option>`).join('')}</select><select id="fRef"><option value="">Sem árbitro definido</option>${state.referees.map(r=>`<option value="${r.id}" ${current?.referee_id===r.id?'selected':''}>${esc(r.name)}</option>`).join('')}</select><input id="fDate" type="datetime-local" value="${current?.scheduled_at?new Date(current.scheduled_at).toISOString().slice(0,16):''}"><input id="fField" value="${val('field_name')}" placeholder="Campo"><div class="modal-actions"><button class="secondary" data-close>❌ Cancelar</button><button class="primary" data-save-crud="match" data-id="${id||''}">💾 Salvar</button></div>`;
   document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="crudModal"><div class="modalbox">${body}</div></div>`);
+  const modal=document.querySelector('#crudModal');
+  modal?.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',()=>modal.remove()));
+  const saveBtn=modal?.querySelector('[data-save-crud]');
+  if(saveBtn) saveBtn.addEventListener('click',()=>saveCrud(saveBtn.dataset.saveCrud,saveBtn.dataset.id||''));
 }
 async function saveCrud(type,id=''){
   if(!canOperate())return;
