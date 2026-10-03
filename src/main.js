@@ -1,0 +1,174 @@
+import { createClient } from '@supabase/supabase-js'
+import './style.css'
+
+const SUPABASE_URL = 'https://kfsxzpyzohcvzlsfvtyx.supabase.co'
+const SUPABASE_KEY = 'sb_publishable_A0uWsabYDmYB4sbMtUMgdA_3wu_PFTD'
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+const app = document.querySelector('#app')
+
+const state = {
+  tab: 'dashboard', competition: null, matches: [], teams: [], players: [], referees: [], groups: [],
+  selectedMatch: null, events: [], lineups: [], votes: [], session: null, profile: null,
+  authMode: 'login', loading: false, timerStartedAt: null, timerHalf: null, timerInterval: null
+}
+
+const esc = (v='') => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))
+const flag = n => ({Argentina:'🇦🇷',Brasil:'🇧🇷',Chile:'🇨🇱',Colômbia:'🇨🇴',Equador:'🇪🇨',Paraguai:'🇵🇾',Uruguai:'🇺🇾',Venezuela:'🇻🇪'})[n] || '⚽'
+const teamName = id => state.teams.find(t => t.id === id)?.name || '—'
+const playerName = id => state.players.find(p => p.id === id)?.name || '—'
+const fmtDate = v => v ? new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}) : '—'
+const canOperate = () => !!state.session && ['admin','organizador','arbitro','operador'].includes(state.profile?.role)
+const roleLabel = r => ({admin:'Administrador',organizador:'Organizador',arbitro:'Árbitro',operador:'Operador',publico:'Público'})[r] || 'Público'
+
+async function load(){
+  state.loading = true
+  const sessionRes = await supabase.auth.getSession()
+  state.session = sessionRes.data.session
+  if(state.session){
+    state.profile = (await supabase.from('profiles').select('*').eq('id', state.session.user.id).maybeSingle()).data
+  } else state.profile = null
+  const q = async t => (await supabase.from(t).select('*')).data || []
+  state.competition = (await supabase.from('competitions').select('*').eq('name','2ª Copa das Nações Ouro/Prata/Diamante').maybeSingle()).data
+  ;[state.matches,state.teams,state.players,state.referees,state.groups] = await Promise.all(['matches','teams','players','referees','groups'].map(q))
+  state.matches.sort((a,b)=>new Date(a.scheduled_at||0)-new Date(b.scheduled_at||0))
+  if(state.selectedMatch) await loadMatchDetails(state.selectedMatch.id, false)
+  state.loading = false
+  render()
+}
+
+async function loadMatchDetails(id, doRender=true){
+  state.selectedMatch = state.matches.find(m=>m.id===id) || null
+  if(!state.selectedMatch){ state.events=[]; state.lineups=[]; state.votes=[]; if(doRender) render(); return }
+  const [ev,lu,v] = await Promise.all([
+    supabase.from('match_events').select('*').eq('match_id',id).order('created_at',{ascending:true}),
+    supabase.from('match_lineups').select('*').eq('match_id',id),
+    supabase.from('match_votes').select('*').eq('match_id',id)
+  ])
+  state.events=ev.data||[]; state.lineups=lu.data||[]; state.votes=v.data||[]
+  if(doRender) render()
+}
+
+function subscribe(){
+  supabase.channel('futebol-campo-live')
+    .on('postgres_changes',{event:'*',schema:'public',table:'matches'}, async payload=>{
+      const i=state.matches.findIndex(x=>x.id===payload.new?.id)
+      if(payload.eventType==='DELETE'){ if(i>=0) state.matches.splice(i,1) }
+      else if(i>=0) state.matches[i]=payload.new; else state.matches.push(payload.new)
+      if(state.selectedMatch?.id===payload.new?.id) await loadMatchDetails(payload.new.id,false)
+      render()
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'match_events'}, async payload=>{
+      if(state.selectedMatch?.id===payload.new?.match_id) await loadMatchDetails(state.selectedMatch.id,false)
+      render()
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'match_lineups'}, async payload=>{
+      if(state.selectedMatch?.id===payload.new?.match_id) await loadMatchDetails(state.selectedMatch.id,false)
+      render()
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'match_votes'}, async payload=>{
+      if(state.selectedMatch?.id===payload.new?.match_id) await loadMatchDetails(state.selectedMatch.id,false)
+      render()
+    }).subscribe()
+}
+
+function nav(){return `<aside><div class="brand">⚽ <span>OURO & PRATA</span></div><nav>${[['dashboard','Painel','⌂'],['jogos','Jogos','▣'],['ao_vivo','Ao vivo','●'],['times','Times','◈'],['atletas','Atletas','♙'],['arbitragem','Arbitragem','⚑'],['grupos','Grupos','▦'],['classificacao','Classificação','☷']].map(x=>`<button class="${state.tab===x[0]?'active':''}" data-tab="${x[0]}"><i>${x[2]}</i><span>${x[1]}</span></button>`).join('')}</nav><div class="sidefoot">2ª Copa das Nações<br><small>Ouro • Prata • Diamante</small></div></aside>`}
+function header(){return `<header><div><div class="eyebrow">GESTÃO ESPORTIVA • ONLINE</div><h1>${title()}</h1></div><div class="header-actions"><span class="pill">● ${state.session?'CONECTADO':'MODO PÚBLICO'}</span><button class="userbtn" id="authBtn">${state.session?`👤 ${esc(state.profile?.full_name||state.session.user.email)} · ${roleLabel(state.profile?.role)}`:'🔐 Entrar'}</button></div></header>`}
+function title(){return ({dashboard:'Painel geral',jogos:'Jogos',ao_vivo:'Central ao vivo',times:'Times',atletas:'Atletas',arbitragem:'Arbitragem',grupos:'Grupos',classificacao:'Classificação'})[state.tab]}
+function card(title,value,sub=''){return `<div class="card"><div class="muted">${title}</div><div class="big">${value}</div><div class="muted">${sub}</div></div>`}
+function content(){
+  if(state.tab==='dashboard') return `<section class="grid4">${card('Times',state.teams.length,'seleções cadastradas')}${card('Atletas',state.players.length,'cadastros')}${card('Árbitros',state.referees.length,'cadastros')}${card('Jogos',state.matches.length,'na competição')}</section><section class="panel hero"><div><span class="status">${state.competition?.status?.toUpperCase()||'ATIVA'}</span><h2>2ª Copa das Nações Ouro/Prata/Diamante</h2><p class="muted">Central profissional para jogos, súmulas, escalações, arbitragem, classificação e acompanhamento em tempo real.</p></div><div class="hero-score">${state.matches.filter(m=>m.status==='ao_vivo').length}<small>partidas ao vivo</small></div></section><section class="panel"><h2>Seleções</h2><div class="flags">${state.teams.map(t=>`<span>${flag(t.name)} ${esc(t.name)}</span>`).join('')}</div></section><section class="panel"><h2>Próximos jogos</h2>${matchesTable()}</section>`
+  if(state.tab==='jogos') return gamesView()
+  if(state.tab==='ao_vivo') return liveView()
+  if(state.tab==='times') return list('Times',state.teams.map(t=>[flag(t.name)+' '+esc(t.name),t.country||'Seleção']), 'team')
+  if(state.tab==='atletas') return list('Atletas',state.players.map(p=>[esc(p.name),(esc(teamName(p.team_id)))+' • '+esc(p.position||'')]), 'player')
+  if(state.tab==='arbitragem') return list('Equipe de arbitragem',state.referees.map(r=>[esc(r.name),esc(r.registration||'Árbitro')]), 'referee')
+  if(state.tab==='grupos') return list('Grupos A–H',state.groups.slice().sort((a,b)=>a.position-b.position).map(g=>[esc(g.name),state.teams.filter(t=>t.group_id===g.id).length+' times']))
+  if(state.tab==='classificacao') return standingsView()
+}
+function gamesView(){return `<section class="panel"><div class="panelhead"><div><h2>Calendário e partidas</h2><p class="muted">Clique em uma partida para abrir a súmula digital.</p></div>${canOperate()?'<button class="primary" data-crud="match">+ Novo jogo</button>':''}</div>${matchesTable(true)}</section>`}
+function liveView(){
+  const live=state.matches.filter(m=>m.status==='ao_vivo')
+  return `<section class="panel"><div class="panelhead"><div><h2>Central ao vivo</h2><p class="muted">Operação em tempo real. ${canOperate()?'Você possui permissão operacional.':'Entre com um perfil autorizado para registrar eventos.'}</p></div>${canOperate()?'<span class="access">ACESSO OPERACIONAL</span>':''}</div>${live.length?live.map(matchCard).join(''):`<div class="empty">Nenhuma partida está marcada como AO VIVO. Abra um jogo agendado para iniciar a súmula.</div>`}${state.selectedMatch?liveSheet():''}</section>`
+}
+function matchesTable(selectable=false){if(!state.matches.length)return `<div class="empty">Nenhum jogo cadastrado ainda.</div>`;return `<div class="tablewrap"><table><tr><th>Data</th><th>Jogo</th><th>Placar</th><th>Status</th>${selectable?'<th></th>':''}</tr>${state.matches.map(m=>{const h=teamName(m.home_team_id),a=teamName(m.away_team_id);return `<tr><td>${fmtDate(m.scheduled_at)}</td><td>${flag(h)} <b>${esc(h)}</b> × <b>${esc(a)}</b> ${flag(a)}</td><td><b>${m.home_score} × ${m.away_score}</b></td><td><span class="tag ${m.status}">${esc(m.status)}</span></td>${selectable?`<td><button class="smallbtn" data-open-match="${m.id}">${m.status==='ao_vivo'?'Abrir súmula':'Abrir'}</button></td>`:''}</tr>`}).join('')}</table></div>`}
+function matchCard(m){const h=teamName(m.home_team_id),a=teamName(m.away_team_id);return `<div class="matchmini"><div>${flag(h)} <b>${esc(h)}</b></div><div class="scoremini">${m.home_score}<span>×</span>${m.away_score}</div><div><b>${esc(a)}</b> ${flag(a)}</div><button class="smallbtn" data-open-match="${m.id}">Súmula</button></div>`}
+function liveSheet(){const m=state.selectedMatch;if(!m)return '';return `<div class="live-sheet"><div class="sheet-head"><div><span class="status">${m.status.toUpperCase()}</span><h2>${flag(teamName(m.home_team_id))} ${esc(teamName(m.home_team_id))} <strong>${m.home_score} × ${m.away_score}</strong> ${esc(teamName(m.away_team_id))} ${flag(teamName(m.away_team_id))}</h2><p class="muted">${fmtDate(m.scheduled_at)} • ${esc(m.field_name||'Campo não informado')}</p></div><div class="clock"><div id="matchClock">${matchClock(m)}</div><small>${state.timerHalf==='2T'?'2º TEMPO':state.timerHalf==='1T'?'1º TEMPO':m.status==='encerrado'?'ENCERRADO':'PARADO'}</small></div></div>${controlBar(m)}<div class="sheet-grid"><div class="sheet-main">${eventPanel(m)}${eventTimeline()}</div><div class="sheet-side">${lineupPanel(m)}${votePanel(m)}</div></div></div>`}
+function matchClock(m){let base=0, started=state.timerStartedAt, half=state.timerHalf;if(half==='1T'){base=m.first_half_elapsed_seconds||0;started=started||m.first_half_started_at}else if(half==='2T'){base=m.second_half_elapsed_seconds||0;started=started||m.second_half_started_at}if(!started)return fmtSec(base);return fmtSec(base+Math.max(0,Math.floor((Date.now()-new Date(started).getTime())/1000)))}
+function fmtSec(s){const min=Math.floor(s/60),sec=s%60;return String(min).padStart(2,'0')+':'+String(sec).padStart(2,'0')}
+function controlBar(m){const disabled=!canOperate()||m.status==='encerrado';return `<div class="controlbar"><button class="primary" ${disabled?'disabled':''} data-action="start1">▶ Iniciar 1º tempo</button><button ${disabled?'disabled':''} data-action="start2">▶ Iniciar 2º tempo</button><button ${disabled?'disabled':''} data-action="pause">⏸ Pausar</button><button class="danger" ${disabled?'disabled':''} data-action="finish">■ Encerrar partida</button><label>Acréscimos 1T <input id="add1" type="number" min="0" value="${m.added_time_first_half||0}"></label><label>2T <input id="add2" type="number" min="0" value="${m.added_time_second_half||0}"></label></div>`}
+function eventPanel(m){const home=state.players.filter(p=>p.team_id===m.home_team_id),away=state.players.filter(p=>p.team_id===m.away_team_id);const players=home.concat(away);return `<div class="eventpanel"><div class="panelhead"><h3>Registrar ocorrência</h3><span class="muted">${state.events.length} eventos</span></div>${!canOperate()?'<div class="notice">🔒 Faça login com perfil de administrador, organizador, árbitro ou operador para registrar ocorrências.</div>':''}<div class="eventform"><select id="eventType"><option value="gol">⚽ Gol</option><option value="cartao_amarelo">🟨 Cartão amarelo</option><option value="cartao_vermelho">🟥 Cartão vermelho</option><option value="substituicao">🔄 Substituição</option><option value="incidente">📝 Incidente</option></select><select id="eventTeam"><option value="">Equipe</option><option value="${m.home_team_id}">${esc(teamName(m.home_team_id))}</option><option value="${m.away_team_id}">${esc(teamName(m.away_team_id))}</option></select><select id="eventPlayer"><option value="">Atleta</option>${players.map(p=>`<option value="${p.id}">${esc(p.name)} — ${esc(teamName(p.team_id))}</option>`).join('')}</select><input id="eventMinute" type="number" min="0" max="150" placeholder="Min." value="${currentMinute()}"/><input id="eventAdded" type="number" min="0" max="20" placeholder="+"/><input id="eventDesc" placeholder="Observação"/><button class="primary" ${!canOperate()?'disabled':''} data-action="event">Registrar</button></div><div class="subform"><select id="subOut"><option value="">Sai</option>${players.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select><select id="subIn"><option value="">Entra</option>${players.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select><button class="secondary" ${!canOperate()?'disabled':''} data-action="sub">Registrar substituição</button></div></div>`}
+function currentMinute(){if(!state.timerStartedAt)return 0;return Math.floor((Date.now()-new Date(state.timerStartedAt).getTime())/60000)}
+function eventTimeline(){return `<div class="timeline"><h3>Eventos da partida</h3>${state.events.length?state.events.slice().reverse().map(e=>`<div class="eventrow"><span class="eventicon">${eventIcon(e.type)}</span><div><b>${esc(eventLabel(e.type))}</b> <span class="muted">${e.minute??'—'}${e.added_minute?`+${e.added_minute}`:''}'</span><div>${e.player_id?esc(playerName(e.player_id)):''}${e.related_player_id?` → ${esc(playerName(e.related_player_id))}`:''}</div><small>${esc(e.description||'')}</small></div><span class="muted">${esc(teamName(e.team_id))}</span></div>`).join(''):`<div class="empty">Nenhuma ocorrência registrada.</div>`}</div>`}
+function eventIcon(t){return {gol:'⚽',cartao_amarelo:'🟨',cartao_vermelho:'🟥',substituicao:'🔄',incidente:'📝'}[t]||'•'}
+function eventLabel(t){return {gol:'Gol',cartao_amarelo:'Cartão amarelo',cartao_vermelho:'Cartão vermelho',substituicao:'Substituição',incidente:'Incidente'}[t]||t}
+function lineupPanel(m){const teamBlocks=[m.home_team_id,m.away_team_id].map(tid=>{const ps=state.players.filter(p=>p.team_id===tid);return `<div class="lineupteam"><h4>${flag(teamName(tid))} ${esc(teamName(tid))}</h4>${ps.length?ps.map(p=>{const l=state.lineups.find(x=>x.player_id===p.id);return `<label class="playerline"><input type="checkbox" data-lineup="${p.id}" ${l?.status==='titular'?'checked':''} ${!canOperate()?'disabled':''}> <span>${p.shirt_number?`#${p.shirt_number} `:''}${esc(p.name)}</span><small>${l?.status||'reserva'}</small></label>`}).join(''):'<div class="muted">Nenhum atleta cadastrado.</div>'}</div>`}).join('');return `<div class="lineuppanel"><div class="panelhead"><h3>Escalação</h3><button class="secondary" data-action="saveLineup" ${!canOperate()?'disabled':''}>Salvar titulares</button></div><p class="muted">Marque os titulares. Os demais atletas permanecem como reservas.</p>${teamBlocks}</div>`}
+function votePanel(m){const candidates=state.players.filter(p=>state.lineups.some(l=>l.match_id===m.id&&l.player_id===p.id&&l.status==='titular'));const counts=state.votes.reduce((a,v)=>(a[v.player_id]=(a[v.player_id]||0)+1,a),{});return `<div class="votepanel"><h3>Melhor jogador da partida</h3>${candidates.length?candidates.sort((a,b)=>(counts[b.id]||0)-(counts[a.id]||0)).map(p=>`<button class="vote" data-vote="${p.id}" ${!state.session?'disabled':''}>⭐ ${esc(p.name)} <b>${counts[p.id]||0}</b></button>`).join(''):'<div class="muted">Defina a escalação titular para liberar os candidatos.</div>'}</div>`}
+function standingsView(){const rows=state.teams.map(t=>({team:t,j:0,v:0,e:0,d:0,gp:0,gc:0,pts:0}));const map=new Map(rows.map(r=>[r.team.id,r]));state.matches.filter(m=>m.status==='encerrado').forEach(m=>{const h=map.get(m.home_team_id),a=map.get(m.away_team_id);if(!h||!a)return;h.j++;a.j++;h.gp+=m.home_score||0;h.gc+=m.away_score||0;a.gp+=m.away_score||0;a.gc+=m.home_score||0;if(m.home_score>m.away_score){h.v++;h.pts+=3;a.d++}else if(m.home_score<m.away_score){a.v++;a.pts+=3;h.d++}else{h.e++;a.e++;h.pts++;a.pts++}});rows.sort((a,b)=>b.pts-a.pts||(b.gp-b.gc)-(a.gp-a.gc)||b.gp-a.gp||a.team.name.localeCompare(b.team.name));return `<section class="panel"><div class="panelhead"><div><h2>Classificação geral</h2><p class="muted">Calculada automaticamente com as partidas encerradas.</p></div><span class="tag">${state.matches.filter(m=>m.status==='encerrado').length} jogos concluídos</span></div><div class="tablewrap"><table><tr><th>#</th><th>Time</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>Pts</th></tr>${rows.map((r,i)=>`<tr><td><b>${i+1}</b></td><td>${flag(r.team.name)} ${esc(r.team.name)}</td><td>${r.j}</td><td>${r.v}</td><td>${r.e}</td><td>${r.d}</td><td>${r.gp}</td><td>${r.gc}</td><td>${r.gp-r.gc}</td><td><b>${r.pts}</b></td></tr>`).join('')}</table></div></section>`}
+function list(title,items,type){
+  const data = type==='team' ? state.teams : type==='player' ? state.players : type==='referee' ? state.referees : [];
+  const rows = data.map(r=>{
+    const label = type==='team' ? flag(r.name)+' '+esc(r.name) : esc(r.name);
+    const detail = type==='team' ? esc(r.country||'Seleção') : type==='player' ? esc(teamName(r.team_id))+' • '+esc(r.position||'') : esc(r.registration||'Árbitro');
+    return `<tr><td><b>${label}</b></td><td>${detail}</td>${canOperate()?`<td class="actions"><button class="smallbtn" data-edit-crud="${type}" data-id="${r.id}">✏️ Alterar</button><button class="danger smallbtn" data-delete-crud="${type}" data-id="${r.id}">🗑️ Excluir</button></td>`:''}</tr>`
+  }).join('');
+  return `<section class="panel"><div class="panelhead"><h2>${title}</h2><div class="panelhead"><span class="tag">${items.length} registros</span>${canOperate()&&type?`<button class="primary" data-crud="${type}">➕ Incluir</button>`:''}</div></div>${data.length?`<div class="tablewrap"><table><tr><th>Nome</th><th>Detalhes</th>${canOperate()?'<th>Ações</th>':''}</tr>${rows}</table></div>`:`<div class="empty">Nenhum registro cadastrado.</div>`}</section>`
+}
+
+async function updateMatch(values){if(!canOperate()||!state.selectedMatch)return toast('Acesso operacional necessário.','error');const {error}=await supabase.from('matches').update(values).eq('id',state.selectedMatch.id);if(error)return toast(error.message,'error');await load();}
+async function startHalf(half){if(!canOperate())return toast('Entre com perfil autorizado.','error');const m=state.selectedMatch;if(!m)return;const now=new Date().toISOString();state.timerHalf=half;state.timerStartedAt=now;const values=half==='1T'?{status:'ao_vivo',first_half_started_at:now}:{status:'ao_vivo',second_half_started_at:now};await updateMatch(values);startTicker()}
+async function pause(){if(!canOperate()||!state.selectedMatch)return;const m=state.selectedMatch;if(!state.timerStartedAt){stopTicker();return}const elapsed=Math.max(0,Math.floor((Date.now()-new Date(state.timerStartedAt).getTime())/1000));const field=state.timerHalf==='2T'?'second_half_elapsed_seconds':'first_half_elapsed_seconds';const values={[field]:(m[field]||0)+elapsed};state.timerStartedAt=null;stopTicker();await updateMatch(values);state.timerHalf=null;toast('Cronômetro pausado e tempo salvo.');}
+async function finishMatch(){if(!canOperate())return toast('Entre com perfil autorizado.','error');if(!confirm('Encerrar esta partida e confirmar o placar?'))return;if(state.timerStartedAt)await pause();await updateMatch({status:'encerrado',finished_at:new Date().toISOString()});state.timerStartedAt=null;stopTicker();state.timerHalf=null;await loadMatchDetails(state.selectedMatch.id,false);render()}
+async function addEvent(){if(!canOperate())return toast('Acesso operacional necessário.','error');const m=state.selectedMatch;if(!m)return;const type=document.querySelector('#eventType')?.value,team_id=document.querySelector('#eventTeam')?.value||null,player_id=document.querySelector('#eventPlayer')?.value||null,minute=Number(document.querySelector('#eventMinute')?.value)||0,added_minute=Number(document.querySelector('#eventAdded')?.value)||0,description=document.querySelector('#eventDesc')?.value||null;if(type!=='incidente'&&!team_id)return toast('Selecione a equipe.','error');if(type!=='incidente'&&!player_id)return toast('Selecione o atleta.','error');if(type==='substituicao')return toast('Use o formulário específico de substituição.','error');const {error}=await supabase.from('match_events').insert({match_id:m.id,team_id,player_id,minute,added_minute,description,type,created_by:state.session.user.id});if(error)return toast(error.message,'error');if(type==='gol'){const field=team_id===m.home_team_id?'home_score':'away_score';await supabase.from('matches').update({[field]:(m[field]||0)+1}).eq('id',m.id)}await loadMatchDetails(m.id,false);await load();}
+async function addSub(){if(!canOperate())return toast('Acesso operacional necessário.','error');const m=state.selectedMatch;const out=document.querySelector('#subOut')?.value,inP=document.querySelector('#subIn')?.value,team_id=out?state.players.find(p=>p.id===out)?.team_id:null;if(!out||!inP||!team_id)return toast('Informe quem sai e quem entra.','error');const minute=Number(document.querySelector('#eventMinute')?.value)||currentMinute();const {error}=await supabase.from('match_events').insert({match_id:m.id,team_id,player_id:out,related_player_id:inP,minute,type:'substituicao',description:`Substituição: ${playerName(out)} por ${playerName(inP)}`,created_by:state.session.user.id});if(error)return toast(error.message,'error');await loadMatchDetails(m.id);}
+async function saveLineup(){if(!canOperate())return toast('Acesso operacional necessário.','error');const m=state.selectedMatch;const boxes=[...document.querySelectorAll('[data-lineup]')];const rows=boxes.map((b,i)=>({match_id:m.id,player_id:b.dataset.lineup,status:b.checked?'titular':'reserva',starter_position:b.checked?i+1:null}));await supabase.from('match_lineups').delete().eq('match_id',m.id);const {error}=rows.length?await supabase.from('match_lineups').insert(rows):{error:null};if(error)return toast(error.message,'error');await loadMatchDetails(m.id);}
+async function vote(player_id){if(!state.session)return openAuth();const {error}=await supabase.from('match_votes').insert({match_id:state.selectedMatch.id,player_id,voter_id:state.session.user.id,vote_type:'melhor_jogador'});if(error)return toast(error.message,'error');toast('Voto registrado.','ok');}
+function crudModal(type,id=null){
+  if(!canOperate()) return;
+  const current = id ? (type==='team'?state.teams:type==='player'?state.players:type==='referee'?state.referees:state.matches).find(x=>x.id===id) : null;
+  const common=`<button class="close" data-close>×</button><div class="eyebrow">${current?'ALTERAR':'INCLUIR'} CADASTRO</div>`;
+  const val=(key='')=>esc(current?.[key]??'');
+  let body='';
+  if(type==='team') body=`${common}<h2>${current?'Alterar time':'Novo time'}</h2><input id="fName" value="${val('name')}" placeholder="Nome do time" required><input id="fCountry" value="${val('country')}" placeholder="País / seleção"><select id="fGroup"><option value="">Sem grupo</option>${state.groups.slice().sort((a,b)=>a.position-b.position).map(g=>`<option value="${g.id}" ${current?.group_id===g.id?'selected':''}>${esc(g.name)}</option>`).join('')}</select><div class="modal-actions"><button class="secondary" data-close>❌ Cancelar</button><button class="primary" data-save-crud="team" data-id="${id||''}">💾 Salvar</button></div>`;
+  if(type==='player') body=`${common}<h2>${current?'Alterar atleta':'Novo atleta'}</h2><input id="fName" value="${val('name')}" placeholder="Nome do atleta" required><select id="fTeam">${state.teams.map(t=>`<option value="${t.id}" ${current?.team_id===t.id?'selected':''}>${flag(t.name)} ${esc(t.name)}</option>`).join('')}</select><input id="fNumber" type="number" min="1" max="99" value="${current?.shirt_number??''}" placeholder="Número"><input id="fPosition" value="${val('position')}" placeholder="Posição"><div class="modal-actions"><button class="secondary" data-close>❌ Cancelar</button><button class="primary" data-save-crud="player" data-id="${id||''}">💾 Salvar</button></div>`;
+  if(type==='referee') body=`${common}<h2>${current?'Alterar árbitro':'Novo árbitro'}</h2><input id="fName" value="${val('name')}" placeholder="Nome do árbitro" required><input id="fReg" value="${val('registration')}" placeholder="Registro"><input id="fPhone" value="${val('phone')}" placeholder="Telefone"><div class="modal-actions"><button class="secondary" data-close>❌ Cancelar</button><button class="primary" data-save-crud="referee" data-id="${id||''}">💾 Salvar</button></div>`;
+  if(type==='match') body=`${common}<h2>${current?'Alterar jogo':'Novo jogo'}</h2><select id="fHome">${state.teams.map(t=>`<option value="${t.id}" ${current?.home_team_id===t.id?'selected':''}>${flag(t.name)} ${esc(t.name)}</option>`).join('')}</select><select id="fAway">${state.teams.map(t=>`<option value="${t.id}" ${current?.away_team_id===t.id?'selected':''}>${flag(t.name)} ${esc(t.name)}</option>`).join('')}</select><select id="fMatchGroup"><option value="">Sem grupo</option>${state.groups.slice().sort((a,b)=>a.position-b.position).map(g=>`<option value="${g.id}" ${current?.group_id===g.id?'selected':''}>${esc(g.name)}</option>`).join('')}</select><select id="fRef"><option value="">Sem árbitro definido</option>${state.referees.map(r=>`<option value="${r.id}" ${current?.referee_id===r.id?'selected':''}>${esc(r.name)}</option>`).join('')}</select><input id="fDate" type="datetime-local" value="${current?.scheduled_at?new Date(current.scheduled_at).toISOString().slice(0,16):''}"><input id="fField" value="${val('field_name')}" placeholder="Campo"><div class="modal-actions"><button class="secondary" data-close>❌ Cancelar</button><button class="primary" data-save-crud="match" data-id="${id||''}">💾 Salvar</button></div>`;
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="crudModal"><div class="modalbox">${body}</div></div>`);
+}
+async function saveCrud(type,id=''){
+  if(!canOperate())return;
+  let row={};
+  if(type==='team') row={competition_id:state.competition.id,name:document.querySelector('#fName').value.trim(),country:document.querySelector('#fCountry').value.trim()||null,group_id:document.querySelector('#fGroup').value||null};
+  if(type==='player') row={team_id:document.querySelector('#fTeam').value,name:document.querySelector('#fName').value.trim(),shirt_number:Number(document.querySelector('#fNumber').value)||null,position:document.querySelector('#fPosition').value.trim()||null};
+  if(type==='referee') row={name:document.querySelector('#fName').value.trim(),registration:document.querySelector('#fReg').value.trim()||null,phone:document.querySelector('#fPhone').value.trim()||null};
+  if(type==='match'){const h=document.querySelector('#fHome').value,a=document.querySelector('#fAway').value;if(h===a)return toast('O mandante e o visitante devem ser diferentes.','error');const dt=document.querySelector('#fDate').value;row={competition_id:state.competition.id,group_id:document.querySelector('#fMatchGroup').value||null,home_team_id:h,away_team_id:a,referee_id:document.querySelector('#fRef').value||null,scheduled_at:dt?new Date(dt).toISOString():null,field_name:document.querySelector('#fField').value.trim()||null}};
+  if(!row.name && ['team','player','referee'].includes(type))return toast('Informe o nome.','error');
+  const table={team:'teams',player:'players',referee:'referees',match:'matches'}[type];
+  const answer=await askConfirm(id?'Confirma ALTERAR este cadastro?':'Confirma SALVAR este cadastro?'); if(!answer)return;
+  const result=id?await supabase.from(table).update(row).eq('id',id):await supabase.from(table).insert(row);
+  if(result.error)return toast(result.error.message,'error');
+  document.querySelector('#crudModal')?.remove();toast(id?'Cadastro alterado com sucesso.':'Cadastro salvo com sucesso.');await load();
+}
+async function deleteCrud(type,id){
+  if(!canOperate())return;
+  const table={team:'teams',player:'players',referee:'referees',match:'matches'}[type];
+  const label=type==='team'?teamName(id):type==='player'?playerName(id):type==='referee'?(state.referees.find(x=>x.id===id)?.name||'este árbitro'):'este jogo';
+  const ok=await askConfirm(`Deseja EXCLUIR ${label}? Esta ação não pode ser desfeita.`); if(!ok)return;
+  const {error}=await supabase.from(table).delete().eq('id',id);if(error)return toast(error.message,'error');toast('Cadastro excluído com sucesso.');await load();
+}
+function askConfirm(message){return new Promise(resolve=>{const old=document.querySelector('#confirmModal');if(old)old.remove();document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="confirmModal"><div class="modalbox"><div class="eyebrow">CONFIRMAÇÃO</div><h2>Confirmação</h2><p>${esc(message)}</p><div class="modal-actions"><button class="secondary" id="confirmNo">NÃO</button><button class="danger" id="confirmYes">SIM</button></div></div></div>`);document.querySelector('#confirmNo').onclick=()=>{document.querySelector('#confirmModal')?.remove();resolve(false)};document.querySelector('#confirmYes').onclick=()=>{document.querySelector('#confirmModal')?.remove();resolve(true)}})}
+
+async function authSubmit(){const email=document.querySelector('#authEmail')?.value.trim(),password=document.querySelector('#authPassword')?.value;if(!email||!password)return toast('Informe e-mail e senha.','error');let res;if(state.authMode==='signup')res=await supabase.auth.signUp({email,password});else res=await supabase.auth.signInWithPassword({email,password});if(res.error)return toast(res.error.message,'error');if(state.authMode==='signup')toast('Usuário criado. Se a confirmação de e-mail estiver ativa, confirme o e-mail antes de entrar.','ok');else toast('Login realizado.','ok');await load();}
+async function logout(){await supabase.auth.signOut();state.session=null;state.profile=null;render()}
+function openAuth(){document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="authModal"><div class="modalbox"><button class="close" data-close>×</button><div class="eyebrow">ACESSO AO SISTEMA</div><h2>${state.authMode==='signup'?'Criar usuário':'Entrar'}</h2><p class="muted">Para operar a súmula, use um usuário com perfil autorizado no Supabase.</p><input id="authEmail" type="email" placeholder="E-mail"><input id="authPassword" type="password" placeholder="Senha"><button class="primary wide" data-auth-submit>${state.authMode==='signup'?'Criar usuário':'Entrar'}</button><button class="linkbtn" data-toggle-auth>${state.authMode==='signup'?'Já tenho cadastro':'Criar novo usuário'}</button></div></div>`)}
+function toast(msg,type='ok'){document.querySelectorAll('.toast').forEach(x=>x.remove());document.body.insertAdjacentHTML('beforeend',`<div class="toast ${type}">${esc(msg)}</div>`);setTimeout(()=>document.querySelector('.toast')?.remove(),3500)}
+function startTicker(){stopTicker();state.timerInterval=setInterval(()=>{const el=document.querySelector('#matchClock');if(el)el.textContent=matchClock(state.selectedMatch)},1000)}
+function stopTicker(){if(state.timerInterval)clearInterval(state.timerInterval);state.timerInterval=null}
+
+function render(){app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker()}
+function bind(){document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;render()});document.querySelectorAll('[data-open-match]').forEach(b=>b.onclick=async()=>{state.tab='ao_vivo';await loadMatchDetails(b.dataset.openMatch)});document.querySelectorAll('[data-crud]').forEach(b=>b.onclick=()=>crudModal(b.dataset.crud));document.querySelectorAll('[data-edit-crud]').forEach(b=>b.onclick=()=>crudModal(b.dataset.editCrud,b.dataset.id));document.querySelectorAll('[data-delete-crud]').forEach(b=>b.onclick=()=>deleteCrud(b.dataset.deleteCrud,b.dataset.id));document.querySelectorAll('[data-save-crud]').forEach(b=>b.onclick=()=>saveCrud(b.dataset.saveCrud,b.dataset.id));document.querySelector('#authBtn')?.addEventListener('click',()=>state.session?openUserMenu():openAuth());document.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{const a=b.dataset.action;if(a==='start1')await startHalf('1T');if(a==='start2')await startHalf('2T');if(a==='pause')await pause();if(a==='finish')await finishMatch();if(a==='event')await addEvent();if(a==='sub')await addSub();if(a==='saveLineup')await saveLineup()});document.querySelectorAll('[data-vote]').forEach(b=>b.onclick=()=>vote(b.dataset.vote))}
+function openUserMenu(){document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="userModal"><div class="modalbox"><button class="close" data-close>×</button><div class="eyebrow">USUÁRIO</div><h2>${esc(state.profile?.full_name||state.session.user.email)}</h2><p>Perfil: <b>${roleLabel(state.profile?.role)}</b></p><button class="danger wide" id="logoutBtn">Sair</button></div></div>`);document.querySelector('#logoutBtn').onclick=logout}
+document.addEventListener('click',e=>{if(e.target.matches('[data-close]'))e.target.closest('.modal')?.remove();if(e.target.matches('[data-auth-submit]'))authSubmit();if(e.target.matches('[data-toggle-auth]')){state.authMode=state.authMode==='login'?'signup':'login';document.querySelector('#authModal')?.remove();openAuth()}})
+
+supabase.auth.onAuthStateChange(async()=>{setTimeout(load,0)})
+subscribe()
+load()
