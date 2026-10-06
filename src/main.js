@@ -365,8 +365,28 @@ async function exportSelectedPlayers(){
   const msg=`Exportar ${rows.length} atleta(s) para o campeonato selecionado?${duplicates.length?` ${duplicates.length} duplicado(s) serão ignorados.`:''}`;
   if(!(await askConfirm(msg)))return;
 
+  // Tenta inserir em lote. Se algum registro for rejeitado pelo banco (por exemplo,
+  // conflito de número/campo único), faz uma segunda tentativa atleta por atleta,
+  // evitando que um único atleta impeça os demais de serem copiados.
   const ins=await supabase.from('players').insert(rows);
-  if(ins.error)return toast(ins.error.message,'error');
+  if(ins.error){
+    const ok=[];
+    const failed=[];
+    for(const row of rows){
+      const one=await supabase.from('players').insert(row);
+      if(one.error)failed.push({name:row.full_name||row.name,error:one.error.message});
+      else ok.push(row.full_name||row.name);
+    }
+    if(!ok.length){
+      const detalhe=failed[0]?.error||ins.error.message;
+      return toast('Nenhum atleta foi exportado: '+detalhe,'error');
+    }
+    document.querySelector('#playerExportModal')?.remove();
+    const falhaTxt=failed.length?` ${failed.length} não exportado(s).`:'';
+    toast(`${ok.length} atleta(s) exportado(s) com sucesso.${falhaTxt}`);
+    await load();
+    return;
+  }
 
   document.querySelector('#playerExportModal')?.remove();
   toast(`${rows.length} atleta(s) exportado(s) com sucesso.`);
@@ -502,25 +522,12 @@ function ensureCustomStyles(){if(document.querySelector('#ouroCustomStyles'))ret
 function render(){ensureCustomStyles();ensureSumulaStyles();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 async function openMatchFromButton(id){
   try{
-    if(!id){ toast('ID da partida não encontrado.','error'); return }
-    const match = state.matches.find(m=>String(m.id)===String(id))
-    if(match) state.selectedMatch={...match}
+    if(!id){toast('ID da partida não encontrado.','error');return}
+    const match=state.matches.find(m=>String(m.id)===String(id))
+    if(match)state.selectedMatch={...match}
     state.tab='ao_vivo'
-    const mr = match ? {data:match,error:null} : await supabase.from('matches').select('*').eq('id',id).maybeSingle()
-    if(mr.error) throw mr.error
-    if(!mr.data){ toast('Partida não encontrada.','error'); return }
-    state.selectedMatch=mr.data
-    const [ev,lu,v] = await Promise.all([
-      supabase.from('match_events').select('*').eq('match_id',id).order('created_at',{ascending:true}),
-      supabase.from('match_lineups').select('*').eq('match_id',id),
-      supabase.from('match_votes').select('*').eq('match_id',id)
-    ])
-    if(ev.error) throw ev.error
-    if(lu.error) throw lu.error
-    if(v.error) throw v.error
-    state.events=ev.data||[]
-    state.lineups=lu.data||[]
-    state.votes=v.data||[]
+    await loadMatchDetails(id,false)
+    if(!state.selectedMatch){toast('Partida não encontrada.','error');return}
     render()
     window.scrollTo({top:0,behavior:'smooth'})
   }catch(err){
