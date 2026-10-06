@@ -239,46 +239,71 @@ function list(title,items,type){
 
 async function openPlayerExportModal(){
   if(!canOperate()) return toast('Acesso operacional necessário.','error');
-  const destinations=(state.competitions||[]).filter(c=>c.id!==state.competition?.id);
-  if(!destinations.length) return toast('Não existe outro campeonato cadastrado para receber os atletas.','error');
+  const competitions=state.competitions||[];
+  if(competitions.length<2) return toast('Cadastre pelo menos dois campeonatos para exportar atletas.','error');
   document.querySelector('#playerExportModal')?.remove();
-  const compOptions=destinations.map(c=>`<option value="${c.id}">${esc(c.name)}${c.season?` • ${esc(c.season)}`:''}</option>`).join('');
+  const sourceId=state.competition?.id||'';
+  const compOptions=competitions.map(c=>`<option value="${c.id}" ${c.id===sourceId?'selected':''}>${esc(c.name)}${c.season?` • ${esc(c.season)}`:''}</option>`).join('');
+  const destOptions=competitions.filter(c=>c.id!==sourceId).map(c=>`<option value="${c.id}">${esc(c.name)}${c.season?` • ${esc(c.season)}`:''}</option>`).join('');
   document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="playerExportModal"><div class="modalbox wide">
     <button class="close" data-close>×</button>
     <div class="eyebrow">EXPORTAÇÃO DE ATLETAS</div>
     <h2>📋 Exportar atletas</h2>
-    <p class="muted">Marque cada atleta e escolha individualmente para qual time ele será copiado.</p>
-    <label>Campeonato de destino</label>
-    <select id="playerExportCompetition" data-player-export-competition><option value="">Selecione o campeonato</option>${compOptions}</select>
+    <p class="muted">Selecione o campeonato de origem, marque os atletas e escolha individualmente para qual time de outro campeonato cada atleta será copiado.</p>
+    <div class="formgrid">
+      <div><label>Campeonato de origem</label>
+        <select id="playerExportSource" data-player-export-source>${compOptions}</select>
+      </div>
+      <div><label>Campeonato de destino</label>
+        <select id="playerExportCompetition" data-player-export-competition><option value="">Selecione o campeonato</option>${destOptions}</select>
+      </div>
+    </div>
     <div class="modal-actions"><button class="secondary" type="button" data-export-check-all>☑️ Marcar todos</button><button class="secondary" type="button" data-export-uncheck-all>⬜ Desmarcar todos</button></div>
     <div id="playerExportRows" class="tablewrap"><div class="empty">Selecione o campeonato de destino.</div></div>
     <div class="modal-actions"><button class="secondary" type="button" data-close>❌ Cancelar</button><button class="primary" type="button" data-export-players>📤 Exportar atletas marcados</button></div>
   </div></div>`);
+  await loadPlayerExportTeams();
 }
 
 async function loadPlayerExportTeams(){
-  const cid=document.querySelector('#playerExportCompetition')?.value;
+  const sourceId=document.querySelector('#playerExportSource')?.value||'';
+  const destId=document.querySelector('#playerExportCompetition')?.value||'';
   const box=document.querySelector('#playerExportRows');
   if(!box) return;
-  if(!cid){box.innerHTML='<div class="empty">Selecione o campeonato de destino.</div>';return}
-  const res=await supabase.from('teams').select('id,name,country').eq('competition_id',cid).order('name');
-  if(res.error)return toast(res.error.message,'error');
-  const teams=res.data||[];
-  if(!teams.length){box.innerHTML='<div class="empty">O campeonato de destino ainda não possui times cadastrados.</div>';return}
-  const options=teams.map(t=>`<option value="${t.id}">${flag(t.name)} ${esc(t.name)}</option>`).join('');
-  const rows=state.players.slice().sort((a,b)=>
-    teamName(a.team_id).localeCompare(teamName(b.team_id),'pt-BR') ||
-    (a.full_name||a.name||'').localeCompare(b.full_name||b.name||'','pt-BR')
-  ).map(p=>`<tr>
+  if(!sourceId){box.innerHTML='<div class="empty">Selecione o campeonato de origem.</div>';return}
+  if(!destId){box.innerHTML='<div class="empty">Selecione o campeonato de destino.</div>';return}
+  if(sourceId===destId){box.innerHTML='<div class="empty">O campeonato de origem e o destino devem ser diferentes.</div>';return}
+
+  const [srcTeamsRes,dstTeamsRes]=await Promise.all([
+    supabase.from('teams').select('id,name,country').eq('competition_id',sourceId).order('name'),
+    supabase.from('teams').select('id,name,country').eq('competition_id',destId).order('name')
+  ]);
+  if(srcTeamsRes.error)return toast(srcTeamsRes.error.message,'error');
+  if(dstTeamsRes.error)return toast(dstTeamsRes.error.message,'error');
+
+  const srcTeams=srcTeamsRes.data||[];
+  const dstTeams=dstTeamsRes.data||[];
+  if(!dstTeams.length){box.innerHTML='<div class="empty">O campeonato de destino ainda não possui times cadastrados.</div>';return}
+  if(!srcTeams.length){box.innerHTML='<div class="empty">O campeonato de origem ainda não possui times cadastrados.</div>';return}
+
+  const sourceTeamIds=srcTeams.map(t=>t.id);
+  const playersRes=await supabase.from('players').select('*').in('team_id',sourceTeamIds);
+  if(playersRes.error)return toast(playersRes.error.message,'error');
+  const players=playersRes.data||[];
+  if(!players.length){box.innerHTML='<div class="empty">Nenhum atleta cadastrado no campeonato de origem.</div>';return}
+
+  const teamMap=new Map(srcTeams.map(t=>[t.id,t.name]));
+  const options=dstTeams.map(t=>`<option value="${t.id}">${flag(t.name)} ${esc(t.name)}</option>`).join('');
+  const rows=players.slice().sort((a,b)=>(teamMap.get(a.team_id)||'').localeCompare(teamMap.get(b.team_id)||'','pt-BR') || (a.full_name||a.name||'').localeCompare(b.full_name||b.name||'','pt-BR')).map(p=>`<tr>
     <td><input type="checkbox" data-export-player="${p.id}"></td>
     <td><b>${esc(p.shirt_number??'—')}</b></td>
     <td>${esc(p.full_name||p.name)}</td>
     <td>${esc(p.nickname||'—')}</td>
     <td>${esc(cat(p.category))}</td>
-    <td>${esc(teamName(p.team_id))}</td>
+    <td>${esc(teamMap.get(p.team_id)||'—')}</td>
     <td><select data-export-dest-player="${p.id}"><option value="">Selecione o time</option>${options}</select></td>
   </tr>`).join('');
-  box.innerHTML=`<table><tr><th>Marcar</th><th>Nº</th><th>Nome completo</th><th>Apelido</th><th>Categoria</th><th>Equipe atual</th><th>Transferir para</th></tr>${rows}</table>`;
+  box.innerHTML=`<table><tr><th>Marcar</th><th>Nº</th><th>Nome completo</th><th>Apelido</th><th>Categoria</th><th>Equipe atual</th><th>Copiar para</th></tr>${rows}</table>`;
 }
 
 async function exportSelectedPlayers(){
@@ -288,8 +313,18 @@ async function exportSelectedPlayers(){
   const checked=[...document.querySelectorAll('[data-export-player]:checked')];
   if(!checked.length)return toast('Marque pelo menos um atleta.','error');
 
+  const sourceId=document.querySelector('#playerExportSource')?.value||'';
+  if(!sourceId)return toast('Selecione o campeonato de origem.','error');
+  const sourceTeamsRes=await supabase.from('teams').select('id').eq('competition_id',sourceId);
+  if(sourceTeamsRes.error)return toast(sourceTeamsRes.error.message,'error');
+  const sourceTeamIds=(sourceTeamsRes.data||[]).map(t=>t.id);
+  if(!sourceTeamIds.length)return toast('O campeonato de origem não possui times cadastrados.','error');
+  const playerIds=checked.map(cb=>cb.dataset.exportPlayer);
+  const playersRes=await supabase.from('players').select('*').in('id',playerIds).in('team_id',sourceTeamIds);
+  if(playersRes.error)return toast(playersRes.error.message,'error');
+  const playersById=new Map((playersRes.data||[]).map(p=>[String(p.id),p]));
   const selected=checked.map(cb=>{
-    const p=state.players.find(x=>x.id===cb.dataset.exportPlayer);
+    const p=playersById.get(String(cb.dataset.exportPlayer));
     const dest=document.querySelector(`[data-export-dest-player="${cb.dataset.exportPlayer}"]`)?.value||'';
     return {p,dest};
   }).filter(x=>x.p);
@@ -511,7 +546,7 @@ if(t.matches('[data-export-players]')){await exportSelectedPlayers();return}if(t
 
 document.addEventListener('change',async e=>{
   const t=e.target;
-  if(t.matches('[data-player-export-competition]')) await loadPlayerExportTeams();
+  if(t.matches('[data-player-export-source]') || t.matches('[data-player-export-competition]')) await loadPlayerExportTeams();
 });
 
 supabase.auth.onAuthStateChange(async()=>{setTimeout(load,0)})
