@@ -161,6 +161,7 @@ function mediaView(){const photos=state.media.filter(x=>x.category==='foto'),vid
 function mediaCard(x){const isImg=x.mime_type?.startsWith('image/'),isVideo=x.mime_type?.startsWith('video/');return `<div class="media-card">${isImg?`<img src="${esc(x.file_url)}" alt="${esc(x.title)}">`:isVideo?`<video src="${esc(x.file_url)}" controls preload="metadata"></video>`:'📄'}<b>${esc(x.title)}</b>${x.description?`<small>${esc(x.description)}</small>`:''}<a class="smallbtn" href="${esc(x.file_url)}" target="_blank">Abrir</a>${canOperate()?`<button class="smallbtn" data-media-delete="${x.id}">Excluir</button>`:''}</div>`}
 function reportsView(){return `<section class="panel"><div class="panelhead"><div><h2>Relatórios</h2><p class="muted">Escolha um relatório e imprima ou salve em PDF pelo navegador.</p></div></div><div class="report-buttons">${['jogos','sumula','atletas','atletas_equipe','artilheiros','equipes','cartoes','classificacao','grupos'].map(x=>`<button class="secondary" data-report="${x}">${({jogos:'Jogos',sumula:'📝 Súmula do jogo',atletas:'Atletas',atletas_equipe:'Atletas por equipe',artilheiros:'Artilheiros',equipes:'Equipes',cartoes:'Cartões',classificacao:'Classificação',grupos:'Classificação por grupos'})[x]}</button>`).join('')}</div>${state.reportType?reportContent(state.reportType):'<div class="empty">Selecione um relatório.</div>'}</section>`}
 async function loadReportMatch(id){if(!id)return;try{const mr=await supabase.from('matches').select('*').eq('id',id).maybeSingle();if(mr.error)throw mr.error;if(!mr.data)return toast('Partida não encontrada.','error');const [ev,lu]=await Promise.all([supabase.from('match_events').select('*').eq('match_id',id).order('created_at',{ascending:true}),supabase.from('match_lineups').select('*').eq('match_id',id)]);if(ev.error)throw ev.error;if(lu.error)throw lu.error;state.reportMatchId=id;state.selectedMatch=mr.data;state.events=ev.data||[];state.lineups=lu.data||[];render()}catch(err){console.error(err);toast('Não foi possível carregar a súmula: '+(err?.message||'erro desconhecido'),'error')}}
+function age(v){if(!v)return '—';const d=new Date(v);if(Number.isNaN(d.getTime()))return '—';const now=new Date();let n=now.getFullYear()-d.getFullYear();const md=now.getMonth()-d.getMonth();if(md<0||(md===0&&now.getDate()<d.getDate()))n--;return n>=0?String(n):'—'}
 function sumulaReport(m){if(!m)return '<div class="empty">Selecione uma partida para gerar a súmula.</div>';const h=teamName(m.home_team_id),a=teamName(m.away_team_id);const ref=(id)=>state.referees.find(r=>r.id===id)?.name||'—';const status=matchStatusLabel(m.status);const typeLabel=e=>({gol:'⚽ Gol',gol_contra:'🥅 Gol Contra',cartao_amarelo:'🟨 Cartão Amarelo',cartao_vermelho:'🟥 Cartão Vermelho',substituicao:'🔄 Substituição',incidente:'Incidente'})[e.type]||e.type;const eventRows=state.events.slice().sort((x,y)=>((x.minute||0)*60+(x.second||0))-((y.minute||0)*60+(y.second||0))).map(e=>{const team=teamName(e.team_id);const player=e.player_id?playerName(e.player_id):'';let detail=e.description||player||'—';if(e.type==='substituicao'&&e.related_player_id)detail=`Sai: ${playerName(e.player_id)||'—'} • Entra: ${playerName(e.related_player_id)||'—'}`;return `<tr><td><b>${String(e.minute||0).padStart(2,'0')}:${String(e.second||0).padStart(2,'0')}</b></td><td>${typeLabel(e)}</td><td>${esc(team)}</td><td>${esc(detail)}</td></tr>`}).join('');const lineupRows=(teamId)=>state.players.filter(p=>p.team_id===teamId).sort((x,y)=>(Number(x.shirt_number)||999)-(Number(y.shirt_number)||999)).map(p=>`<tr><td><b>${p.shirt_number||'—'}</b></td><td>${esc(p.full_name||p.name)}</td><td>${esc(p.nickname||'—')}</td><td>${esc(cat(p.category))}</td><td>${age(p.birth_date)}</td></tr>`).join('');return `<div class="report-preview sumula-print"><div class="sumula-header"><img src="${logoOuroPrata}" alt="Ouro e Prata"><div><h2>${esc(state.competition?.name||'Campeonato')}</h2><h3>SÚMULA OFICIAL DA PARTIDA</h3><p>${esc(state.competition?.season||'')}</p></div></div><div class="sumula-match"><div><b>${flag(h)} ${esc(h)}</b><strong>${m.home_score||0} × ${m.away_score||0}</strong><b>${esc(a)} ${flag(a)}</b></div><p><b>Status:</b> ${status} &nbsp; <b>Data:</b> ${fmtDate(m.scheduled_at)} &nbsp; <b>Campo:</b> ${esc(m.field_name||'—')}</p></div><div class="sumula-officials"><b>Arbitragem:</b> Árbitro: ${esc(ref(m.referee_id))} • Assistente 1: ${esc(ref(m.assistant_1_id))} • Assistente 2: ${esc(ref(m.assistant_2_id))} • Mesário: ${esc(ref(m.fourth_official_id))}</div><div class="sumula-grid"><div><h3>${flag(h)} ${esc(h)}</h3><table><tr><th>Nº</th><th>NOME COMPLETO</th><th>APELIDO</th><th>CATEGORIA</th><th>IDADE</th></tr>${lineupRows(m.home_team_id)}</table></div><div><h3>${flag(a)} ${esc(a)}</h3><table><tr><th>Nº</th><th>NOME COMPLETO</th><th>APELIDO</th><th>CATEGORIA</th><th>IDADE</th></tr>${lineupRows(m.away_team_id)}</table></div></div><h3>Eventos da partida</h3><table><tr><th>Tempo</th><th>Evento</th><th>Equipe</th><th>Detalhes</th></tr>${eventRows||'<tr><td colspan="4">Nenhuma ocorrência registrada.</td></tr>'}</table><div class="sumula-signatures"><div>________________________________<br>Árbitro</div><div>________________________________<br>Responsável / Organização</div></div><div class="panelhead no-print"><h3>Súmula do jogo</h3><button class="primary" data-print-report>🖨️ Imprimir / PDF</button></div></div>`}
 function reportContent(type){let title=({jogos:'Relatório de jogos',sumula:'Súmula do jogo',atletas:'Relatório de atletas',atletas_equipe:'Relação de atletas por equipes',artilheiros:'Artilharia',equipes:'Relatório de equipes',cartoes:'Cartões',classificacao:'Classificação geral',grupos:'Classificação por grupos'})[type];let body='';if(type==='sumula'){body=`<div class="sumula-selector"><label>Selecione a partida<select id="reportMatchSelect"><option value="">Selecione...</option>${state.matches.map(x=>`<option value="${x.id}" ${x.id===state.reportMatchId?'selected':''}>${esc(teamName(x.home_team_id))} × ${esc(teamName(x.away_team_id))} • ${fmtDate(x.scheduled_at)}</option>`).join('')}</select></label></div>${sumulaReport(state.reportMatchId?state.selectedMatch:null)}`}if(type==='jogos')body=matchesTable(false);if(type==='atletas'||type==='atletas_equipe'){if(type==='atletas_equipe'){body=state.teams.map(t=>{const ps=state.players.filter(p=>p.team_id===t.id).sort((a,b)=>{const na=Number(a.shirt_number),nb=Number(b.shirt_number);if(Number.isFinite(na)&&Number.isFinite(nb))return na-nb;if(Number.isFinite(na))return -1;if(Number.isFinite(nb))return 1;return (a.full_name||a.name||'').localeCompare(b.full_name||b.name||'')});return `<div class="report-team"><h3>${flag(t.name)} ${esc(t.name)}</h3><div class="tablewrap"><table><tr><th>Nº</th><th>Atleta</th><th>Apelido</th><th>Categoria</th><th>Posição</th><th>Nascimento</th></tr>${ps.map(p=>`<tr><td><b>${p.shirt_number||'—'}</b></td><td>${esc(p.full_name||p.name)}</td><td>${esc(p.nickname||'')}</td><td>${esc(p.category||'')}</td><td>${esc(p.position||'')}</td><td>${p.birth_date?esc(p.birth_date):'—'}</td></tr>`).join('')}</table></div></div>`}).join('')}else body=`<div class="tablewrap"><table><tr><th>Atleta</th><th>Equipe</th><th>Número</th><th>Posição</th></tr>${state.players.map(p=>`<tr><td>${esc(p.full_name||p.name)}</td><td>${esc(teamName(p.team_id))}</td><td>${p.shirt_number||''}</td><td>${esc(p.position||'')}</td></tr>`).join('')}</table></div>`}if(type==='equipes')body=`<div class="tablewrap"><table><tr><th>Equipe</th><th>Grupo</th></tr>${state.teams.map(t=>`<tr><td>${flag(t.name)} ${esc(t.name)}</td><td>${esc(state.groups.find(g=>g.id===t.group_id)?.name||'—')}</td></tr>`).join('')}</table></div>`;if(type==='artilheiros'){const map={};state.allEvents.filter(e=>e.type==='gol'&&e.player_id).forEach(e=>map[e.player_id]=(map[e.player_id]||0)+1);body=`<div class="tablewrap"><table><tr><th>#</th><th>Atleta</th><th>Equipe</th><th>Gols</th></tr>${Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([id,n],i)=>`<tr><td>${i+1}</td><td>${esc(playerName(id))}</td><td>${esc(teamName(state.players.find(p=>p.id===id)?.team_id))}</td><td><b>${n}</b></td></tr>`).join('')}</table></div>`}if(type==='cartoes'){const map={};state.allEvents.filter(e=>['cartao_amarelo','cartao_vermelho'].includes(e.type)&&e.player_id).forEach(e=>{const k=e.player_id+'|'+e.type;map[k]=(map[k]||0)+1});body=`<div class="tablewrap"><table><tr><th>Atleta</th><th>Equipe</th><th>Tipo</th><th>Quantidade</th></tr>${Object.entries(map).map(([k,n])=>{const [id,t]=k.split('|');return `<tr><td>${esc(playerName(id))}</td><td>${esc(teamName(state.players.find(p=>p.id===id)?.team_id))}</td><td>${t==='cartao_amarelo'?'Amarelo':'Vermelho'}</td><td>${n}</td></tr>`}).join('')}</table></div>`}if(type==='classificacao')body=standingsTable(calcStandings());if(type==='grupos')body=state.groups.slice().sort((a,b)=>a.position-b.position).map(g=>`<h3>${esc(g.name)}</h3>${standingsTable(calcStandings(state.teams.filter(t=>t.group_id===g.id).map(t=>t.id)))}`).join('');return `<div class="report-preview"><div class="panelhead"><h3>${title}</h3><button class="primary" data-print-report>🖨️ Imprimir / PDF</button></div>${body}</div>`}
 function matchCard(m){const h=teamName(m.home_team_id),a=teamName(m.away_team_id);return `<div class="matchmini"><div>${flag(h)} <b>${esc(h)}</b></div><div class="scoremini">${m.home_score}<span>×</span>${m.away_score}</div><div><b>${esc(a)}</b> ${flag(a)}</div><button class="smallbtn" data-open-match="${m.id}">Súmula</button></div>`}
@@ -242,25 +243,44 @@ async function openPlayerExportModal(){
   const competitions=state.competitions||[];
   if(competitions.length<2) return toast('Cadastre pelo menos dois campeonatos para exportar atletas.','error');
   document.querySelector('#playerExportModal')?.remove();
-  const sourceId=state.competition?.id||'';
-  const compOptions=competitions.map(c=>`<option value="${c.id}" ${c.id===sourceId?'selected':''}>${esc(c.name)}${c.season?` • ${esc(c.season)}`:''}</option>`).join('');
-  const destOptions=competitions.filter(c=>c.id!==sourceId).map(c=>`<option value="${c.id}">${esc(c.name)}${c.season?` • ${esc(c.season)}`:''}</option>`).join('');
+
+  // Se o campeonato atualmente aberto possui atletas, ele é a origem.
+  // Se estiver vazio, usamos automaticamente o primeiro campeonato que possui atletas
+  // e deixamos o campeonato atual como destino. Isso evita abrir a janela vazia.
+  const counts=await Promise.all(competitions.map(async c=>{
+    const tr=await supabase.from('teams').select('id').eq('competition_id',c.id);
+    if(tr.error)return {c,n:0};
+    const ids=(tr.data||[]).map(x=>x.id);
+    if(!ids.length)return {c,n:0};
+    const pr=await supabase.from('players').select('id',{count:'exact',head:true}).in('team_id',ids);
+    return {c,n:pr.error?0:(pr.count||0)};
+  }));
+  const current=state.competition?.id||'';
+  const currentCount=counts.find(x=>x.c.id===current)?.n||0;
+  const sourceDefault=currentCount>0?current:(counts.find(x=>x.n>0)?.c.id||current);
+  const destDefault=sourceDefault===current
+    ? (competitions.find(c=>c.id!==sourceDefault)?.id||'')
+    : current;
+
+  const sourceOptions=competitions.map(c=>`<option value="${c.id}" ${c.id===sourceDefault?'selected':''}>${esc(c.name)}${c.season?` • ${esc(c.season)}`:''}</option>`).join('');
+  const destOptions=competitions.filter(c=>c.id!==sourceDefault).map(c=>`<option value="${c.id}" ${c.id===destDefault?'selected':''}>${esc(c.name)}${c.season?` • ${esc(c.season)}`:''}</option>`).join('');
+
   document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="playerExportModal"><div class="modalbox wide">
     <button class="close" data-close>×</button>
-    <div class="eyebrow">EXPORTAÇÃO DE ATLETAS</div>
+    <div class="eyebrow">CÓPIA DE ATLETAS ENTRE CAMPEONATOS</div>
     <h2>📋 Exportar atletas</h2>
-    <p class="muted">Selecione o campeonato de origem, marque os atletas e escolha individualmente para qual time de outro campeonato cada atleta será copiado.</p>
+    <p class="muted">O atleta será <b>copiado</b> para o novo campeonato e permanecerá no campeonato de origem.</p>
     <div class="formgrid">
       <div><label>Campeonato de origem</label>
-        <select id="playerExportSource" data-player-export-source>${compOptions}</select>
+        <select id="playerExportSource" data-player-export-source>${sourceOptions}</select>
       </div>
       <div><label>Campeonato de destino</label>
         <select id="playerExportCompetition" data-player-export-competition><option value="">Selecione o campeonato</option>${destOptions}</select>
       </div>
     </div>
     <div class="modal-actions"><button class="secondary" type="button" data-export-check-all>☑️ Marcar todos</button><button class="secondary" type="button" data-export-uncheck-all>⬜ Desmarcar todos</button></div>
-    <div id="playerExportRows" class="tablewrap"><div class="empty">Selecione o campeonato de destino.</div></div>
-    <div class="modal-actions"><button class="secondary" type="button" data-close>❌ Cancelar</button><button class="primary" type="button" data-export-players>📤 Exportar atletas marcados</button></div>
+    <div id="playerExportRows" class="tablewrap"><div class="empty">Carregando atletas...</div></div>
+    <div class="modal-actions"><button class="secondary" type="button" data-close>❌ Cancelar</button><button class="primary" type="button" data-export-players>📤 Copiar atletas marcados</button></div>
   </div></div>`);
   await loadPlayerExportTeams();
 }
@@ -269,32 +289,30 @@ async function loadPlayerExportTeams(){
   const sourceId=document.querySelector('#playerExportSource')?.value||'';
   const destId=document.querySelector('#playerExportCompetition')?.value||'';
   const box=document.querySelector('#playerExportRows');
-  if(!box) return;
+  if(!box)return;
   if(!sourceId){box.innerHTML='<div class="empty">Selecione o campeonato de origem.</div>';return}
   if(!destId){box.innerHTML='<div class="empty">Selecione o campeonato de destino.</div>';return}
-  if(sourceId===destId){box.innerHTML='<div class="empty">O campeonato de origem e o destino devem ser diferentes.</div>';return}
+  if(sourceId===destId){box.innerHTML='<div class="empty">Origem e destino devem ser campeonatos diferentes.</div>';return}
 
-  const [srcTeamsRes,dstTeamsRes]=await Promise.all([
+  const [src,dst]=await Promise.all([
     supabase.from('teams').select('id,name,country').eq('competition_id',sourceId).order('name'),
     supabase.from('teams').select('id,name,country').eq('competition_id',destId).order('name')
   ]);
-  if(srcTeamsRes.error)return toast(srcTeamsRes.error.message,'error');
-  if(dstTeamsRes.error)return toast(dstTeamsRes.error.message,'error');
+  if(src.error)return toast('Erro ao carregar times da origem: '+src.error.message,'error');
+  if(dst.error)return toast('Erro ao carregar times do destino: '+dst.error.message,'error');
+  const sourceTeams=src.data||[],destTeams=dst.data||[];
+  if(!sourceTeams.length){box.innerHTML='<div class="empty">O campeonato de origem não possui times cadastrados.</div>';return}
+  if(!destTeams.length){box.innerHTML='<div class="empty">O campeonato de destino não possui times cadastrados. Cadastre pelo menos um time antes de copiar atletas.</div>';return}
 
-  const srcTeams=srcTeamsRes.data||[];
-  const dstTeams=dstTeamsRes.data||[];
-  if(!dstTeams.length){box.innerHTML='<div class="empty">O campeonato de destino ainda não possui times cadastrados.</div>';return}
-  if(!srcTeams.length){box.innerHTML='<div class="empty">O campeonato de origem ainda não possui times cadastrados.</div>';return}
-
-  const sourceTeamIds=srcTeams.map(t=>t.id);
-  const playersRes=await supabase.from('players').select('*').in('team_id',sourceTeamIds);
-  if(playersRes.error)return toast(playersRes.error.message,'error');
-  const players=playersRes.data||[];
+  const sourceIds=sourceTeams.map(t=>t.id);
+  const pr=await supabase.from('players').select('*').in('team_id',sourceIds);
+  if(pr.error)return toast('Erro ao carregar atletas da origem: '+pr.error.message,'error');
+  const players=pr.data||[];
   if(!players.length){box.innerHTML='<div class="empty">Nenhum atleta cadastrado no campeonato de origem.</div>';return}
 
-  const teamMap=new Map(srcTeams.map(t=>[t.id,t.name]));
-  const options=dstTeams.map(t=>`<option value="${t.id}">${flag(t.name)} ${esc(t.name)}</option>`).join('');
-  const rows=players.slice().sort((a,b)=>(teamMap.get(a.team_id)||'').localeCompare(teamMap.get(b.team_id)||'','pt-BR') || (a.full_name||a.name||'').localeCompare(b.full_name||b.name||'','pt-BR')).map(p=>`<tr>
+  const teamMap=new Map(sourceTeams.map(t=>[t.id,t.name]));
+  const options=destTeams.map(t=>`<option value="${t.id}">${flag(t.name)} ${esc(t.name)}</option>`).join('');
+  const rows=players.slice().sort((a,b)=>(teamMap.get(a.team_id)||'').localeCompare(teamMap.get(b.team_id)||'','pt-BR')||(a.full_name||a.name||'').localeCompare(b.full_name||b.name||'','pt-BR')).map(p=>`<tr>
     <td><input type="checkbox" data-export-player="${p.id}"></td>
     <td><b>${esc(p.shirt_number??'—')}</b></td>
     <td>${esc(p.full_name||p.name)}</td>
@@ -308,88 +326,83 @@ async function loadPlayerExportTeams(){
 
 async function exportSelectedPlayers(){
   if(!canOperate())return toast('Acesso operacional necessário.','error');
-  const cid=document.querySelector('#playerExportCompetition')?.value;
-  if(!cid)return toast('Selecione o campeonato de destino.','error');
+  const sourceId=document.querySelector('#playerExportSource')?.value||'';
+  const destCompetitionId=document.querySelector('#playerExportCompetition')?.value||'';
+  if(!sourceId)return toast('Selecione o campeonato de origem.','error');
+  if(!destCompetitionId)return toast('Selecione o campeonato de destino.','error');
+  if(sourceId===destCompetitionId)return toast('Origem e destino devem ser diferentes.','error');
+
   const checked=[...document.querySelectorAll('[data-export-player]:checked')];
   if(!checked.length)return toast('Marque pelo menos um atleta.','error');
 
-  const sourceId=document.querySelector('#playerExportSource')?.value||'';
-  if(!sourceId)return toast('Selecione o campeonato de origem.','error');
   const sourceTeamsRes=await supabase.from('teams').select('id').eq('competition_id',sourceId);
-  if(sourceTeamsRes.error)return toast(sourceTeamsRes.error.message,'error');
+  if(sourceTeamsRes.error)return toast('Erro ao confirmar a origem: '+sourceTeamsRes.error.message,'error');
   const sourceTeamIds=(sourceTeamsRes.data||[]).map(t=>t.id);
   if(!sourceTeamIds.length)return toast('O campeonato de origem não possui times cadastrados.','error');
+
   const playerIds=checked.map(cb=>cb.dataset.exportPlayer);
   const playersRes=await supabase.from('players').select('*').in('id',playerIds).in('team_id',sourceTeamIds);
-  if(playersRes.error)return toast(playersRes.error.message,'error');
-  const playersById=new Map((playersRes.data||[]).map(p=>[String(p.id),p]));
-  const selected=checked.map(cb=>{
-    const p=playersById.get(String(cb.dataset.exportPlayer));
-    const dest=document.querySelector(`[data-export-dest-player="${cb.dataset.exportPlayer}"]`)?.value||'';
-    return {p,dest};
-  }).filter(x=>x.p);
+  if(playersRes.error)return toast('Erro ao localizar os atletas: '+playersRes.error.message,'error');
+  const byId=new Map((playersRes.data||[]).map(p=>[String(p.id),p]));
 
-  const missing=selected.filter(x=>!x.dest);
-  if(missing.length)return toast('Escolha o time de destino de todos os atletas marcados.','error');
+  const selected=checked.map(cb=>({
+    p:byId.get(String(cb.dataset.exportPlayer)),
+    dest:document.querySelector(`[data-export-dest-player="${cb.dataset.exportPlayer}"]`)?.value||''
+  })).filter(x=>x.p);
+  if(selected.length!==checked.length)return toast('Alguns atletas selecionados não foram encontrados na origem. Recarregue a lista e tente novamente.','error');
+  if(selected.some(x=>!x.dest))return toast('Escolha o time de destino de todos os atletas marcados.','error');
 
+  // Confirma que os times escolhidos realmente pertencem ao campeonato de destino.
   const destTeamIds=[...new Set(selected.map(x=>x.dest))];
-  const existingRes=await supabase.from('players').select('team_id,full_name,name').in('team_id',destTeamIds);
-  if(existingRes.error)return toast(existingRes.error.message,'error');
+  const destTeamsRes=await supabase.from('teams').select('id').eq('competition_id',destCompetitionId).in('id',destTeamIds);
+  if(destTeamsRes.error)return toast('Erro ao validar os times de destino: '+destTeamsRes.error.message,'error');
+  const validDest=new Set((destTeamsRes.data||[]).map(t=>String(t.id)));
+  if(destTeamIds.some(id=>!validDest.has(String(id))))return toast('Há um time selecionado que não pertence ao campeonato de destino. Selecione novamente os times.','error');
 
+  const existingRes=await supabase.from('players').select('team_id,full_name,name').in('team_id',destTeamIds);
+  if(existingRes.error)return toast('Erro ao verificar atletas já cadastrados: '+existingRes.error.message,'error');
   const existing=new Set((existingRes.data||[]).map(x=>`${x.team_id}|${String(x.full_name||x.name||'').trim().toLowerCase()}`));
-  const rows=[];
-  const duplicates=[];
+  const rows=[],duplicates=[];
 
   for(const x of selected){
-    const name=String(x.p.full_name||x.p.name||'').trim();
-    if(!name)continue;
-    const key=`${x.dest}|${name.toLowerCase()}`;
-    if(existing.has(key)){duplicates.push(name);continue}
+    const fullName=String(x.p.full_name||x.p.name||'').trim();
+    if(!fullName)continue;
+    const key=`${x.dest}|${fullName.toLowerCase()}`;
+    if(existing.has(key)){duplicates.push(fullName);continue}
     rows.push({
       team_id:x.dest,
-      name,
-      full_name:name,
-      nickname:x.p.nickname||null,
-      birth_date:x.p.birth_date||null,
-      category:x.p.category||null,
-      shirt_number:Number(x.p.shirt_number)||null,
-      position:x.p.position||null,
-      photo_url:x.p.photo_url||null,
-      photo_path:x.p.photo_path||null
+      name:String(x.p.name||fullName).trim(),
+      full_name:String(x.p.full_name||fullName).trim(),
+      nickname:x.p.nickname??null,
+      birth_date:x.p.birth_date??null,
+      category:x.p.category??null,
+      shirt_number:Number.isFinite(Number(x.p.shirt_number))?Number(x.p.shirt_number):null,
+      position:x.p.position??null,
+      active:x.p.active!==false,
+      photo_url:x.p.photo_url??null,
+      photo_path:x.p.photo_path??null
     });
     existing.add(key);
   }
 
   if(!rows.length)return toast('Todos os atletas selecionados já existem nos times de destino.','error');
-
-  const msg=`Exportar ${rows.length} atleta(s) para o campeonato selecionado?${duplicates.length?` ${duplicates.length} duplicado(s) serão ignorados.`:''}`;
+  const msg=`Copiar ${rows.length} atleta(s) para o campeonato de destino?${duplicates.length?` ${duplicates.length} já existente(s) serão ignorado(s).`:''}`;
   if(!(await askConfirm(msg)))return;
 
-  // Tenta inserir em lote. Se algum registro for rejeitado pelo banco (por exemplo,
-  // conflito de número/campo único), faz uma segunda tentativa atleta por atleta,
-  // evitando que um único atleta impeça os demais de serem copiados.
-  const ins=await supabase.from('players').insert(rows);
-  if(ins.error){
-    const ok=[];
-    const failed=[];
-    for(const row of rows){
-      const one=await supabase.from('players').insert(row);
-      if(one.error)failed.push({name:row.full_name||row.name,error:one.error.message});
-      else ok.push(row.full_name||row.name);
-    }
-    if(!ok.length){
-      const detalhe=failed[0]?.error||ins.error.message;
-      return toast('Nenhum atleta foi exportado: '+detalhe,'error');
-    }
-    document.querySelector('#playerExportModal')?.remove();
-    const falhaTxt=failed.length?` ${failed.length} não exportado(s).`:'';
-    toast(`${ok.length} atleta(s) exportado(s) com sucesso.${falhaTxt}`);
-    await load();
-    return;
+  // Insere um por vez para identificar exatamente qual atleta falhou.
+  const ok=[],failed=[];
+  for(const row of rows){
+    const result=await supabase.from('players').insert(row);
+    if(result.error)failed.push(`${row.full_name||row.name}: ${result.error.message}`);
+    else ok.push(row.full_name||row.name);
   }
 
+  if(!ok.length){
+    return toast('Nenhum atleta foi copiado. '+(failed[0]||'Verifique as permissões do cadastro de atletas.'),'error');
+  }
   document.querySelector('#playerExportModal')?.remove();
-  toast(`${rows.length} atleta(s) exportado(s) com sucesso.`);
+  const detail=failed.length?` ${failed.length} atleta(s) não foram copiados.`:'';
+  toast(`${ok.length} atleta(s) copiado(s) com sucesso.${detail}`,'ok');
   await load();
 }
 
@@ -522,12 +535,25 @@ function ensureCustomStyles(){if(document.querySelector('#ouroCustomStyles'))ret
 function render(){ensureCustomStyles();ensureSumulaStyles();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 async function openMatchFromButton(id){
   try{
-    if(!id){toast('ID da partida não encontrado.','error');return}
-    const match=state.matches.find(m=>String(m.id)===String(id))
-    if(match)state.selectedMatch={...match}
+    if(!id){ toast('ID da partida não encontrado.','error'); return }
+    const match = state.matches.find(m=>String(m.id)===String(id))
+    if(match) state.selectedMatch={...match}
     state.tab='ao_vivo'
-    await loadMatchDetails(id,false)
-    if(!state.selectedMatch){toast('Partida não encontrada.','error');return}
+    const mr = match ? {data:match,error:null} : await supabase.from('matches').select('*').eq('id',id).maybeSingle()
+    if(mr.error) throw mr.error
+    if(!mr.data){ toast('Partida não encontrada.','error'); return }
+    state.selectedMatch=mr.data
+    const [ev,lu,v] = await Promise.all([
+      supabase.from('match_events').select('*').eq('match_id',id).order('created_at',{ascending:true}),
+      supabase.from('match_lineups').select('*').eq('match_id',id),
+      supabase.from('match_votes').select('*').eq('match_id',id)
+    ])
+    if(ev.error) throw ev.error
+    if(lu.error) throw lu.error
+    if(v.error) throw v.error
+    state.events=ev.data||[]
+    state.lineups=lu.data||[]
+    state.votes=v.data||[]
     render()
     window.scrollTo({top:0,behavior:'smooth'})
   }catch(err){
@@ -544,12 +570,31 @@ const eventButtons=[...document.querySelectorAll('[data-action="event"]')];event
   document.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{const a=b.dataset.action;if(a==='start1')await startHalf('1T');if(a==='start2')await startHalf('2T');if(a==='pause')await pause();if(a==='resetMatchClock')await resetMatchClock();if(a==='finish')await finishMatch();if(a==='event')await addEvent();if(a==='sub')await addSub();if(a==='saveLineup')await saveLineup();if(a==='saveScoreCorrection')await saveScoreCorrection()});document.querySelectorAll('[data-vote]').forEach(b=>b.onclick=()=>vote(b.dataset.vote));document.querySelectorAll('[data-reopen-match]').forEach(b=>b.onclick=()=>reopenMatch(b.dataset.reopenMatch));document.querySelectorAll('[data-not-started]').forEach(b=>b.onclick=()=>markNotStarted(b.dataset.notStarted));document.querySelectorAll('[data-sponsor-new]').forEach(b=>b.onclick=()=>sponsorModal());document.querySelectorAll('[data-sponsor-edit]').forEach(b=>b.onclick=()=>sponsorModal(b.dataset.sponsorEdit));document.querySelectorAll('[data-sponsor-delete]').forEach(b=>b.onclick=()=>deleteSponsor(b.dataset.sponsorDelete));document.querySelectorAll('[data-media-new]').forEach(b=>b.onclick=()=>mediaModal());document.querySelectorAll('[data-media-delete]').forEach(b=>b.onclick=()=>deleteMedia(b.dataset.mediaDelete));document.querySelectorAll('[data-event-edit]').forEach(b=>b.onclick=()=>{state.editingEventId=b.dataset.eventEdit;render()});document.querySelectorAll('[data-event-delete]').forEach(b=>b.onclick=()=>deleteEvent(b.dataset.eventDelete));document.querySelectorAll('[data-event-save]').forEach(b=>b.onclick=()=>saveEventInline(b.dataset.eventSave));document.querySelectorAll('[data-event-update]').forEach(b=>b.onclick=()=>updateEvent(b.dataset.eventUpdate));document.querySelectorAll('[data-event-edit-cancel]').forEach(b=>b.onclick=()=>{state.editingEventId=null;render()});document.querySelectorAll('[data-report]').forEach(b=>b.onclick=()=>{state.reportType=b.dataset.report;state.reportMatchId=null;render()});document.querySelector('#reportMatchSelect')?.addEventListener('change',e=>loadReportMatch(e.target.value));document.querySelector('[data-print-report]')?.addEventListener('click',()=>window.print());document.querySelector('[data-sponsor-save]')?.addEventListener('click',e=>saveSponsor(e.target.dataset.sponsorSave||''));document.querySelector('[data-media-save]')?.addEventListener('click',saveMedia);document.querySelector('[data-configure-competition]')?.addEventListener('click',openCompetitionConfig);document.querySelectorAll('[data-lineup-status]').forEach(b=>b.onclick=()=>lineupStatusModal(b.dataset.lineupStatus));}
 
 function openUserMenu(){document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="userModal"><div class="modalbox"><button class="close" data-close>×</button><div class="eyebrow">USUÁRIO</div><h2>${esc(state.profile?.full_name||state.session.user.email)}</h2><p>Perfil: <b>${roleLabel(state.profile?.role)}</b></p><button class="danger wide" id="logoutBtn">Sair</button></div></div>`);document.querySelector('#logoutBtn').onclick=logout}
-document.addEventListener('click',async e=>{const t=e.target.closest('button,a');if(!t)return;
-if(t.matches('[data-player-export]')){await openPlayerExportModal();return}
-if(t.matches('[data-export-check-all]')){document.querySelectorAll('[data-export-player]').forEach(x=>x.checked=true);return}
-if(t.matches('[data-export-uncheck-all]')){document.querySelectorAll('[data-export-player]').forEach(x=>x.checked=false);return}
-if(t.matches('[data-export-players]')){await exportSelectedPlayers();return}if(t.matches('[data-close]')){t.closest('.modal')?.remove();return}if(t.matches('[data-auth-submit]')){await authSubmit();return}if(t.matches('[data-save-competition]')){await saveCompetition(t.dataset.saveCompetition||'');return}if(t.matches('[data-sponsor-save]')){await saveSponsor(t.dataset.sponsorSave||'');return}if(t.matches('[data-media-save]')){await saveMedia();return}if(t.matches('[data-open-match]')){e.preventDefault();e.stopPropagation();await openMatchFromButton(t.dataset.openMatch);return}if(t.matches('[data-clock-adjust]')){await adjustClock(Number(t.dataset.clockAdjust)||0);return}if(t.matches('[data-phase-add]')){const list=document.querySelector('#phaseList');if(list)list.insertAdjacentHTML('beforeend',phaseRow({name:'',type:'classificatoria'},document.querySelectorAll('[data-phase-row]').length));return}if(t.matches('[data-phase-remove]')){t.closest('[data-phase-row]')?.remove();return}if(t.matches('[data-phase-save]')){await saveCompetitionConfig();return}if(t.matches('[data-lineup-status]')){lineupStatusModal(t.dataset.lineupStatus);return}if(t.matches('[data-lineup-choice]')){const id=t.dataset.lineupChoice,st=t.dataset.status,btn=document.querySelector(`[data-lineup-status="${id}"]`);if(btn){btn.dataset.status=st;btn.textContent=lineupStatusLabel(st);btn.className=`statusbtn status-${st}`}document.querySelector('#lineupStatusModal')?.remove();return}if(t.matches('[data-score-inc]')){await adjustScore(t.dataset.scoreInc,1);return}if(t.matches('[data-score-dec]')){await adjustScore(t.dataset.scoreDec,-1);return}if(t.matches('[data-minute-adjust]')){await adjustMinute(Number(t.dataset.minuteAdjust));return}if(t.matches('[data-classification]')){state.tab=t.dataset.classification==='grupo'?'grupos':'classificacao';render();return}if(t.matches('[data-toggle-auth]')){state.authMode=state.authMode==='login'?'signup':'login';document.querySelector('#authModal')?.remove();openAuth();return}})
-
+document.addEventListener('click',async e=>{
+  const t=e.target.closest('button,a');
+  if(!t)return;
+  if(t.matches('[data-player-export]')){await openPlayerExportModal();return}
+  if(t.matches('[data-export-check-all]')){document.querySelectorAll('[data-export-player]').forEach(x=>x.checked=true);return}
+  if(t.matches('[data-export-uncheck-all]')){document.querySelectorAll('[data-export-player]').forEach(x=>x.checked=false);return}
+  if(t.matches('[data-export-players]')){await exportSelectedPlayers();return}
+  if(t.matches('[data-close]')){t.closest('.modal')?.remove();return}
+  if(t.matches('[data-auth-submit]')){await authSubmit();return}
+  if(t.matches('[data-save-competition]')){await saveCompetition(t.dataset.saveCompetition||'');return}
+  if(t.matches('[data-sponsor-save]')){await saveSponsor(t.dataset.sponsorSave||'');return}
+  if(t.matches('[data-media-save]')){await saveMedia();return}
+  if(t.matches('[data-open-match]')){e.preventDefault();e.stopPropagation();await openMatchFromButton(t.dataset.openMatch);return}
+  if(t.matches('[data-clock-adjust]')){await adjustClock(Number(t.dataset.clockAdjust)||0);return}
+  if(t.matches('[data-phase-add]')){const list=document.querySelector('#phaseList');if(list)list.insertAdjacentHTML('beforeend',phaseRow({name:'',type:'classificatoria'},document.querySelectorAll('[data-phase-row]').length));return}
+  if(t.matches('[data-phase-remove]')){t.closest('[data-phase-row]')?.remove();return}
+  if(t.matches('[data-phase-save]')){await saveCompetitionConfig();return}
+  if(t.matches('[data-lineup-status]')){lineupStatusModal(t.dataset.lineupStatus);return}
+  if(t.matches('[data-lineup-choice]')){const id=t.dataset.lineupChoice,st=t.dataset.status,btn=document.querySelector(`[data-lineup-status="${id}"]`);if(btn){btn.dataset.status=st;btn.textContent=lineupStatusLabel(st);btn.className=`statusbtn status-${st}`}document.querySelector('#lineupStatusModal')?.remove();return}
+  if(t.matches('[data-score-inc]')){await adjustScore(t.dataset.scoreInc,1);return}
+  if(t.matches('[data-score-dec]')){await adjustScore(t.dataset.scoreDec,-1);return}
+  if(t.matches('[data-minute-adjust]')){await adjustMinute(Number(t.dataset.minuteAdjust));return}
+  if(t.matches('[data-classification]')){state.tab=t.dataset.classification==='grupo'?'grupos':'classificacao';render();return}
+  if(t.matches('[data-toggle-auth]')){state.authMode=state.authMode==='login'?'signup':'login';document.querySelector('#authModal')?.remove();openAuth();return}
+});
 
 document.addEventListener('change',async e=>{
   const t=e.target;
