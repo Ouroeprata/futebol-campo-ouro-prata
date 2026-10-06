@@ -30,17 +30,15 @@ const cat = v => ({
 
 const age = v => {
   if (!v) return '—'
-
   const d = new Date(String(v).slice(0,10) + 'T00:00:00')
   if (Number.isNaN(d.getTime())) return '—'
-
   const n = new Date()
   let a = n.getFullYear() - d.getFullYear()
   const md = n.getMonth() - d.getMonth()
-
   if (md < 0 || (md === 0 && n.getDate() < d.getDate())) a--
+  return a >= 0 ? String(a) : '—'
+}
 
-  return a >= 0 ? String(a) : '—'}
 async function loadProfile(session){
   if(!session) return null
   const profileRes = await supabase.from('profiles').select('id,full_name,role,phone,created_at').eq('id', session.user.id).maybeSingle()
