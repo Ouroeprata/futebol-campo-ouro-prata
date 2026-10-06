@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import './style.css'
+import './estilo.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
 
 const SUPABASE_URL = 'https://kfsxzpyzohcvzlsfvtyx.supabase.co'
