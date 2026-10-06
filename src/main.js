@@ -22,24 +22,7 @@ const playerName = id => { const p=state.players.find(x=>x.id===id); return p ? 
 const fmtDate = v => v ? new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}) : '—'
 const canOperate = () => !!state.session && ['admin','organizador','arbitro','operador'].includes(state.profile?.role)
 const roleLabel = r => ({admin:'Administrador',organizador:'Organizador',arbitro:'Árbitro',operador:'Operador',publico:'Público'})[r] || 'Público'
-const cat = v => ({
-  ouro: 'Ouro',
-  prata: 'Prata',
-  diamante: 'Diamante'
-}[String(v || '').trim().toLowerCase()] || String(v || '—'))
 
-const age = v => {
-  if (!v) return '—'
-  const d = new Date(String(v).slice(0,10) + 'T00:00:00')
-  if (Number.isNaN(d.getTime())) return '—'
-
-  const n = new Date()
-  let a = n.getFullYear() - d.getFullYear()
-  const md = n.getMonth() - d.getMonth()
-
-  if (md < 0 || (md === 0 && n.getDate() < d.getDate())) a--
-
-  return a >= 0 ? String(a) : '—'}
 async function loadProfile(session){
   if(!session) return null
   const profileRes = await supabase.from('profiles').select('id,full_name,role,phone,created_at').eq('id', session.user.id).maybeSingle()
@@ -250,7 +233,109 @@ function list(title,items,type){
     const detail = type==='team' ? esc(r.country||'Seleção') : type==='player' ? `${esc(r.nickname||'')} ${r.nickname?'• ':''}${esc(teamName(r.team_id))} • ${esc(r.category||'')} • ${esc(r.position||'')} ${r.shirt_number?`• #${r.shirt_number}`:''}` : esc(r.registration||'Árbitro');
     return `<tr><td><b>${label}</b></td><td>${detail}</td>${canOperate()?`<td class="actions"><button class="smallbtn" data-edit-crud="${type}" data-id="${r.id}">✏️ Alterar</button><button class="danger smallbtn" data-delete-crud="${type}" data-id="${r.id}">🗑️ Excluir</button></td>`:''}</tr>`
   }).join('');
-  return `<section class="panel"><div class="panelhead"><h2>${title}</h2><div class="panelhead"><span class="tag">${items.length} registros</span>${canOperate()&&type?`<button class="primary" data-crud="${type}">➕ Incluir</button>`:''}</div></div>${data.length?`<div class="tablewrap"><table><tr><th>Nome</th><th>Detalhes</th>${canOperate()?'<th>Ações</th>':''}</tr>${rows}</table></div>`:`<div class="empty">Nenhum registro cadastrado.</div>`}</section>`
+  return `<section class="panel"><div class="panelhead"><h2>${title}</h2><div class="panelhead"><span class="tag">${items.length} registros</span>${canOperate()&&type==='player'?'<button class="secondary" data-player-export>📋 Exportar atletas</button>':''}${canOperate()&&type?`<button class="primary" data-crud="${type}">➕ Incluir</button>`:''}</div></div>${data.length?`<div class="tablewrap"><table><tr><th>Nome</th><th>Detalhes</th>${canOperate()?'<th>Ações</th>':''}</tr>${rows}</table></div>`:`<div class="empty">Nenhum registro cadastrado.</div>`}</section>`
+}
+
+
+async function openPlayerExportModal(){
+  if(!canOperate()) return toast('Acesso operacional necessário.','error');
+  const destinations=(state.competitions||[]).filter(c=>c.id!==state.competition?.id);
+  if(!destinations.length) return toast('Não existe outro campeonato cadastrado para receber os atletas.','error');
+  document.querySelector('#playerExportModal')?.remove();
+  const compOptions=destinations.map(c=>`<option value="${c.id}">${esc(c.name)}${c.season?` • ${esc(c.season)}`:''}</option>`).join('');
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="playerExportModal"><div class="modalbox wide">
+    <button class="close" data-close>×</button>
+    <div class="eyebrow">TRANSFERÊNCIA DE ATLETAS</div>
+    <h2>📋 Exportar atletas</h2>
+    <p class="muted">Marque cada atleta e escolha individualmente para qual time ele será transferido.</p>
+    <label>Campeonato de destino</label>
+    <select id="playerExportCompetition" data-player-export-competition><option value="">Selecione o campeonato</option>${compOptions}</select>
+    <div class="modal-actions"><button class="secondary" type="button" data-export-check-all>☑️ Marcar todos</button><button class="secondary" type="button" data-export-uncheck-all>⬜ Desmarcar todos</button></div>
+    <div id="playerExportRows" class="tablewrap"><div class="empty">Selecione o campeonato de destino.</div></div>
+    <div class="modal-actions"><button class="secondary" type="button" data-close>❌ Cancelar</button><button class="primary" type="button" data-export-players>📤 Exportar atletas marcados</button></div>
+  </div></div>`);
+}
+
+async function loadPlayerExportTeams(){
+  const cid=document.querySelector('#playerExportCompetition')?.value;
+  const box=document.querySelector('#playerExportRows');
+  if(!box) return;
+  if(!cid){box.innerHTML='<div class="empty">Selecione o campeonato de destino.</div>';return}
+  const res=await supabase.from('teams').select('id,name,country').eq('competition_id',cid).order('name');
+  if(res.error)return toast(res.error.message,'error');
+  const teams=res.data||[];
+  if(!teams.length){box.innerHTML='<div class="empty">O campeonato de destino ainda não possui times cadastrados.</div>';return}
+  const options=teams.map(t=>`<option value="${t.id}">${flag(t.name)} ${esc(t.name)}</option>`).join('');
+  const rows=state.players.slice().sort((a,b)=>
+    teamName(a.team_id).localeCompare(teamName(b.team_id),'pt-BR') ||
+    (a.full_name||a.name||'').localeCompare(b.full_name||b.name||'','pt-BR')
+  ).map(p=>`<tr>
+    <td><input type="checkbox" data-export-player="${p.id}"></td>
+    <td><b>${esc(p.shirt_number??'—')}</b></td>
+    <td>${esc(p.full_name||p.name)}</td>
+    <td>${esc(p.nickname||'—')}</td>
+    <td>${esc(cat(p.category))}</td>
+    <td>${esc(teamName(p.team_id))}</td>
+    <td><select data-export-dest-player="${p.id}"><option value="">Selecione o time</option>${options}</select></td>
+  </tr>`).join('');
+  box.innerHTML=`<table><tr><th>Marcar</th><th>Nº</th><th>Nome completo</th><th>Apelido</th><th>Categoria</th><th>Equipe atual</th><th>Transferir para</th></tr>${rows}</table>`;
+}
+
+async function exportSelectedPlayers(){
+  if(!canOperate())return toast('Acesso operacional necessário.','error');
+  const cid=document.querySelector('#playerExportCompetition')?.value;
+  if(!cid)return toast('Selecione o campeonato de destino.','error');
+  const checked=[...document.querySelectorAll('[data-export-player]:checked')];
+  if(!checked.length)return toast('Marque pelo menos um atleta.','error');
+
+  const selected=checked.map(cb=>{
+    const p=state.players.find(x=>x.id===cb.dataset.exportPlayer);
+    const dest=document.querySelector(`[data-export-dest-player="${cb.dataset.exportPlayer}"]`)?.value||'';
+    return {p,dest};
+  }).filter(x=>x.p);
+
+  const missing=selected.filter(x=>!x.dest);
+  if(missing.length)return toast('Escolha o time de destino de todos os atletas marcados.','error');
+
+  const destTeamIds=[...new Set(selected.map(x=>x.dest))];
+  const existingRes=await supabase.from('players').select('team_id,full_name,name').in('team_id',destTeamIds);
+  if(existingRes.error)return toast(existingRes.error.message,'error');
+
+  const existing=new Set((existingRes.data||[]).map(x=>`${x.team_id}|${String(x.full_name||x.name||'').trim().toLowerCase()}`));
+  const rows=[];
+  const duplicates=[];
+
+  for(const x of selected){
+    const name=String(x.p.full_name||x.p.name||'').trim();
+    if(!name)continue;
+    const key=`${x.dest}|${name.toLowerCase()}`;
+    if(existing.has(key)){duplicates.push(name);continue}
+    rows.push({
+      team_id:x.dest,
+      name,
+      full_name:name,
+      nickname:x.p.nickname||null,
+      birth_date:x.p.birth_date||null,
+      category:x.p.category||null,
+      shirt_number:Number(x.p.shirt_number)||null,
+      position:x.p.position||null,
+      photo_url:x.p.photo_url||null,
+      photo_path:x.p.photo_path||null
+    });
+    existing.add(key);
+  }
+
+  if(!rows.length)return toast('Todos os atletas selecionados já existem nos times de destino.','error');
+
+  const msg=`Exportar ${rows.length} atleta(s) para o campeonato selecionado?${duplicates.length?` ${duplicates.length} duplicado(s) serão ignorados.`:''}`;
+  if(!(await askConfirm(msg)))return;
+
+  const ins=await supabase.from('players').insert(rows);
+  if(ins.error)return toast(ins.error.message,'error');
+
+  document.querySelector('#playerExportModal')?.remove();
+  toast(`${rows.length} atleta(s) exportado(s) com sucesso.`);
+  await load();
 }
 
 async function adjustScore(teamId,delta){if(!canOperate()||!state.selectedMatch)return;const m=state.selectedMatch;if(m.status==='encerrado')return;const field=teamId===m.home_team_id?'home_score':'away_score';const value=Math.max(0,Number(m[field]||0)+delta);await updateMatch({[field]:value});}
@@ -417,7 +502,17 @@ const eventButtons=[...document.querySelectorAll('[data-action="event"]')];event
   document.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{const a=b.dataset.action;if(a==='start1')await startHalf('1T');if(a==='start2')await startHalf('2T');if(a==='pause')await pause();if(a==='resetMatchClock')await resetMatchClock();if(a==='finish')await finishMatch();if(a==='event')await addEvent();if(a==='sub')await addSub();if(a==='saveLineup')await saveLineup();if(a==='saveScoreCorrection')await saveScoreCorrection()});document.querySelectorAll('[data-vote]').forEach(b=>b.onclick=()=>vote(b.dataset.vote));document.querySelectorAll('[data-reopen-match]').forEach(b=>b.onclick=()=>reopenMatch(b.dataset.reopenMatch));document.querySelectorAll('[data-not-started]').forEach(b=>b.onclick=()=>markNotStarted(b.dataset.notStarted));document.querySelectorAll('[data-sponsor-new]').forEach(b=>b.onclick=()=>sponsorModal());document.querySelectorAll('[data-sponsor-edit]').forEach(b=>b.onclick=()=>sponsorModal(b.dataset.sponsorEdit));document.querySelectorAll('[data-sponsor-delete]').forEach(b=>b.onclick=()=>deleteSponsor(b.dataset.sponsorDelete));document.querySelectorAll('[data-media-new]').forEach(b=>b.onclick=()=>mediaModal());document.querySelectorAll('[data-media-delete]').forEach(b=>b.onclick=()=>deleteMedia(b.dataset.mediaDelete));document.querySelectorAll('[data-event-edit]').forEach(b=>b.onclick=()=>{state.editingEventId=b.dataset.eventEdit;render()});document.querySelectorAll('[data-event-delete]').forEach(b=>b.onclick=()=>deleteEvent(b.dataset.eventDelete));document.querySelectorAll('[data-event-save]').forEach(b=>b.onclick=()=>saveEventInline(b.dataset.eventSave));document.querySelectorAll('[data-event-update]').forEach(b=>b.onclick=()=>updateEvent(b.dataset.eventUpdate));document.querySelectorAll('[data-event-edit-cancel]').forEach(b=>b.onclick=()=>{state.editingEventId=null;render()});document.querySelectorAll('[data-report]').forEach(b=>b.onclick=()=>{state.reportType=b.dataset.report;state.reportMatchId=null;render()});document.querySelector('#reportMatchSelect')?.addEventListener('change',e=>loadReportMatch(e.target.value));document.querySelector('[data-print-report]')?.addEventListener('click',()=>window.print());document.querySelector('[data-sponsor-save]')?.addEventListener('click',e=>saveSponsor(e.target.dataset.sponsorSave||''));document.querySelector('[data-media-save]')?.addEventListener('click',saveMedia);document.querySelector('[data-configure-competition]')?.addEventListener('click',openCompetitionConfig);document.querySelectorAll('[data-lineup-status]').forEach(b=>b.onclick=()=>lineupStatusModal(b.dataset.lineupStatus));}
 
 function openUserMenu(){document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="userModal"><div class="modalbox"><button class="close" data-close>×</button><div class="eyebrow">USUÁRIO</div><h2>${esc(state.profile?.full_name||state.session.user.email)}</h2><p>Perfil: <b>${roleLabel(state.profile?.role)}</b></p><button class="danger wide" id="logoutBtn">Sair</button></div></div>`);document.querySelector('#logoutBtn').onclick=logout}
-document.addEventListener('click',async e=>{const t=e.target.closest('button,a');if(!t)return;if(t.matches('[data-close]')){t.closest('.modal')?.remove();return}if(t.matches('[data-auth-submit]')){await authSubmit();return}if(t.matches('[data-save-competition]')){await saveCompetition(t.dataset.saveCompetition||'');return}if(t.matches('[data-sponsor-save]')){await saveSponsor(t.dataset.sponsorSave||'');return}if(t.matches('[data-media-save]')){await saveMedia();return}if(t.matches('[data-open-match]')){e.preventDefault();e.stopPropagation();await openMatchFromButton(t.dataset.openMatch);return}if(t.matches('[data-clock-adjust]')){await adjustClock(Number(t.dataset.clockAdjust)||0);return}if(t.matches('[data-phase-add]')){const list=document.querySelector('#phaseList');if(list)list.insertAdjacentHTML('beforeend',phaseRow({name:'',type:'classificatoria'},document.querySelectorAll('[data-phase-row]').length));return}if(t.matches('[data-phase-remove]')){t.closest('[data-phase-row]')?.remove();return}if(t.matches('[data-phase-save]')){await saveCompetitionConfig();return}if(t.matches('[data-lineup-status]')){lineupStatusModal(t.dataset.lineupStatus);return}if(t.matches('[data-lineup-choice]')){const id=t.dataset.lineupChoice,st=t.dataset.status,btn=document.querySelector(`[data-lineup-status="${id}"]`);if(btn){btn.dataset.status=st;btn.textContent=lineupStatusLabel(st);btn.className=`statusbtn status-${st}`}document.querySelector('#lineupStatusModal')?.remove();return}if(t.matches('[data-score-inc]')){await adjustScore(t.dataset.scoreInc,1);return}if(t.matches('[data-score-dec]')){await adjustScore(t.dataset.scoreDec,-1);return}if(t.matches('[data-minute-adjust]')){await adjustMinute(Number(t.dataset.minuteAdjust));return}if(t.matches('[data-classification]')){state.tab=t.dataset.classification==='grupo'?'grupos':'classificacao';render();return}if(t.matches('[data-toggle-auth]')){state.authMode=state.authMode==='login'?'signup':'login';document.querySelector('#authModal')?.remove();openAuth();return}})
+document.addEventListener('click',async e=>{const t=e.target.closest('button,a');if(!t)return;
+if(t.matches('[data-player-export]')){await openPlayerExportModal();return}
+if(t.matches('[data-export-check-all]')){document.querySelectorAll('[data-export-player]').forEach(x=>x.checked=true);return}
+if(t.matches('[data-export-uncheck-all]')){document.querySelectorAll('[data-export-player]').forEach(x=>x.checked=false);return}
+if(t.matches('[data-export-players]')){await exportSelectedPlayers();return}const t=e.target.closest('button,a');if(!t)return;if(t.matches('[data-close]')){t.closest('.modal')?.remove();return}if(t.matches('[data-auth-submit]')){await authSubmit();return}if(t.matches('[data-save-competition]')){await saveCompetition(t.dataset.saveCompetition||'');return}if(t.matches('[data-sponsor-save]')){await saveSponsor(t.dataset.sponsorSave||'');return}if(t.matches('[data-media-save]')){await saveMedia();return}if(t.matches('[data-open-match]')){e.preventDefault();e.stopPropagation();await openMatchFromButton(t.dataset.openMatch);return}if(t.matches('[data-clock-adjust]')){await adjustClock(Number(t.dataset.clockAdjust)||0);return}if(t.matches('[data-phase-add]')){const list=document.querySelector('#phaseList');if(list)list.insertAdjacentHTML('beforeend',phaseRow({name:'',type:'classificatoria'},document.querySelectorAll('[data-phase-row]').length));return}if(t.matches('[data-phase-remove]')){t.closest('[data-phase-row]')?.remove();return}if(t.matches('[data-phase-save]')){await saveCompetitionConfig();return}if(t.matches('[data-lineup-status]')){lineupStatusModal(t.dataset.lineupStatus);return}if(t.matches('[data-lineup-choice]')){const id=t.dataset.lineupChoice,st=t.dataset.status,btn=document.querySelector(`[data-lineup-status="${id}"]`);if(btn){btn.dataset.status=st;btn.textContent=lineupStatusLabel(st);btn.className=`statusbtn status-${st}`}document.querySelector('#lineupStatusModal')?.remove();return}if(t.matches('[data-score-inc]')){await adjustScore(t.dataset.scoreInc,1);return}if(t.matches('[data-score-dec]')){await adjustScore(t.dataset.scoreDec,-1);return}if(t.matches('[data-minute-adjust]')){await adjustMinute(Number(t.dataset.minuteAdjust));return}if(t.matches('[data-classification]')){state.tab=t.dataset.classification==='grupo'?'grupos':'classificacao';render();return}if(t.matches('[data-toggle-auth]')){state.authMode=state.authMode==='login'?'signup':'login';document.querySelector('#authModal')?.remove();openAuth();return}})
+
+
+document.addEventListener('change',async e=>{
+  const t=e.target;
+  if(t.matches('[data-player-export-competition]')) await loadPlayerExportTeams();
+});
 
 supabase.auth.onAuthStateChange(async()=>{setTimeout(load,0)})
 subscribe()
