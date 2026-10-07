@@ -839,7 +839,6 @@ async function saveEventInline(id){
   await loadMatchDetails(m.id,false);
   render();
   toast('Evento salvo com sucesso.');
-();ensureSumulaStyles();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 supabase.auth.onAuthStateChange(async()=>{setTimeout(load,0)})
 subscribe()
