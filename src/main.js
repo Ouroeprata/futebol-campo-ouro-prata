@@ -688,34 +688,116 @@ function ensureSumulaStyles(){if(document.getElementById('sumulaStyles'))return;
 function ensureCustomStyles(){if(document.querySelector('#ouroCustomStyles'))return;document.head.insertAdjacentHTML('beforeend',`<style id="ouroCustomStyles">.match-goals{display:flex;align-items:center;justify-content:center;gap:18px;margin:12px 0 8px}.goal-team{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:120px}.goal-buttons{display:flex;align-items:center;gap:5px}.goalbtn{width:34px;height:34px;border:1px solid #cbd5d1;border-radius:7px;background:#f5f8f6;font-size:20px;font-weight:700;cursor:pointer}.half-active{background:#087443!important;color:#fff!important;border-color:#087443!important}.goal-buttons strong{min-width:38px;text-align:center;font-size:25px}.goal-x{font-size:22px;font-weight:700}.officials{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}.officials span{padding:5px 9px;border-radius:8px;background:#f1f5f3;font-size:12px}.compact-playerline{display:flex;align-items:center;justify-content:space-between;gap:6px}.statusbtn{width:108px;min-width:108px;border:0;border-radius:8px;padding:7px 5px;font-size:12px;cursor:pointer}.status-titular{background:#dff3e7;color:#17633e}.status-reserva{background:#edf1ef;color:#376052}.status-nao_compareceu{background:#fde4e4;color:#8b3030}.status-options{display:grid;gap:10px;margin-top:15px}.status-option{padding:13px;border:1px solid #d5ded9;border-radius:10px;background:#f7faf8;text-align:left;font-size:15px;cursor:pointer}.status-option.selected{border-color:#168458;background:#e5f4ed}.phase-row{display:grid;grid-template-columns:1fr 170px auto;gap:8px;margin:8px 0}.phase-head{display:flex;align-items:center;justify-content:space-between;margin:14px 0 8px}.event-clock{display:inline-flex;align-items:center;justify-content:center;min-width:70px;height:42px;padding:0 9px;border-radius:8px;background:#0b4d37;color:white;font-weight:700;font-variant-numeric:tabular-nums}.group-box{margin-top:12px}.config-modal{max-width:650px}.class-tabs{display:flex;gap:8px;margin:12px 0}.class-tabs button{border:1px solid #d4ded9;background:#f4f8f6;border-radius:9px;padding:9px 14px;cursor:pointer}.class-tabs button.active{background:#0b6b49;color:#fff;border-color:#0b6b49}.avatar-sm{width:34px;height:34px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:8px}.player-photo-preview{display:block;width:80px;height:80px;object-fit:cover;border-radius:10px;margin-top:8px}.file-field{display:flex;flex-direction:column;gap:5px}.video-grid video{width:100%;max-height:220px;border-radius:10px}.eventform{grid-template-columns:repeat(3,minmax(0,1fr))}.subform{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center}.event-clock-box{grid-column:1/-1;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.eventform>.primary{grid-column:1/-1}.controlbar{flex-wrap:wrap}.controlbar button{white-space:nowrap}.eventform{gap:6px}.event-clock-box{padding:5px 0}.subform{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto auto;min-height:48px}.sub-clock-inline{display:flex;align-items:center;gap:5px}.sub-clock-inline .event-clock{min-width:62px;height:34px;font-size:12px}.subform .smallbtn{white-space:nowrap}.app-logo{width:54px!important;height:54px!important;object-fit:contain!important}.eventpanel{border-radius:16px!important;overflow:hidden}.eventpanel .panelhead{background:linear-gradient(90deg,#075d3e,#0b754d);color:#fff;padding:14px 16px;margin:-1px -1px 14px}.eventpanel .panelhead .muted{color:#d8eee5}.eventpanel .panelhead .tag{background:#fff;color:#075d3e}.event-section{background:#f7faf8;border:1px solid #e0e9e4;border-radius:12px;padding:12px;margin:10px 0}.event-section>label{display:block;font-weight:800;color:#24483b;margin-bottom:8px}.event-clock-layout{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}.event-adjust-group,.event-timer-actions{display:flex;gap:6px;flex-wrap:wrap}.event-adjust-group .smallbtn,.event-timer-actions .smallbtn{min-height:38px}.event-clock{min-width:86px!important;height:46px!important;font-size:21px!important}.event-type-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.event-type-btn{min-height:78px;border:1px solid #d5e0da;border-radius:10px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;font-size:12px}.event-type-btn span{font-size:25px}.event-type-btn.selected{background:#087447;color:#fff;border-color:#087447;box-shadow:0 2px 8px #075d3e2b}.event-type-hidden{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}.event-fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.event-fields-grid>div>small,.substitution-grid small{display:block;font-weight:700;color:#557268;margin:0 0 4px}.substitution-grid{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px}.event-form-actions{display:flex;gap:8px;margin-top:12px}.event-save-btn{flex:1}.eventpanel-locked{opacity:.96}.event-locked-notice{border-color:#e8c7c7;background:#fff3f3;color:#8b3030}.timeline{border-radius:16px;overflow:hidden}.timeline>h3{background:linear-gradient(90deg,#075d3e,#0b754d);color:#fff;padding:14px 16px;margin:0}.eventrow{padding:12px 14px!important}.event-actions{gap:5px!important}.event-actions .smallbtn{min-height:34px}@media(max-width:900px){.event-type-grid{grid-template-columns:repeat(3,1fr)}.event-clock-layout{grid-template-columns:1fr}.event-fields-grid{grid-template-columns:1fr}.substitution-grid{grid-column:auto;grid-template-columns:1fr}.event-timer-actions{justify-content:center}}@media(max-width:560px){.event-type-grid{grid-template-columns:repeat(2,1fr)}.app-logo{width:46px!important;height:46px!important}}.competition-switch{display:flex;align-items:center;gap:7px;font-size:10px;font-weight:800;color:#71847b}.competition-switch select{border:1px solid #d7e2dc;border-radius:9px;padding:8px 10px;background:#fff;max-width:300px}.competition-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}.competition-card{border:1px solid #dfe9e4;border-radius:14px;padding:16px;background:#fff;box-shadow:0 5px 18px #0b5d3b0d}.competition-card.selected{border-color:#0b6542;box-shadow:0 0 0 2px #0b65421c}.competition-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.competition-card h3{margin:7px 0 8px}.competition-actions{display:flex;gap:7px;margin-top:13px}.competition-actions .smallbtn{flex:1}@media(max-width:700px){.competition-switch{max-width:180px}.competition-switch select{max-width:160px}}
 </style>`)}
 function render(){ensureCustomStyles();ensureSumulaStyles();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+
 async function openMatchFromButton(id){
   try{
-    if(!id){ toast('ID da partida não encontrado.','error'); return }
-    const match = state.matches.find(m=>String(m.id)===String(id))
-    if(match) state.selectedMatch={...match}
-    state.tab='ao_vivo'
-    const mr = match ? {data:match,error:null} : await supabase.from('matches').select('*').eq('id',id).maybeSingle()
-    if(mr.error) throw mr.error
-    if(!mr.data){ toast('Partida não encontrada.','error'); return }
-    state.selectedMatch=mr.data
-    const [ev,lu,v] = await Promise.all([
-      supabase.from('match_events').select('*').eq('match_id',id).order('created_at',{ascending:true}),
-      supabase.from('match_lineups').select('*').eq('match_id',id),
-      supabase.from('match_votes').select('*').eq('match_id',id)
-    ])
-    if(ev.error) throw ev.error
-    if(lu.error) throw lu.error
-    if(v.error) throw v.error
-    state.events=ev.data||[]
-    state.lineups=lu.data||[]
-    state.votes=v.data||[]
-    render()
-    window.scrollTo({top:0,behavior:'smooth'})
+    if(!id){
+      toast('ID da partida não encontrado.','error');
+      return;
+    }
+
+    state.tab='ao_vivo';
+
+    const cached=state.matches.find(m=>String(m.id)===String(id));
+
+    const mr=cached
+      ? {data:cached,error:null}
+      : await supabase
+          .from('matches')
+          .select('*')
+          .eq('id',id)
+          .maybeSingle();
+
+    if(mr.error) throw mr.error;
+
+    if(!mr.data){
+      toast('Partida não encontrada.','error');
+      return;
+    }
+
+    state.selectedMatch=mr.data;
+
+    const [ev,lu,v]=await Promise.all([
+      supabase
+        .from('match_events')
+        .select('*')
+        .eq('match_id',id)
+        .order('created_at',{ascending:true}),
+
+      supabase
+        .from('match_lineups')
+        .select('*')
+        .eq('match_id',id),
+
+      supabase
+        .from('match_votes')
+        .select('*')
+        .eq('match_id',id)
+    ]);
+
+    state.events=ev.data||[];
+    state.lineups=lu.data||[];
+    state.votes=v.data||[];
+
+    if(ev.error){
+      console.warn(
+        'Não foi possível carregar eventos da partida:',
+        ev.error.message
+      );
+    }
+
+    if(lu.error){
+      console.warn(
+        'Não foi possível carregar a escalação da partida:',
+        lu.error.message
+      );
+    }
+
+    if(v.error){
+      console.warn(
+        'Não foi possível carregar os votos da partida:',
+        v.error.message
+      );
+    }
+
+    const i=state.matches.findIndex(
+      m=>String(m.id)===String(id)
+    );
+
+    if(i>=0){
+      state.matches[i]=mr.data;
+    }else{
+      state.matches.push(mr.data);
+    }
+
+    render();
+
+    window.scrollTo({
+      top:0,
+      behavior:'smooth'
+    });
+
   }catch(err){
-    console.error('Erro ao abrir partida:',err)
-    toast('Não foi possível abrir a partida: '+(err?.message||'erro desconhecido'),'error')
+
+    console.error(
+      'Erro ao abrir partida:',
+      err
+    );
+
+    toast(
+      'Não foi possível abrir a partida: '+
+      (err?.message||'erro desconhecido'),
+      'error'
+    );
   }
 }
+
+
+
+
+
+
+
 
 function bind(){document.querySelectorAll('[data-open-match]').forEach(b=>{b.type='button';b.onclick=async e=>{e.preventDefault();e.stopImmediatePropagation();await openMatchFromButton(b.dataset.openMatch)}});document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;state.reportType=null;render()});document.querySelectorAll('[data-tab-direct]').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tabDirect;state.reportType=null;render()});document.querySelector('#competitionSelector')?.addEventListener('change',e=>switchCompetition(e.target.value));document.querySelector('[data-new-competition]')?.addEventListener('click',()=>openCompetitionModal());document.querySelectorAll('[data-edit-competition]').forEach(b=>b.onclick=()=>openCompetitionModal(b.dataset.editCompetition));document.querySelectorAll('[data-select-competition]').forEach(b=>b.onclick=()=>switchCompetition(b.dataset.selectCompetition));document.querySelectorAll('[data-crud]').forEach(b=>b.onclick=()=>crudModal(b.dataset.crud));document.querySelectorAll('[data-edit-crud]').forEach(b=>b.onclick=()=>crudModal(b.dataset.editCrud,b.dataset.id));document.querySelectorAll('[data-delete-crud]').forEach(b=>b.onclick=()=>deleteCrud(b.dataset.deleteCrud,b.dataset.id));document.querySelectorAll('[data-save-crud]').forEach(b=>b.onclick=()=>saveCrud(b.dataset.saveCrud,b.dataset.id));document.querySelector('#authBtn')?.addEventListener('click',()=>state.session?openUserMenu():openAuth());document.querySelectorAll('[data-event-clock-adjust]').forEach(b=>b.onclick=()=>{adjustEventClock(Number(b.dataset.eventClockAdjust));render()});document.querySelectorAll('[data-event-timer]').forEach(b=>b.onclick=()=>{b.dataset.eventTimer==='reset'?resetEventTimer():toggleEventTimer()});
   const fillEventPlayers=()=>{const team=document.querySelector('#eventTeam')?.value||'';const ps=state.players.filter(p=>p.team_id===team).sort((a,b)=>(Number(a.shirt_number)||999)-(Number(b.shirt_number)||999));const opts='<option value="">Selecione o atleta</option>'+ps.map(p=>`<option value="${p.id}">${p.shirt_number?`Nº ${p.shirt_number} - `:''}${esc(p.full_name||p.name)} - ${esc(teamName(p.team_id))}</option>`).join('');['#eventPlayer','#eventSubOut','#eventSubIn'].forEach(sel=>{const el=document.querySelector(sel);if(el)el.innerHTML=opts})};
