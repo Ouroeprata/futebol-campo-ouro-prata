@@ -23,8 +23,16 @@ const flag = n => {
   return ({
     argentina:'🇦🇷', brasil:'🇧🇷', brazil:'🇧🇷', chile:'🇨🇱', colombia:'🇨🇴',
     equador:'🇪🇨', ecuador:'🇪🇨', paraguai:'🇵🇾', paraguay:'🇵🇾', uruguai:'🇺🇾', uruguay:'🇺🇾',
-    venezuela:'🇻🇪'
-  })[key] || '⚽'
+    venezuela:'🇻🇪',
+    'africa do sul':'🇿🇦',
+    'argelia':'🇩🇿',
+    'camaroes':'🇨🇲',
+    'egito':'🇪🇬',
+    'gana':'🇬🇭',
+    'marrocos':'🇲🇦',
+    'nigeria':'🇳🇬',
+    'senegal':'🇸🇳'
+  })[key] || '🏳️'
 }
 const teamName = id => state.teams.find(t => t.id === id)?.name || '—'
 const playerName = id => { const p=state.players.find(x=>x.id===id); return p ? (p.full_name||p.name||'—') : '—' }
