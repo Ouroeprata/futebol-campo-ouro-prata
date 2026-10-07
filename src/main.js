@@ -253,51 +253,190 @@ function list(title,items,type){
   return `<section class="panel"><div class="panelhead"><h2>${title}</h2><div class="panelhead"><span class="tag">${items.length} registros</span>${canOperate()&&type==='player'?'<button class="secondary" data-player-export>📋 Exportar atletas</button>':''}${canOperate()&&type?`<button class="primary" data-crud="${type}">➕ Incluir</button>`:''}</div></div>${data.length?`<div class="tablewrap"><table><tr><th>Nome</th><th>Detalhes</th>${canOperate()?'<th>Ações</th>':''}</tr>${rows}</table></div>`:`<div class="empty">Nenhum registro cadastrado.</div>`}</section>`
 }
 
-
 async function openPlayerExportModal(){
   if(!canOperate()) return toast('Acesso operacional necessário.','error');
+
   const competitions=state.competitions||[];
-  if(competitions.length<2) return toast('Cadastre pelo menos dois campeonatos para exportar atletas.','error');
+  if(competitions.length<2){
+    return toast('Cadastre pelo menos dois campeonatos para transferir atletas.','error');
+  }
+
   document.querySelector('#playerExportModal')?.remove();
 
-  // Se o campeonato atualmente aberto possui atletas, ele é a origem.
-  // Se estiver vazio, usamos automaticamente o primeiro campeonato que possui atletas
-  // e deixamos o campeonato atual como destino. Isso evita abrir a janela vazia.
-  const counts=await Promise.all(competitions.map(async c=>{
-    const tr=await supabase.from('teams').select('id').eq('competition_id',c.id);
-    if(tr.error)return {c,n:0};
-    const ids=(tr.data||[]).map(x=>x.id);
-    if(!ids.length)return {c,n:0};
-    const pr=await supabase.from('players').select('id',{count:'exact',head:true}).in('team_id',ids);
-    return {c,n:pr.error?0:(pr.count||0)};
-  }));
+  const counts=await Promise.all(
+    competitions.map(async c=>{
+      const tr=await supabase
+        .from('teams')
+        .select('id')
+        .eq('competition_id',c.id);
+
+      if(tr.error) return {c,n:0};
+
+      const ids=(tr.data||[]).map(x=>x.id);
+      if(!ids.length) return {c,n:0};
+
+      const pr=await supabase
+        .from('players')
+        .select('id',{count:'exact',head:true})
+        .in('team_id',ids);
+
+      return {c,n:pr.error?0:(pr.count||0)};
+    })
+  );
+
   const current=state.competition?.id||'';
   const currentCount=counts.find(x=>x.c.id===current)?.n||0;
-  const sourceDefault=currentCount>0?current:(counts.find(x=>x.n>0)?.c.id||current);
-  const destDefault=sourceDefault===current
-    ? (competitions.find(c=>c.id!==sourceDefault)?.id||'')
-    : current;
 
-  const sourceOptions=competitions.map(c=>`<option value="${c.id}" ${c.id===sourceDefault?'selected':''}>${esc(c.name)}${c.season?` • ${esc(c.season)}`:''}</option>`).join('');
-  const destOptions=competitions.filter(c=>c.id!==sourceDefault).map(c=>`<option value="${c.id}" ${c.id===destDefault?'selected':''}>${esc(c.name)}${c.season?` • ${esc(c.season)}`:''}</option>`).join('');
+  const sourceDefault=
+    currentCount>0
+      ? current
+      : (counts.find(x=>x.n>0)?.c.id||current);
 
-  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="playerExportModal"><div class="modalbox wide">
-    <button class="close" data-close>×</button>
-    <div class="eyebrow">CÓPIA DE ATLETAS ENTRE CAMPEONATOS</div>
-    <h2>📋 Exportar atletas</h2>
-    <p class="muted">O atleta será <b>copiado</b> para o novo campeonato e permanecerá no campeonato de origem.</p>
-    <div class="formgrid">
-      <div><label>Campeonato de origem</label>
-        <select id="playerExportSource" data-player-export-source>${sourceOptions}</select>
-      </div>
-      <div><label>Campeonato de destino</label>
-        <select id="playerExportCompetition" data-player-export-competition><option value="">Selecione o campeonato</option>${destOptions}</select>
+  const destDefault=
+    sourceDefault===current
+      ? (competitions.find(c=>c.id!==sourceDefault)?.id||'')
+      : current;
+
+  const sourceOptions=competitions.map(c=>`
+    <option value="${c.id}" ${c.id===sourceDefault?'selected':''}>
+      ${esc(c.name)}${c.season?` • ${esc(c.season)}`:''}
+    </option>
+  `).join('');
+
+  const destOptions=competitions
+    .filter(c=>c.id!==sourceDefault)
+    .map(c=>`
+      <option value="${c.id}" ${c.id===destDefault?'selected':''}>
+        ${esc(c.name)}${c.season?` • ${esc(c.season)}`:''}
+      </option>
+    `).join('');
+
+  document.body.insertAdjacentHTML('beforeend',`
+    <style id="playerExportStyles">
+      #playerExportModal{
+        z-index:9999;
+        padding:12px;
+        overflow:auto;
+      }
+
+      #playerExportModal .modalbox.wide{
+        width:min(1400px,98vw);
+        max-width:98vw;
+        max-height:94vh;
+        overflow:hidden;
+        display:flex;
+        flex-direction:column;
+      }
+
+      #playerExportRows{
+        width:100%;
+        max-width:100%;
+        overflow-x:auto;
+        overflow-y:auto;
+        max-height:58vh;
+        border:1px solid #ddd;
+        border-radius:8px;
+      }
+
+      #playerExportRows table{
+        width:max-content;
+        min-width:1200px;
+        border-collapse:collapse;
+      }
+
+      #playerExportRows th,
+      #playerExportRows td{
+        white-space:nowrap;
+        padding:8px;
+      }
+
+      #playerExportRows select{
+        min-width:210px;
+      }
+
+      @media(max-width:800px){
+        #playerExportModal .modalbox.wide{
+          width:98vw;
+          max-width:98vw;
+        }
+
+        #playerExportRows{
+          max-height:55vh;
+        }
+
+        #playerExportRows table{
+          min-width:1050px;
+        }
+
+        #playerExportRows select{
+          min-width:180px;
+        }
+      }
+    </style>
+
+    <div class="modal" id="playerExportModal">
+      <div class="modalbox wide">
+
+        <button class="close" data-close>×</button>
+
+        <div class="eyebrow">
+          TRANSFERÊNCIA DE ATLETAS ENTRE CAMPEONATOS
+        </div>
+
+        <h2>📋 Transferir atletas</h2>
+
+        <p class="muted">
+          O atleta será <b>copiado</b> para o campeonato de destino
+          e permanecerá no campeonato de origem.
+        </p>
+
+        <div class="formgrid">
+
+          <div>
+            <label>Campeonato de origem</label>
+            <select id="playerExportSource" data-player-export-source>
+              ${sourceOptions}
+            </select>
+          </div>
+
+          <div>
+            <label>Campeonato de destino</label>
+            <select id="playerExportCompetition" data-player-export-competition>
+              <option value="">Selecione o campeonato</option>
+              ${destOptions}
+            </select>
+          </div>
+
+        </div>
+
+        <div class="modal-actions">
+          <button class="secondary" type="button" data-export-check-all>
+            ☑️ Marcar todos
+          </button>
+
+          <button class="secondary" type="button" data-export-uncheck-all>
+            ⬜ Desmarcar todos
+          </button>
+        </div>
+
+        <div id="playerExportRows" class="tablewrap">
+          <div class="empty">Carregando atletas...</div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="secondary" type="button" data-close>
+            ❌ Cancelar
+          </button>
+
+          <button class="primary" type="button" data-export-players>
+            📤 Transferir atletas marcados
+          </button>
+        </div>
+
       </div>
     </div>
-    <div class="modal-actions"><button class="secondary" type="button" data-export-check-all>☑️ Marcar todos</button><button class="secondary" type="button" data-export-uncheck-all>⬜ Desmarcar todos</button></div>
-    <div id="playerExportRows" class="tablewrap"><div class="empty">Carregando atletas...</div></div>
-    <div class="modal-actions"><button class="secondary" type="button" data-close>❌ Cancelar</button><button class="primary" type="button" data-export-players>📤 Copiar atletas marcados</button></div>
-  </div></div>`);
+  `);
+
   await loadPlayerExportTeams();
 }
 
