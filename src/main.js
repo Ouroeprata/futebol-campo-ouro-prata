@@ -839,7 +839,8 @@ async function saveEventInline(id){
   await loadMatchDetails(m.id,false);
   render();
   toast('Evento salvo com sucesso.');
-
+}
+}
 supabase.auth.onAuthStateChange(async()=>{setTimeout(load,0)})
 subscribe()
 load()
