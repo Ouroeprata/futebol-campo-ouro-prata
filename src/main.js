@@ -1245,7 +1245,123 @@ function ensureFinalRequestedFixes(){
   document.head.appendChild(s);
 }
 
-function render(){ensureCustomStyles();ensureVisualLayoutStyles();ensureApprovedLiveLayoutStyles();ensureSumulaStyles();ensureFinalRequestedFixes();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+function ensureMobileFinalStyles(){
+  if(document.getElementById('ouroMobileFinalStyles'))return;
+  const s=document.createElement('style');
+  s.id='ouroMobileFinalStyles';
+  s.textContent=`
+    /* ===== CORREÇÃO FINAL MOBILE: não altera o layout desktop ===== */
+    @media(max-width:700px){
+      html,body,#app{width:100%!important;min-width:0!important;max-width:100%!important;overflow-x:hidden!important}
+      .layout{display:block!important;width:100%!important;min-width:0!important;max-width:100%!important;overflow-x:hidden!important}
+
+      /* menu compacto: não rouba a largura da tela */
+      .layout>aside{position:fixed!important;left:0!important;top:0!important;bottom:0!important;width:58px!important;min-width:58px!important;max-width:58px!important;height:100vh!important;overflow:hidden!important;z-index:10000!important}
+      .layout>aside .brand{width:58px!important;padding:10px 3px!important;justify-content:center!important}
+      .layout>aside .brand span,.layout>aside nav button span,.layout>aside .sidefoot{display:none!important}
+      .layout>aside nav{padding:4px 4px 8px!important;overflow-y:auto!important;overflow-x:hidden!important}
+      .layout>aside nav button{width:50px!important;min-width:50px!important;height:44px!important;min-height:44px!important;margin:3px 0!important;padding:8px 0!important;justify-content:center!important;border-radius:9px!important}
+      .layout>aside nav button i{margin:0!important;font-size:18px!important}
+
+      /* conteúdo usa toda a largura restante */
+      .layout>main{display:block!important;margin-left:58px!important;width:calc(100% - 58px)!important;min-width:0!important;max-width:calc(100% - 58px)!important;padding:0 6px 18px!important;overflow-x:hidden!important}
+      .layout>main>.app-header,.layout>main>.panel,.layout>main>.live-sheet,.layout>main>.grid4,.layout>main>.competition-grid{width:100%!important;max-width:100%!important;min-width:0!important}
+      .app-header{padding:7px 2px!important;gap:5px!important;min-width:0!important}
+      .app-header h1{font-size:14px!important;line-height:1.05!important}
+      .app-header .brand-subtitle,.app-header .eyebrow{display:none!important}
+      .header-actions{width:100%!important;min-width:0!important;gap:4px!important;flex-wrap:nowrap!important}
+      .header-actions .competition-switch{min-width:0!important;flex:1 1 auto!important}
+      .header-actions .competition-switch select{width:100%!important;max-width:100%!important;min-width:0!important;font-size:10px!important;padding:6px!important}
+      .header-actions .userbtn{font-size:10px!important;padding:6px!important;white-space:nowrap!important}
+
+      .panel,.live-sheet{border-radius:10px!important}
+      .panel{padding:8px!important}
+
+      /* resultado / cronômetro */
+      .live-sheet .sheet-head{position:relative!important;width:100%!important;min-height:118px!important;padding:10px 5px 8px!important;overflow:hidden!important}
+      .live-sheet .sheet-head>div:first-child{width:100%!important;min-width:0!important;padding:0 0 0!important}
+      .live-sheet .status{font-size:8px!important;padding:3px 6px!important;margin-bottom:3px!important}
+      .live-sheet .match-goals{display:grid!important;grid-template-columns:minmax(0,1fr) 20px minmax(0,1fr)!important;width:100%!important;min-width:0!important;gap:2px!important;margin-top:2px!important;padding-right:2px!important}
+      .live-sheet .goal-team{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;min-width:0!important;width:100%!important;gap:2px!important}
+      .live-sheet .goal-team b{display:block!important;width:100%!important;max-width:100%!important;font-size:16px!important;line-height:1.05!important;text-align:center!important;white-space:normal!important;overflow-wrap:anywhere!important}
+      .live-sheet .goal-buttons{display:flex!important;align-items:center!important;justify-content:center!important;gap:2px!important}
+      .live-sheet .goal-buttons strong{font-size:28px!important;line-height:1!important;min-width:26px!important}
+      .live-sheet .goalbtn{width:20px!important;height:20px!important;font-size:13px!important;padding:0!important}
+      .live-sheet .goal-x{font-size:18px!important;align-self:center!important}
+      .live-sheet .clock{position:absolute!important;right:5px!important;top:5px!important;width:72px!important;min-height:45px!important;padding:5px 3px!important;border-radius:9px!important}
+      .live-sheet .clock #matchClock{font-size:18px!important;line-height:1!important}
+      .live-sheet .clock small{font-size:7px!important}
+      .live-sheet .officials{font-size:8px!important;line-height:1.1!important;margin-top:4px!important;max-width:calc(100% - 78px)!important}
+
+      /* controles não ultrapassam a tela */
+      .live-sheet .controlbar{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%!important;min-width:0!important;gap:4px!important;padding:5px 0!important}
+      .live-sheet .controlbar button{width:100%!important;min-width:0!important;max-width:100%!important;font-size:9px!important;padding:7px 2px!important;white-space:normal!important}
+
+      /* correção de placar */
+      .live-sheet .correction-panel,.live-sheet .correction-panel *{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+      .live-sheet .correction-panel{padding:8px!important}
+      .live-sheet .correction-panel .grid2,.live-sheet .correction-panel .score-correction{grid-template-columns:1fr!important}
+
+      /* eventos e ocorrência */
+      .live-sheet .sheet-grid{display:block!important;width:100%!important;min-width:0!important}
+      .live-sheet .sheet-main,.live-sheet .sheet-side,.live-sheet .eventpanel,.live-sheet .timeline{width:100%!important;min-width:0!important;max-width:100%!important}
+      .live-sheet .sheet-side{margin-top:8px!important}
+      .live-sheet .event-fields-grid,.live-sheet .substitution-grid{display:grid!important;grid-template-columns:1fr!important;width:100%!important;min-width:0!important;gap:6px!important}
+      .live-sheet .event-fields-grid>* ,.live-sheet .substitution-grid>*{width:100%!important;min-width:0!important;max-width:100%!important}
+      .live-sheet .event-type-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%!important;gap:4px!important}
+      .live-sheet .event-type-grid button{width:100%!important;min-width:0!important;font-size:9px!important;padding:7px 2px!important}
+
+      /* ===== SÚMULA: 2 equipes lado a lado, sem rolagem ===== */
+      .live-sheet .lineup-section-bottom,.live-sheet .lineuppanel,.live-sheet .lineup-scroll{width:100%!important;min-width:0!important;max-width:100%!important;overflow:visible!important}
+      .live-sheet .lineuppanel .panelhead{display:block!important;width:100%!important;padding:7px!important}
+      .live-sheet .lineuppanel .panelhead h3{font-size:16px!important;line-height:1.1!important;margin:0!important}
+      .live-sheet .lineuppanel .panelhead p{font-size:9px!important;line-height:1.1!important;margin:3px 0!important}
+      .live-sheet .lineuppanel .panelhead .secondary{display:block!important;width:100%!important;margin-top:5px!important;font-size:9px!important;padding:7px!important}
+      .live-sheet .lineup-teams{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;width:100%!important;min-width:0!important;max-width:100%!important;gap:4px!important}
+      .live-sheet .lineupteam{width:100%!important;min-width:0!important;max-width:100%!important;overflow:hidden!important;border-radius:7px!important}
+      .live-sheet .lineupteam-head{display:block!important;padding:6px 4px!important;min-width:0!important}
+      .live-sheet .lineupteam h4{font-size:13px!important;line-height:1.05!important;white-space:normal!important;overflow-wrap:anywhere!important;text-align:center!important}
+      .live-sheet .lineup-count{display:block!important;width:max-content!important;max-width:100%!important;margin:3px auto 0!important;font-size:8px!important;padding:3px 5px!important}
+      .live-sheet .lineup-table-head{display:grid!important;grid-template-columns:18px minmax(0,1fr)!important;gap:2px!important;padding:4px 3px!important;font-size:8px!important}
+      .live-sheet .lineup-table-head span:nth-child(3),.live-sheet .lineup-table-head span:nth-child(4){display:none!important}
+      .live-sheet .compact-playerline{display:grid!important;grid-template-columns:18px minmax(0,1fr)!important;grid-template-rows:auto 27px!important;position:relative!important;width:100%!important;min-width:0!important;min-height:68px!important;gap:2px!important;padding:5px 4px!important;padding-right:23px!important;align-items:start!important}
+      .live-sheet .compact-playerline .lineup-num{grid-column:1!important;grid-row:1 / span 2!important;font-size:8px!important;line-height:1.1!important}
+      .live-sheet .compact-playerline .lineup-player-name{grid-column:2!important;grid-row:1!important;display:block!important;width:100%!important;min-width:0!important;max-width:100%!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere!important;word-break:normal!important;font-size:11px!important;line-height:1.08!important;font-weight:700!important}
+      .live-sheet .compact-playerline .statusselect{grid-column:2!important;grid-row:2!important;width:100%!important;min-width:0!important;max-width:100%!important;height:25px!important;font-size:8px!important;padding:1px 2px!important}
+      .live-sheet .compact-playerline .lineup-action-btn{position:absolute!important;right:2px!important;top:3px!important;width:19px!important;min-width:19px!important;height:19px!important;padding:0!important;font-size:10px!important;display:inline-flex!important}
+
+      /* votação: mesma largura e duas equipes */
+      .live-sheet .votepanel,.live-sheet .vote-scroll,.live-sheet .vote-teams{width:100%!important;min-width:0!important;max-width:100%!important;overflow:visible!important}
+      .live-sheet .vote-panel-head{padding:7px!important}
+      .live-sheet .vote-panel-head h3{font-size:15px!important}
+      .live-sheet .vote-panel-head p{font-size:9px!important;line-height:1.1!important}
+      .live-sheet .vote-teams{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:4px!important;padding:4px!important}
+      .live-sheet .vote-team{min-width:0!important;max-width:100%!important;overflow:hidden!important}
+      .live-sheet .vote-team-head{display:block!important;padding:6px 4px!important}
+      .live-sheet .vote-team-head h4{font-size:12px!important;text-align:center!important;overflow-wrap:anywhere!important}
+      .live-sheet .vote-team-head span{display:block!important;width:max-content!important;max-width:100%!important;margin:3px auto 0!important;font-size:7px!important;padding:3px 5px!important}
+      .live-sheet .vote-instruction{font-size:8px!important;line-height:1.1!important;padding:5px!important}
+      .live-sheet .vote-list{padding:3px!important}
+      .live-sheet .vote{display:flex!important;width:100%!important;min-width:0!important;max-width:100%!important;gap:2px!important;padding:6px 4px!important;font-size:9px!important;line-height:1.1!important;white-space:normal!important;text-align:left!important;overflow-wrap:anywhere!important}
+      .live-sheet .vote span{min-width:0!important;overflow-wrap:anywhere!important}
+      .live-sheet .vote b{font-size:9px!important;flex:0 0 auto!important}
+    }
+
+    @media(max-width:380px){
+      .layout>aside{width:52px!important;min-width:52px!important;max-width:52px!important}
+      .layout>aside nav button{width:46px!important;min-width:46px!important}
+      .layout>main{margin-left:52px!important;width:calc(100% - 52px)!important;max-width:calc(100% - 52px)!important;padding-left:4px!important;padding-right:4px!important}
+      .live-sheet .goal-team b{font-size:14px!important}
+      .live-sheet .goal-buttons strong{font-size:24px!important}
+      .live-sheet .lineup-player-name{font-size:10px!important}
+      .live-sheet .statusselect{font-size:7px!important}
+      .live-sheet .compact-playerline{min-height:64px!important}
+    }
+  `;
+  document.head.appendChild(s);
+}
+
+function render(){ensureCustomStyles();ensureVisualLayoutStyles();ensureApprovedLiveLayoutStyles();ensureSumulaStyles();ensureFinalRequestedFixes();ensureMobileFinalStyles();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
