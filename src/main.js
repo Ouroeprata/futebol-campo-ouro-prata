@@ -840,7 +840,7 @@ async function saveEventInline(id){
   render();
   toast('Evento salvo com sucesso.');
 }
-}
+
 supabase.auth.onAuthStateChange(async()=>{setTimeout(load,0)})
 subscribe()
 load()
