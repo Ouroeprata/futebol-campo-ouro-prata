@@ -182,7 +182,7 @@ async function loadReportMatch(id){if(!id)return;try{const mr=await supabase.fro
 function sumulaReport(m){if(!m)return '<div class="empty">Selecione uma partida para gerar a súmula.</div>';const h=teamName(m.home_team_id),a=teamName(m.away_team_id);const ref=(id)=>state.referees.find(r=>r.id===id)?.name||'—';const status=matchStatusLabel(m.status);const typeLabel=e=>({gol:'⚽ Gol',gol_contra:'🥅 Gol Contra',cartao_amarelo:'🟨 Cartão Amarelo',cartao_vermelho:'🟥 Cartão Vermelho',substituicao:'🔄 Substituição',incidente:'Incidente'})[e.type]||e.type;const eventRows=state.events.slice().sort((x,y)=>((x.minute||0)*60+(x.second||0))-((y.minute||0)*60+(y.second||0))).map(e=>{const team=teamName(e.team_id);const player=e.player_id?playerName(e.player_id):'';let detail=e.description||player||'—';if(e.type==='substituicao'&&e.related_player_id)detail=`Sai: ${playerName(e.player_id)||'—'} • Entra: ${playerName(e.related_player_id)||'—'}`;return `<tr><td><b>${String(e.minute||0).padStart(2,'0')}:${String(e.second||0).padStart(2,'0')}</b></td><td>${typeLabel(e)}</td><td>${esc(team)}</td><td>${esc(detail)}</td></tr>`}).join('');const lineupRows=(teamId)=>state.players.filter(p=>p.team_id===teamId).sort((x,y)=>(Number(x.shirt_number)||999)-(Number(y.shirt_number)||999)).map(p=>`<tr><td><b>${p.shirt_number||'—'}</b></td><td>${esc(p.full_name||p.name)}</td><td>${esc(p.nickname||'—')}</td><td>${esc(cat(p.category))}</td><td>${age(p.birth_date)}</td></tr>`).join('');return `<div class="report-preview sumula-print"><div class="sumula-header"><img src="${logoOuroPrata}" alt="Ouro e Prata"><div><h2>${esc(state.competition?.name||'Campeonato')}</h2><h3>SÚMULA OFICIAL DA PARTIDA</h3><p>${esc(state.competition?.season||'')}</p></div></div><div class="sumula-match"><div><b>${flag(h)} ${esc(h)}</b><strong>${m.home_score||0} × ${m.away_score||0}</strong><b>${esc(a)} ${flag(a)}</b></div><p><b>Status:</b> ${status} &nbsp; <b>Data:</b> ${fmtDate(m.scheduled_at)} &nbsp; <b>Campo:</b> ${esc(m.field_name||'—')}</p></div><div class="sumula-officials"><b>Arbitragem:</b> Árbitro: ${esc(ref(m.referee_id))} • Assistente 1: ${esc(ref(m.assistant_1_id))} • Assistente 2: ${esc(ref(m.assistant_2_id))} • Mesário: ${esc(ref(m.fourth_official_id))}</div><div class="sumula-grid"><div><h3>${flag(h)} ${esc(h)}</h3><table><tr><th>Nº</th><th>NOME COMPLETO</th><th>APELIDO</th><th>CATEGORIA</th><th>IDADE</th></tr>${lineupRows(m.home_team_id)}</table></div><div><h3>${flag(a)} ${esc(a)}</h3><table><tr><th>Nº</th><th>NOME COMPLETO</th><th>APELIDO</th><th>CATEGORIA</th><th>IDADE</th></tr>${lineupRows(m.away_team_id)}</table></div></div><h3>Eventos da partida</h3><table><tr><th>Tempo</th><th>Evento</th><th>Equipe</th><th>Detalhes</th></tr>${eventRows||'<tr><td colspan="4">Nenhuma ocorrência registrada.</td></tr>'}</table><div class="sumula-signatures"><div>________________________________<br>Árbitro</div><div>________________________________<br>Responsável / Organização</div></div><div class="panelhead no-print"><h3>Súmula do jogo</h3><button class="primary" data-print-report>🖨️ Imprimir / PDF</button></div></div>`}
 function reportContent(type){let title=({jogos:'Relatório de jogos',sumula:'Súmula do jogo',atletas:'Relatório de atletas',atletas_equipe:'Relação de atletas por equipes',artilheiros:'Artilharia',equipes:'Relatório de equipes',cartoes:'Cartões',classificacao:'Classificação geral',grupos:'Classificação por grupos'})[type];let body='';if(type==='sumula'){body=`<div class="sumula-selector"><label>Selecione a partida<select id="reportMatchSelect"><option value="">Selecione...</option>${state.matches.map(x=>`<option value="${x.id}" ${x.id===state.reportMatchId?'selected':''}>${esc(teamName(x.home_team_id))} × ${esc(teamName(x.away_team_id))} • ${fmtDate(x.scheduled_at)}</option>`).join('')}</select></label></div>${sumulaReport(state.reportMatchId?state.selectedMatch:null)}`}if(type==='jogos')body=matchesTable(false);if(type==='atletas'||type==='atletas_equipe'){if(type==='atletas_equipe'){body=state.teams.map(t=>{const ps=state.players.filter(p=>p.team_id===t.id).sort((a,b)=>{const na=Number(a.shirt_number),nb=Number(b.shirt_number);if(Number.isFinite(na)&&Number.isFinite(nb))return na-nb;if(Number.isFinite(na))return -1;if(Number.isFinite(nb))return 1;return (a.full_name||a.name||'').localeCompare(b.full_name||b.name||'')});return `<div class="report-team"><h3>${flag(t.name)} ${esc(t.name)}</h3><div class="tablewrap"><table><tr><th>Nº</th><th>Atleta</th><th>Apelido</th><th>Categoria</th><th>Posição</th><th>Nascimento</th></tr>${ps.map(p=>`<tr><td><b>${p.shirt_number||'—'}</b></td><td>${esc(p.full_name||p.name)}</td><td>${esc(p.nickname||'')}</td><td>${esc(p.category||'')}</td><td>${esc(p.position||'')}</td><td>${p.birth_date?esc(p.birth_date):'—'}</td></tr>`).join('')}</table></div></div>`}).join('')}else body=`<div class="tablewrap"><table><tr><th>Atleta</th><th>Equipe</th><th>Número</th><th>Posição</th></tr>${state.players.map(p=>`<tr><td>${esc(p.full_name||p.name)}</td><td>${esc(teamName(p.team_id))}</td><td>${p.shirt_number||''}</td><td>${esc(p.position||'')}</td></tr>`).join('')}</table></div>`}if(type==='equipes')body=`<div class="tablewrap"><table><tr><th>Equipe</th><th>Grupo</th></tr>${state.teams.map(t=>`<tr><td>${flag(t.name)} ${esc(t.name)}</td><td>${esc(state.groups.find(g=>g.id===t.group_id)?.name||'—')}</td></tr>`).join('')}</table></div>`;if(type==='artilheiros'){const map={};state.allEvents.filter(e=>e.type==='gol'&&e.player_id).forEach(e=>map[e.player_id]=(map[e.player_id]||0)+1);body=`<div class="tablewrap"><table><tr><th>#</th><th>Atleta</th><th>Equipe</th><th>Gols</th></tr>${Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([id,n],i)=>`<tr><td>${i+1}</td><td>${esc(playerName(id))}</td><td>${esc(teamName(state.players.find(p=>p.id===id)?.team_id))}</td><td><b>${n}</b></td></tr>`).join('')}</table></div>`}if(type==='cartoes'){const map={};state.allEvents.filter(e=>['cartao_amarelo','cartao_vermelho'].includes(e.type)&&e.player_id).forEach(e=>{const k=e.player_id+'|'+e.type;map[k]=(map[k]||0)+1});body=`<div class="tablewrap"><table><tr><th>Atleta</th><th>Equipe</th><th>Tipo</th><th>Quantidade</th></tr>${Object.entries(map).map(([k,n])=>{const [id,t]=k.split('|');return `<tr><td>${esc(playerName(id))}</td><td>${esc(teamName(state.players.find(p=>p.id===id)?.team_id))}</td><td>${t==='cartao_amarelo'?'Amarelo':'Vermelho'}</td><td>${n}</td></tr>`}).join('')}</table></div>`}if(type==='classificacao')body=standingsTable(calcStandings());if(type==='grupos')body=state.groups.slice().sort((a,b)=>a.position-b.position).map(g=>`<h3>${esc(g.name)}</h3>${standingsTable(calcStandings(state.teams.filter(t=>t.group_id===g.id).map(t=>t.id)))}`).join('');return `<div class="report-preview"><div class="panelhead"><h3>${title}</h3><button class="primary" data-print-report>🖨️ Imprimir / PDF</button></div>${body}</div>`}
 function matchCard(m){const h=teamName(m.home_team_id),a=teamName(m.away_team_id);return `<div class="matchmini"><div>${flag(h)} <b>${esc(h)}</b></div><div class="scoremini">${m.home_score}<span>×</span>${m.away_score}</div><div><b>${esc(a)}</b> ${flag(a)}</div><button class="smallbtn" data-open-match="${m.id}">Súmula</button></div>`}
-function liveSheet(){const m=state.selectedMatch;if(!m)return '';const h=teamName(m.home_team_id),a=teamName(m.away_team_id);const official=(id,label)=>{const r=state.referees.find(x=>x.id===id);return r?`<span><b>${label}:</b> ${esc(r.name)}</span>`:''};const publicMode=!canOperate();const publicInfo=publicMode?`<div class="public-match-info"><span>📅 ${fmtDate(m.scheduled_at)}</span><span>📍 ${esc(m.field_name||'Campo não informado')}</span><span>⚽ ${m.status==='ao_vivo'?'Partida em andamento':matchStatusLabel(m.status)}</span></div>`:'';return `<div class="live-sheet ${publicMode?'public-live-sheet':''}"><div class="sheet-head"><div><span class="status">${m.reopened_at&&m.status==='agendado'?'REABERTA':m.status.toUpperCase()}</span><div class="match-goals"><div class="goal-team"><div class="goal-buttons">${!publicMode?`<button class="goalbtn" data-score-dec="${m.home_team_id}">−</button>`:''}<strong>${m.home_score||0}</strong>${!publicMode?`<button class="goalbtn" data-score-inc="${m.home_team_id}">+</button>`:''}</div><b>${flag(h)} ${esc(h)}</b></div><div class="goal-x">×</div><div class="goal-team"><div class="goal-buttons">${!publicMode?`<button class="goalbtn" data-score-dec="${m.away_team_id}">−</button>`:''}<strong>${m.away_score||0}</strong>${!publicMode?`<button class="goalbtn" data-score-inc="${m.away_team_id}">+</button>`:''}</div><b>${flag(a)} ${esc(a)}</b></div></div>${publicInfo}<div class="officials">${official(m.referee_id,'Árbitro')}${official(m.assistant_1_id,'Assistente 1')}${official(m.assistant_2_id,'Assistente 2')}${official(m.fourth_official_id,'Mesário')}</div></div><div class="clock"><div id="matchClock">${matchClock(m)}</div><small>${state.timerHalf==='2T'?'2º TEMPO':state.timerHalf==='1T'?'1º TEMPO':m.status==='encerrado'?'ENCERRADO':'PARADO'}</small></div></div>${controlBar(m)}${correctionPanel(m)}<div class="sheet-grid"><div class="sheet-main">${publicMode?'':eventPanel(m)}${publicMode?'':eventTimeline()}</div><div class="sheet-side">${lineupPanel(m)}${votePanel(m)}</div></div></div>`}
+function liveSheet(){const m=state.selectedMatch;if(!m)return '';const h=teamName(m.home_team_id),a=teamName(m.away_team_id);const official=(id,label)=>{const r=state.referees.find(x=>x.id===id);return r?`<span><b>${label}:</b> ${esc(r.name)}</span>`:''};const publicMode=!canOperate();const publicInfo=publicMode?`<div class="public-match-info"><span>📅 ${fmtDate(m.scheduled_at)}</span><span>📍 ${esc(m.field_name||'Campo não informado')}</span><span>⚽ ${m.status==='ao_vivo'?'Partida em andamento':matchStatusLabel(m.status)}</span></div>`:'';return `<div class="live-sheet ${publicMode?'public-live-sheet':''}"><div class="sheet-head"><div><span class="status">${m.reopened_at&&m.status==='agendado'?'REABERTA':m.status.toUpperCase()}</span><div class="match-goals"><div class="goal-team"><div class="goal-buttons">${!publicMode?`<button class="goalbtn" data-score-dec="${m.home_team_id}">−</button>`:''}<strong>${m.home_score||0}</strong>${!publicMode?`<button class="goalbtn" data-score-inc="${m.home_team_id}">+</button>`:''}</div><b>${flag(h)} ${esc(h)}</b></div><div class="goal-x">×</div><div class="goal-team"><div class="goal-buttons">${!publicMode?`<button class="goalbtn" data-score-dec="${m.away_team_id}">−</button>`:''}<strong>${m.away_score||0}</strong>${!publicMode?`<button class="goalbtn" data-score-inc="${m.away_team_id}">+</button>`:''}</div><b>${flag(a)} ${esc(a)}</b></div></div>${publicInfo}<div class="officials">${official(m.referee_id,'Árbitro')}${official(m.assistant_1_id,'Assistente 1')}${official(m.assistant_2_id,'Assistente 2')}${official(m.fourth_official_id,'Mesário')}</div></div><div class="clock"><div id="matchClock">${matchClock(m)}</div><small>${state.timerHalf==='2T'?'2º TEMPO':state.timerHalf==='1T'?'1º TEMPO':m.status==='encerrado'?'ENCERRADO':'PARADO'}</small></div></div>${controlBar(m)}${correctionPanel(m)}<div class="sheet-grid"><div class="sheet-main">${publicMode?'':eventPanel(m)}</div><div class="sheet-side">${publicMode?'':eventTimeline()}</div></div><div class="lineup-section-bottom">${lineupPanel(m)}${votePanel(m)}</div></div>`}
 function matchClock(m){if(state.timerHalf)return fmtSec(elapsedSeconds(m));if(m?.status==='encerrado')return fmtSec((m.second_half_elapsed_seconds||0)+(m.first_half_elapsed_seconds||0));return '00:00'}
 function fmtSec(s){const min=Math.floor(s/60),sec=s%60;return String(min).padStart(2,'0')+':'+String(sec).padStart(2,'0')}
 function controlBar(m){if(!canOperate())return `<div class="public-live-banner">🔴 <b>Acompanhamento ao vivo</b></div>`;const disabled=m.status==='encerrado';return `<div class="controlbar"><button class="${state.timerHalf==='1T'?'primary half-active':''}" ${disabled?'disabled':''} data-action="start1">▶ Iniciar 1º tempo</button><button class="${state.timerHalf==='2T'?'primary half-active':''}" ${disabled?'disabled':''} data-action="start2">▶ Iniciar 2º tempo</button><button ${disabled?'disabled':''} data-action="pause">⏸ Pausar</button><button ${disabled?'disabled':''} data-minute-adjust="1">+ 1 min</button><button ${disabled?'disabled':''} data-clock-adjust="1">+ 1 seg</button><button ${disabled?'disabled':''} data-minute-adjust="-1">− 1 min</button><button ${disabled?'disabled':''} data-clock-adjust="-1">− 1 seg</button><button ${disabled?'disabled':''} data-action="resetMatchClock">↺ Zerar tempo</button><button class="danger" ${disabled?'disabled':''} data-action="finish">■ Encerrar partida</button></div>`}
@@ -240,7 +240,7 @@ function eventTimeline(){
 function eventIcon(t){return {gol:'⚽',gol_contra:'🥅',cartao_amarelo:'🟨',cartao_vermelho:'🟥',substituicao:'🔄',incidente:'📝'}[t]||'•'}
 function eventLabel(t){return {gol:'Gol',gol_contra:'Gol Contra',cartao_amarelo:'Cartão amarelo',cartao_vermelho:'Cartão vermelho',substituicao:'Substituição',incidente:'Incidente'}[t]||t}
 function lineupStatusLabel(st){return st==='titular'?'Titular':st==='nao_compareceu'?'Não compareceu':'Reserva'}
-function lineupPanel(m){const teamBlocks=[m.home_team_id,m.away_team_id].map(tid=>{const ps=state.players.filter(p=>p.team_id===tid).sort((a,b)=>(a.shirt_number||999)-(b.shirt_number||999));return `<div class="lineupteam"><h4>${flag(teamName(tid))} ${esc(teamName(tid))}</h4>${ps.length?ps.map(p=>{const l=state.lineups.find(x=>x.player_id===p.id);const st=l?.status||'reserva';return `<div class="playerline compact-playerline"><span>${p.shirt_number?`#${p.shirt_number} `:''}${esc(p.name)}</span><select class="statusselect status-${st}" data-lineup-status="${p.id}" data-status="${st}" ${!canOperate()?'disabled':''}><option value="titular" ${st==='titular'?'selected':''}>Titular</option><option value="reserva" ${st==='reserva'?'selected':''}>Reserva</option><option value="nao_compareceu" ${st==='nao_compareceu'?'selected':''}>Não Compareceu</option></select></div>`}).join(''):'<div class="muted">Nenhum atleta cadastrado.</div>'}</div>`}).join('');return `<div class="lineuppanel"><div class="panelhead"><h3>Súmula / escalação</h3><button class="secondary" data-action="saveLineup" ${!canOperate()?'disabled':''}>Salvar situação dos atletas</button></div><p class="muted">Selecione a situação de cada atleta na lista.</p>${teamBlocks}</div>`}
+function lineupPanel(m){const teamBlocks=[m.home_team_id,m.away_team_id].map(tid=>{const ps=state.players.filter(p=>p.team_id===tid).sort((a,b)=>(a.shirt_number||999)-(b.shirt_number||999));return `<div class="lineupteam"><div class="lineupteam-head"><h4>${flag(teamName(tid))} ${esc(teamName(tid))}</h4><span class="lineup-count">${ps.length} atletas</span></div><div class="lineup-table-head"><span>#</span><span>Atleta</span><span>Situação</span><span>Ações</span></div>${ps.length?ps.map((p,i)=>{const l=state.lineups.find(x=>x.player_id===p.id);const st=l?.status||'reserva';return `<div class="playerline compact-playerline"><span class="lineup-num">${i+1}</span><span class="lineup-player-name">${p.shirt_number?`<b>#${p.shirt_number}</b> `:''}${esc(p.name)}</span><select class="statusselect status-${st}" data-lineup-status="${p.id}" data-status="${st}" ${!canOperate()?'disabled':''}><option value="titular" ${st==='titular'?'selected':''}>Titular</option><option value="reserva" ${st==='reserva'?'selected':''}>Reserva</option><option value="nao_compareceu" ${st==='nao_compareceu'?'selected':''}>Não Compareceu</option></select><span class="lineup-action">📋</span></div>`}).join(''):'<div class="muted" style="padding:18px 6px">Nenhum atleta cadastrado.</div>'}</div>`}).join('');return `<div class="lineuppanel"><div class="panelhead"><div><h3>Súmula / escalação</h3><p class="muted">Os dois times ficam lado a lado. Deslize horizontalmente para consultar toda a escalação.</p></div><button class="secondary" data-action="saveLineup" ${!canOperate()?'disabled':''}>💾 Salvar situação dos atletas</button></div><div class="lineup-scroll"><div class="lineup-teams">${teamBlocks}</div></div></div>`}
 function lineupStatusModal(id){const btn=document.querySelector(`[data-lineup-status="${id}"]`);if(!btn)return;const current=btn.dataset.status||'reserva';document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="lineupStatusModal"><div class="modalbox lineup-status-modal"><button class="close" data-close>×</button><div class="eyebrow">ESCALAÇÃO</div><h2>Escolha a situação</h2><div class="status-options"><button class="status-option ${current==='titular'?'selected':''}" data-lineup-choice="${id}" data-status="titular">🟢 Titular</button><button class="status-option ${current==='reserva'?'selected':''}" data-lineup-choice="${id}" data-status="reserva">⚪ Reserva</button><button class="status-option ${current==='nao_compareceu'?'selected':''}" data-lineup-choice="${id}" data-status="nao_compareceu">🔴 Não compareceu</button></div></div></div>`)}
 function votePanel(m){const candidates=state.players.filter(p=>state.lineups.some(l=>l.match_id===m.id&&l.player_id===p.id&&l.status==='titular'));const counts=state.votes.reduce((a,v)=>(a[v.player_id]=(a[v.player_id]||0)+1,a),{});return `<div class="votepanel"><h3>Melhor jogador da partida</h3>${candidates.length?candidates.sort((a,b)=>(counts[b.id]||0)-(counts[a.id]||0)).map(p=>`<button class="vote" data-vote="${p.id}" ${!state.session?'disabled':''}>⭐ ${esc(p.name)} <b>${counts[p.id]||0}</b></button>`).join(''):'<div class="muted">Defina a escalação titular para liberar os candidatos.</div>'}</div>`}
 function standingsView(){const rows=state.teams.map(t=>({team:t,j:0,v:0,e:0,d:0,gp:0,gc:0,pts:0}));const map=new Map(rows.map(r=>[r.team.id,r]));state.matches.filter(m=>m.status==='encerrado').forEach(m=>{const h=map.get(m.home_team_id),a=map.get(m.away_team_id);if(!h||!a)return;h.j++;a.j++;h.gp+=m.home_score||0;h.gc+=m.away_score||0;a.gp+=m.away_score||0;a.gc+=m.home_score||0;if(m.home_score>m.away_score){h.v++;h.pts+=3;a.d++}else if(m.home_score<m.away_score){a.v++;a.pts+=3;h.d++}else{h.e++;a.e++;h.pts++;a.pts++}});rows.sort((a,b)=>b.pts-a.pts||(b.gp-b.gc)-(a.gp-a.gc)||b.gp-a.gp||a.team.name.localeCompare(b.team.name));return `<section class="panel"><div class="panelhead"><div><h2>Classificação geral</h2><p class="muted">Calculada automaticamente com as partidas encerradas.</p></div><span class="tag">${state.matches.filter(m=>m.status==='encerrado').length} jogos concluídos</span></div>${classificationTabs('geral')}<div class="tablewrap"><table><tr><th>#</th><th>Time</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>Pts</th></tr>${rows.map((r,i)=>`<tr><td><b>${i+1}</b></td><td>${flag(r.team.name)} ${esc(r.team.name)}</td><td>${r.j}</td><td>${r.v}</td><td>${r.e}</td><td>${r.d}</td><td>${r.gp}</td><td>${r.gc}</td><td>${r.gp-r.gc}</td><td><b>${r.pts}</b></td></tr>`).join('')}</table></div></section>`}
@@ -796,7 +796,254 @@ function ensureLayoutFinalStyles(){
   document.head.appendChild(s);
 }
 
-function render(){ensureCustomStyles();ensureVisualLayoutStyles();ensureSumulaStyles();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+
+function ensureApprovedLiveLayoutStyles(){
+  if(document.getElementById('ouroApprovedLiveLayoutStyles')) return;
+  const s=document.createElement('style');
+  s.id='ouroApprovedLiveLayoutStyles';
+  s.textContent=`
+    /* ===== VISUAL APROVADO — TELA AO VIVO ===== */
+    .live-sheet{
+      background:#f4f7f5!important;
+      border:0!important;
+      box-shadow:none!important;
+    }
+
+    /* Placar superior no estilo do modelo aprovado */
+    .live-sheet .sheet-head{
+      position:relative!important;
+      min-height:132px!important;
+      padding:16px 18px!important;
+      border-radius:16px!important;
+      overflow:hidden!important;
+      background:
+        radial-gradient(circle at 50% 115%,rgba(70,150,75,.45),transparent 48%),
+        linear-gradient(180deg,#063f2d 0%,#075d3e 55%,#0a7446 100%)!important;
+      box-shadow:0 5px 18px rgba(4,72,49,.20)!important;
+      color:#fff!important;
+    }
+    .live-sheet .sheet-head>div:first-child{min-width:0!important}
+    .live-sheet .sheet-head .status{
+      display:inline-flex!important;
+      align-items:center!important;
+      padding:6px 12px!important;
+      border-radius:999px!important;
+      background:#12bd70!important;
+      color:#fff!important;
+      font-size:11px!important;
+      font-weight:900!important;
+      letter-spacing:.3px!important;
+    }
+    .live-sheet .match-goals{
+      display:grid!important;
+      grid-template-columns:minmax(220px,1fr) 86px minmax(220px,1fr)!important;
+      align-items:center!important;
+      gap:12px!important;
+      margin:0!important;
+    }
+    .live-sheet .goal-team{
+      min-width:0!important;
+      display:flex!important;
+      flex-direction:row!important;
+      align-items:center!important;
+      justify-content:center!important;
+      gap:12px!important;
+    }
+    .live-sheet .goal-team b{
+      order:1!important;
+      color:#fff!important;
+      font-size:22px!important;
+      font-weight:900!important;
+      text-transform:uppercase!important;
+      white-space:nowrap!important;
+    }
+    .live-sheet .goal-buttons{
+      order:2!important;
+      display:flex!important;
+      align-items:center!important;
+      gap:4px!important;
+    }
+    .live-sheet .goal-buttons strong{
+      min-width:58px!important;
+      color:#fff!important;
+      font-size:48px!important;
+      line-height:1!important;
+      font-weight:900!important;
+    }
+    .live-sheet .goalbtn{
+      width:28px!important;
+      height:28px!important;
+      padding:0!important;
+      border:1px solid rgba(255,255,255,.28)!important;
+      background:rgba(0,0,0,.22)!important;
+      color:#fff!important;
+      font-size:17px!important;
+    }
+    .live-sheet .goal-x{
+      color:#fff!important;
+      font-size:28px!important;
+      font-weight:400!important;
+      text-align:center!important;
+    }
+    .live-sheet .clock{
+      position:absolute!important;
+      right:18px!important;
+      top:20px!important;
+      width:138px!important;
+      min-height:88px!important;
+      padding:12px!important;
+      border-radius:14px!important;
+      background:rgba(0,0,0,.24)!important;
+      border:1px solid rgba(255,255,255,.12)!important;
+      text-align:center!important;
+      box-shadow:inset 0 0 20px rgba(0,0,0,.10)!important;
+    }
+    .live-sheet .clock #matchClock{
+      color:#fff!important;
+      font-size:34px!important;
+      font-weight:900!important;
+      line-height:1.05!important;
+    }
+    .live-sheet .clock small{
+      color:#d9ebe4!important;
+      font-size:10px!important;
+    }
+    .live-sheet .officials,
+    .live-sheet .public-match-info{display:none!important}
+
+    /* Barra de controles */
+    .live-sheet .controlbar{
+      display:flex!important;
+      flex-wrap:wrap!important;
+      gap:8px!important;
+      padding:10px 0!important;
+    }
+    .live-sheet .controlbar button{
+      min-height:38px!important;
+      border-radius:8px!important;
+      font-weight:700!important;
+    }
+    .live-sheet .controlbar .primary{
+      background:#087447!important;
+      color:#fff!important;
+      border-color:#087447!important;
+    }
+    .live-sheet .controlbar .danger{
+      background:#d52d2d!important;
+      color:#fff!important;
+      border-color:#d52d2d!important;
+    }
+
+    /* Correção da partida */
+    .live-sheet .correction-panel{
+      border-radius:16px!important;
+      border:1px solid #e0e8e4!important;
+      background:#fff!important;
+      box-shadow:0 4px 16px rgba(9,69,48,.07)!important;
+    }
+
+    /* Ocorrências + eventos lado a lado */
+    .live-sheet .sheet-grid{
+      display:grid!important;
+      grid-template-columns:minmax(0,1.65fr) minmax(320px,.75fr)!important;
+      gap:16px!important;
+      align-items:stretch!important;
+      margin-top:16px!important;
+    }
+    .live-sheet .sheet-main,
+    .live-sheet .sheet-side{min-width:0!important}
+    .live-sheet .eventpanel,
+    .live-sheet .timeline{
+      height:100%!important;
+      margin:0!important;
+    }
+
+    /* Súmula no final — dois times lado a lado */
+    .live-sheet .lineup-section-bottom{
+      display:block!important;
+      width:100%!important;
+      margin-top:18px!important;
+    }
+    .live-sheet .lineuppanel{
+      width:100%!important;
+      margin:0!important;
+      border-radius:16px!important;
+      background:#fff!important;
+      border:1px solid #dfe9e4!important;
+      box-shadow:0 4px 18px rgba(9,69,48,.07)!important;
+      overflow:hidden!important;
+    }
+    .live-sheet .lineuppanel .panelhead{
+      padding:14px 16px!important;
+      margin:0!important;
+      background:#fff!important;
+      border-bottom:1px solid #e5ece8!important;
+    }
+    .live-sheet .lineup-scroll{
+      width:100%!important;
+      max-width:100%!important;
+      overflow-x:auto!important;
+      overflow-y:hidden!important;
+      padding:0 0 10px!important;
+      -webkit-overflow-scrolling:touch!important;
+      scrollbar-width:thin!important;
+    }
+    .live-sheet .lineup-teams{
+      display:grid!important;
+      grid-template-columns:minmax(500px,1fr) minmax(500px,1fr)!important;
+      gap:14px!important;
+      width:max-content!important;
+      min-width:100%!important;
+      padding:0 12px!important;
+    }
+    .live-sheet .lineupteam{
+      min-width:500px!important;
+      background:#fbfdfc!important;
+      border:1px solid #dce8e2!important;
+      border-radius:14px!important;
+      overflow:hidden!important;
+    }
+    .live-sheet .lineupteam-head{
+      min-height:56px!important;
+    }
+
+    /* Em telas menores, mantém as equipes lado a lado e cria rolagem horizontal */
+    @media(max-width:900px){
+      .live-sheet .sheet-grid{
+        grid-template-columns:1fr!important;
+      }
+      .live-sheet .lineup-teams{
+        min-width:1014px!important;
+      }
+    }
+    @media(max-width:650px){
+      .live-sheet .sheet-head{
+        min-height:150px!important;
+        padding-right:10px!important;
+      }
+      .live-sheet .match-goals{
+        grid-template-columns:minmax(150px,1fr) 46px minmax(150px,1fr)!important;
+        gap:4px!important;
+        padding-right:115px!important;
+      }
+      .live-sheet .goal-team{gap:5px!important}
+      .live-sheet .goal-team b{font-size:15px!important}
+      .live-sheet .goal-buttons strong{font-size:34px!important;min-width:42px!important}
+      .live-sheet .goal-x{font-size:20px!important}
+      .live-sheet .clock{
+        width:105px!important;
+        min-height:68px!important;
+        right:8px!important;
+        top:13px!important;
+      }
+      .live-sheet .clock #matchClock{font-size:25px!important}
+      .live-sheet .lineup-teams{min-width:1014px!important}
+    }
+  `;
+  document.head.appendChild(s);
+}
+
+function render(){ensureCustomStyles();ensureVisualLayoutStyles();ensureApprovedLiveLayoutStyles();ensureSumulaStyles();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
@@ -1003,17 +1250,27 @@ function ensureVisualLayoutStyles(){
     /* Central ao vivo */
     .live-sheet{width:100%!important;max-width:none!important}
     .sheet-head{border-radius:16px!important;overflow:hidden!important}
-    .sheet-grid{display:grid!important;grid-template-columns:minmax(0,1fr) 390px!important;gap:18px!important;align-items:start!important}
+    .sheet-grid{display:grid!important;grid-template-columns:minmax(0,1.7fr) minmax(330px,.8fr)!important;gap:18px!important;align-items:start!important}
     .sheet-main,.sheet-side{min-width:0!important;width:100%!important}
     .eventpanel,.lineuppanel,.timeline{width:100%!important;max-width:none!important}
+    .lineup-section-bottom{width:100%!important;margin-top:18px!important}
     .lineuppanel{position:relative!important}
-    .lineuppanel .panelhead{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important}
+    .lineuppanel .panelhead{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px!important}
+    .lineuppanel .panelhead>div{min-width:0!important}
     .lineuppanel .panelhead .secondary{white-space:nowrap!important}
-    .lineupteam{border:1px solid #e1ebe6!important;border-radius:12px!important;padding:10px!important;margin:10px 0!important;background:#fbfdfc!important}
-    .lineupteam h4{margin:2px 0 8px!important;padding-bottom:8px!important;border-bottom:1px solid #e5ece8!important}
-    .compact-playerline{min-height:48px!important;padding:7px 0!important;border-bottom:1px solid #edf1ef!important}
+    .lineup-scroll{width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;padding-bottom:8px!important;-webkit-overflow-scrolling:touch!important;scrollbar-width:thin!important}
+    .lineup-teams{display:grid!important;grid-template-columns:repeat(2,minmax(500px,1fr))!important;gap:14px!important;min-width:1014px!important}
+    .lineupteam{border:1px solid #dce8e2!important;border-radius:14px!important;padding:0!important;margin:0!important;background:#fbfdfc!important;overflow:hidden!important;box-shadow:0 3px 12px rgba(9,69,48,.05)!important}
+    .lineupteam-head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;padding:13px 14px!important;background:linear-gradient(90deg,#f0f8f4,#fbfdfc)!important;border-bottom:1px solid #dfe9e4!important}
+    .lineupteam h4{margin:0!important;padding:0!important;border:0!important;font-size:17px!important;color:#173e31!important}
+    .lineup-count{font-size:11px!important;font-weight:800!important;color:#527367!important;background:#e7f1ec!important;border-radius:999px!important;padding:5px 9px!important;white-space:nowrap!important}
+    .lineup-table-head{display:grid!important;grid-template-columns:38px minmax(0,1fr) 150px 58px!important;gap:8px!important;align-items:center!important;padding:8px 12px!important;background:#f3f7f5!important;color:#5a7067!important;font-size:10px!important;font-weight:800!important;text-transform:uppercase!important}
+    .compact-playerline{display:grid!important;grid-template-columns:38px minmax(0,1fr) 150px 58px!important;gap:8px!important;align-items:center!important;min-height:46px!important;padding:6px 12px!important;border-bottom:1px solid #edf1ef!important}
     .compact-playerline:last-child{border-bottom:0!important}
-    .compact-playerline>span{min-width:0!important;flex:1 1 auto!important;line-height:1.2!important}
+    .compact-playerline>span{min-width:0!important;line-height:1.2!important}
+    .lineup-num{color:#7a8b84!important;font-size:11px!important;font-weight:700!important}
+    .lineup-player-name{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+    .lineup-action{text-align:center!important;opacity:.65!important}
     .statusselect{width:145px!important;min-width:145px!important;height:38px!important;font-weight:700!important}
 
     /* Controles da partida */
@@ -1051,7 +1308,8 @@ function ensureVisualLayoutStyles(){
       .sheet-side{order:2!important}
       .sheet-main{order:1!important}
       .lineuppanel .panelhead{align-items:flex-start!important;flex-direction:column!important}
-      .lineuppanel .panelhead .secondary{width:100%!important}
+      .lineuppanel .panelhead .secondary{width:auto!important}
+      .lineup-teams{grid-template-columns:repeat(2,minmax(500px,1fr))!important;min-width:1014px!important}
       .grid4{grid-template-columns:repeat(2,minmax(0,1fr))!important}
     }
 
