@@ -1434,7 +1434,30 @@ function ensureMobileFinalStyles(){
   document.head.appendChild(s);
 }
 
-function render(){ensureCustomStyles();ensureVisualLayoutStyles();ensureApprovedLiveLayoutStyles();ensureSumulaStyles();ensureFinalRequestedFixes();ensureMobileFinalStyles();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+function ensurePainelVisibilityFix(){
+  if(document.getElementById('ouroPainelVisibilityFix'))return;
+  const s=document.createElement('style');
+  s.id='ouroPainelVisibilityFix';
+  s.textContent=`
+    /* ===== CORREÇÃO: PAINEL NUNCA DESAPARECE ===== */
+    .layout>main{display:block!important;visibility:visible!important;opacity:1!important}
+    .layout>main>.app-header,.layout>main>.panel,.layout>main>.public-portal-banner,.layout>main>.grid4,.layout>main>.hero,.layout>main>.live-sheet{display:block!important;visibility:visible!important;opacity:1!important}
+    .layout>main>.grid4{display:grid!important}
+    .layout>aside nav button:first-child{display:flex!important;visibility:visible!important;opacity:1!important}
+    @media(max-width:700px){
+      .layout{display:block!important;position:relative!important;min-height:100vh!important;overflow-x:hidden!important}
+      .layout>aside{display:flex!important;visibility:visible!important;opacity:1!important}
+      .layout>main{display:block!important;visibility:visible!important;opacity:1!important;margin-left:58px!important;width:calc(100% - 58px)!important;max-width:calc(100% - 58px)!important;min-width:0!important;overflow-x:hidden!important}
+      .layout>main>.app-header,.layout>main>.panel,.layout>main>.public-portal-banner,.layout>main>.live-sheet{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important}
+      .layout>main>.grid4{display:grid!important;width:100%!important;max-width:100%!important;min-width:0!important}
+      .public-portal-banner{display:block!important;min-height:120px!important;overflow:visible!important}
+      .public-portal-banner h2,.public-portal-banner p{max-width:100%!important;overflow-wrap:anywhere!important}
+    }
+  `;
+  document.head.appendChild(s);
+}
+
+function render(){ensureCustomStyles();ensureVisualLayoutStyles();ensureApprovedLiveLayoutStyles();ensureSumulaStyles();ensureFinalRequestedFixes();ensureMobileFinalStyles();ensurePainelVisibilityFix();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
