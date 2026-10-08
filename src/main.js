@@ -1434,30 +1434,92 @@ function ensureMobileFinalStyles(){
   document.head.appendChild(s);
 }
 
-function ensurePainelVisibilityFix(){
-  if(document.getElementById('ouroPainelVisibilityFix'))return;
+function ensureDeviceMobileStyles(){
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1;
+  document.documentElement.classList.toggle('ouro-mobile-device', isMobile);
+  if(document.getElementById('ouroDeviceMobileStyles')) return;
   const s=document.createElement('style');
-  s.id='ouroPainelVisibilityFix';
+  s.id='ouroDeviceMobileStyles';
   s.textContent=`
-    /* ===== CORREÇÃO: PAINEL NUNCA DESAPARECE ===== */
-    .layout>main{display:block!important;visibility:visible!important;opacity:1!important}
-    .layout>main>.app-header,.layout>main>.panel,.layout>main>.public-portal-banner,.layout>main>.grid4,.layout>main>.hero,.layout>main>.live-sheet{display:block!important;visibility:visible!important;opacity:1!important}
-    .layout>main>.grid4{display:grid!important}
-    .layout>aside nav button:first-child{display:flex!important;visibility:visible!important;opacity:1!important}
-    @media(max-width:700px){
-      .layout{display:block!important;position:relative!important;min-height:100vh!important;overflow-x:hidden!important}
-      .layout>aside{display:flex!important;visibility:visible!important;opacity:1!important}
-      .layout>main{display:block!important;visibility:visible!important;opacity:1!important;margin-left:58px!important;width:calc(100% - 58px)!important;max-width:calc(100% - 58px)!important;min-width:0!important;overflow-x:hidden!important}
-      .layout>main>.app-header,.layout>main>.panel,.layout>main>.public-portal-banner,.layout>main>.live-sheet{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important}
-      .layout>main>.grid4{display:grid!important;width:100%!important;max-width:100%!important;min-width:0!important}
-      .public-portal-banner{display:block!important;min-height:120px!important;overflow:visible!important}
-      .public-portal-banner h2,.public-portal-banner p{max-width:100%!important;overflow-wrap:anywhere!important}
+    /* ===== CORREÇÃO POR DISPOSITIVO: celular/tablet mesmo em "site para computador" ===== */
+    html.ouro-mobile-device,html.ouro-mobile-device body,#app{min-width:0!important;max-width:100%!important;overflow-x:hidden!important}
+    html.ouro-mobile-device .layout{display:block!important;width:100%!important;min-width:0!important;max-width:100%!important;overflow-x:hidden!important}
+    html.ouro-mobile-device .layout>aside{
+      position:fixed!important;left:0!important;top:0!important;bottom:0!important;
+      width:64px!important;min-width:64px!important;max-width:64px!important;height:100vh!important;
+      z-index:50000!important;display:flex!important;overflow:hidden!important;background:#064b35!important;
+      box-shadow:3px 0 12px rgba(0,0,0,.18)!important;
     }
+    html.ouro-mobile-device .layout>aside .brand{width:64px!important;min-width:64px!important;padding:12px 4px!important;justify-content:center!important}
+    html.ouro-mobile-device .layout>aside .brand img{max-width:48px!important;max-height:48px!important;object-fit:contain!important}
+    html.ouro-mobile-device .layout>aside .brand span,
+    html.ouro-mobile-device .layout>aside nav button span,
+    html.ouro-mobile-device .layout>aside .sidefoot{display:none!important}
+    html.ouro-mobile-device .layout>aside nav{width:64px!important;min-width:64px!important;padding:6px 5px 10px!important;overflow-y:auto!important;overflow-x:hidden!important}
+    html.ouro-mobile-device .layout>aside nav button{
+      width:54px!important;min-width:54px!important;height:44px!important;min-height:44px!important;
+      margin:3px 0!important;padding:7px 0!important;justify-content:center!important;border-radius:9px!important;
+      flex:0 0 44px!important;
+    }
+    html.ouro-mobile-device .layout>aside nav button i{display:inline-flex!important;visibility:visible!important;opacity:1!important;margin:0!important;font-size:19px!important;line-height:1!important}
+    html.ouro-mobile-device .layout>main{
+      display:block!important;position:relative!important;z-index:1!important;
+      margin-left:64px!important;width:calc(100% - 64px)!important;max-width:calc(100% - 64px)!important;
+      min-width:0!important;padding:0 6px 18px!important;overflow-x:hidden!important;box-sizing:border-box!important;
+    }
+    html.ouro-mobile-device .layout>main>*{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}
+
+    /* Resultado: compacto, sem sobreposição do cronômetro sobre os nomes */
+    html.ouro-mobile-device .live-sheet .sheet-head{
+      width:100%!important;min-width:0!important;min-height:132px!important;padding:9px 6px 7px!important;
+      overflow:hidden!important;box-sizing:border-box!important;
+    }
+    html.ouro-mobile-device .live-sheet .sheet-head>div:first-child{width:100%!important;min-width:0!important;padding:0!important}
+    html.ouro-mobile-device .live-sheet .status{font-size:8px!important;padding:3px 6px!important}
+    html.ouro-mobile-device .live-sheet .clock{
+      top:7px!important;right:6px!important;width:72px!important;min-height:46px!important;
+      padding:5px 3px!important;border-radius:8px!important;z-index:3!important;
+    }
+    html.ouro-mobile-device .live-sheet .clock #matchClock{font-size:18px!important;line-height:1!important}
+    html.ouro-mobile-device .live-sheet .clock small{font-size:7px!important}
+    html.ouro-mobile-device .live-sheet .match-goals{
+      display:grid!important;grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr)!important;
+      gap:2px!important;width:100%!important;min-width:0!important;margin:8px 0 0!important;
+      padding:38px 2px 0!important;box-sizing:border-box!important;
+    }
+    html.ouro-mobile-device .live-sheet .goal-team{
+      display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+      width:100%!important;min-width:0!important;gap:1px!important;
+    }
+    html.ouro-mobile-device .live-sheet .goal-team b{
+      display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;
+      font-size:13px!important;line-height:1.05!important;font-weight:900!important;text-align:center!important;
+      white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important;text-transform:uppercase!important;
+    }
+    html.ouro-mobile-device .live-sheet .goal-buttons{gap:2px!important}
+    html.ouro-mobile-device .live-sheet .goal-buttons strong{font-size:25px!important;min-width:25px!important;line-height:1!important}
+    html.ouro-mobile-device .live-sheet .goalbtn{width:20px!important;height:20px!important;font-size:12px!important;padding:0!important}
+    html.ouro-mobile-device .live-sheet .goal-x{font-size:16px!important;line-height:1!important}
+
+    /* Súmula permanece legível no aparelho e nunca cria rolagem lateral */
+    html.ouro-mobile-device .live-sheet .lineup-scroll,
+    html.ouro-mobile-device .live-sheet .lineup-teams,
+    html.ouro-mobile-device .live-sheet .lineupteam{width:100%!important;min-width:0!important;max-width:100%!important;overflow:visible!important}
+    html.ouro-mobile-device .live-sheet .lineup-teams{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:4px!important}
+    html.ouro-mobile-device .live-sheet .compact-playerline{min-width:0!important;width:100%!important;grid-template-columns:18px minmax(0,1fr)!important;grid-template-rows:auto 25px!important;min-height:66px!important;padding:5px 3px!important;padding-right:21px!important}
+    html.ouro-mobile-device .live-sheet .compact-playerline .lineup-player-name{font-size:10px!important;line-height:1.08!important;white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important}
+    html.ouro-mobile-device .live-sheet .compact-playerline .statusselect{height:24px!important;font-size:7px!important;padding:1px!important}
+    html.ouro-mobile-device .live-sheet .compact-playerline .lineup-action-btn{width:18px!important;min-width:18px!important;height:18px!important;font-size:9px!important;right:2px!important;top:2px!important}
+    html.ouro-mobile-device .live-sheet .lineupteam h4{font-size:12px!important;line-height:1.05!important}
+
+    /* Patrocinadores */
+    html.ouro-mobile-device .sponsor-card,html.ouro-mobile-device .media-card{min-width:0!important;max-width:100%!important;overflow:hidden!important}
+    html.ouro-mobile-device .sponsor-card img{width:100%!important;height:110px!important;max-width:100%!important;object-fit:contain!important;display:block!important}
   `;
   document.head.appendChild(s);
 }
 
-function render(){ensureCustomStyles();ensureVisualLayoutStyles();ensureApprovedLiveLayoutStyles();ensureSumulaStyles();ensureFinalRequestedFixes();ensureMobileFinalStyles();ensurePainelVisibilityFix();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+function render(){ensureCustomStyles();ensureVisualLayoutStyles();ensureApprovedLiveLayoutStyles();ensureSumulaStyles();ensureFinalRequestedFixes();ensureMobileFinalStyles();ensureDeviceMobileStyles();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
