@@ -1373,6 +1373,63 @@ function ensureMobileFinalStyles(){
       .live-sheet .statusselect{font-size:7px!important}
       .live-sheet .compact-playerline{min-height:64px!important}
     }
+    /* ===== CORREÇÃO MOBILE E PATROCINADORES - VERSÃO DEFINITIVA ===== */
+    /* A partir de tablet/celular, o menu vira compacto e o conteúdo usa toda a largura útil. */
+    @media(max-width:1100px){
+      html,body,#app{width:100%!important;min-width:0!important;max-width:100%!important;overflow-x:hidden!important}
+      .layout{display:block!important;width:100%!important;min-width:0!important;max-width:100%!important;overflow-x:hidden!important}
+      .layout>aside{position:fixed!important;left:0!important;top:0!important;bottom:0!important;width:58px!important;min-width:58px!important;max-width:58px!important;height:100vh!important;z-index:10000!important;overflow:hidden!important}
+      .layout>aside .brand{width:58px!important;padding:10px 3px!important;justify-content:center!important}
+      .layout>aside .brand span,.layout>aside nav button span,.layout>aside .sidefoot{display:none!important}
+      .layout>aside nav{padding:4px!important;overflow-y:auto!important;overflow-x:hidden!important}
+      .layout>aside nav button{width:50px!important;min-width:50px!important;height:44px!important;min-height:44px!important;margin:3px 0!important;padding:8px 0!important;justify-content:center!important;border-radius:9px!important}
+      .layout>aside nav button i{margin:0!important;font-size:18px!important}
+      .layout>main{display:block!important;margin-left:58px!important;width:calc(100% - 58px)!important;max-width:calc(100% - 58px)!important;min-width:0!important;padding:0 7px 18px!important;overflow-x:hidden!important;box-sizing:border-box!important}
+      .layout>main>*{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}
+
+      /* Cabeçalho/resultado: equipes ocupam a linha sem estourar a tela. */
+      .live-sheet .sheet-head{width:100%!important;min-width:0!important;overflow:hidden!important;box-sizing:border-box!important}
+      .live-sheet .match-goals{display:grid!important;grid-template-columns:minmax(0,1fr) 32px minmax(0,1fr)!important;width:100%!important;min-width:0!important;gap:4px!important;box-sizing:border-box!important}
+      .live-sheet .goal-team{min-width:0!important;width:100%!important}
+      .live-sheet .goal-team b{display:block!important;width:100%!important;max-width:100%!important;text-align:center!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;line-height:1.05!important}
+
+      /* Súmula: duas equipes lado a lado, sem rolagem horizontal. Nome nunca fica espremido em uma coluna de 1 letra. */
+      .live-sheet .lineup-scroll,.live-sheet .lineup-teams,.live-sheet .lineupteam{width:100%!important;min-width:0!important;max-width:100%!important;overflow:visible!important;box-sizing:border-box!important}
+      .live-sheet .lineup-teams{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:6px!important}
+      .live-sheet .lineupteam{overflow:hidden!important}
+      .live-sheet .lineup-table-head{display:grid!important;grid-template-columns:18px minmax(0,1fr)!important;gap:3px!important;font-size:8px!important;padding:5px 4px!important}
+      .live-sheet .lineup-table-head span:nth-child(3),.live-sheet .lineup-table-head span:nth-child(4){display:none!important}
+      .live-sheet .compact-playerline{display:grid!important;grid-template-columns:18px minmax(0,1fr)!important;grid-template-rows:auto 27px!important;gap:3px!important;position:relative!important;width:100%!important;min-width:0!important;min-height:68px!important;padding:6px 4px!important;padding-right:23px!important;box-sizing:border-box!important;align-items:start!important}
+      .live-sheet .compact-playerline .lineup-num{grid-column:1!important;grid-row:1 / span 2!important;font-size:8px!important}
+      .live-sheet .compact-playerline .lineup-player-name{grid-column:2!important;grid-row:1!important;display:block!important;width:100%!important;min-width:0!important;max-width:100%!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere!important;word-break:normal!important;font-size:11px!important;line-height:1.12!important;font-weight:700!important}
+      .live-sheet .compact-playerline .statusselect{grid-column:2!important;grid-row:2!important;width:100%!important;min-width:0!important;max-width:100%!important;height:25px!important;font-size:8px!important;padding:1px 2px!important}
+      .live-sheet .compact-playerline .lineup-action-btn{position:absolute!important;right:2px!important;top:3px!important;width:19px!important;min-width:19px!important;height:19px!important;padding:0!important;font-size:10px!important}
+
+      /* Patrocinadores: a logo inteira fica visível, sem corte. */
+      .flags{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important;gap:10px!important;width:100%!important;min-width:0!important;max-width:100%!important}
+      .sponsor-card{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;overflow:hidden!important;padding:10px!important;text-align:center!important}
+      .sponsor-card img{display:block!important;width:100%!important;max-width:100%!important;height:110px!important;object-fit:contain!important;object-position:center!important;background:#fff!important;border-radius:8px!important;margin:0 auto 8px!important}
+      .sponsor-card b,.sponsor-card a{display:block!important;max-width:100%!important;overflow-wrap:anywhere!important;word-break:normal!important}
+    }
+
+    @media(max-width:700px){
+      .layout>main{padding-left:4px!important;padding-right:4px!important}
+      .live-sheet .goal-team b{font-size:15px!important}
+      .live-sheet .lineup-team-head h4,.live-sheet .lineupteam h4{font-size:12px!important}
+      .live-sheet .lineup-player-name{font-size:10px!important}
+      .live-sheet .statusselect{font-size:7px!important}
+      .flags{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+      .sponsor-card img{height:90px!important}
+    }
+
+    @media(max-width:380px){
+      .layout>aside{width:52px!important;min-width:52px!important;max-width:52px!important}
+      .layout>aside nav button{width:46px!important;min-width:46px!important}
+      .layout>main{margin-left:52px!important;width:calc(100% - 52px)!important;max-width:calc(100% - 52px)!important}
+      .live-sheet .lineup-player-name{font-size:9px!important}
+      .live-sheet .statusselect{font-size:7px!important}
+      .sponsor-card img{height:80px!important}
+    }
   `;
   document.head.appendChild(s);
 }
