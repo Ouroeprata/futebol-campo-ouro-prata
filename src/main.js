@@ -17,7 +17,17 @@ const state = {
 }
 
 const esc = (v='') => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))
-const flag = n => ({Argentina:'🇦🇷',Brasil:'🇧🇷',Chile:'🇨🇱',Colômbia:'🇨🇴',Equador:'🇪🇨',Paraguai:'🇵🇾',Uruguai:'🇺🇾',Venezuela:'🇻🇪','África do Sul':'🇿🇦','Africa do Sul':'🇿🇦',Argélia:'🇩🇿',Argelia:'🇩🇿',Camarões:'🇨🇲',Camoes:'🇨🇲',Egito:'🇪🇬',Gana:'🇬🇭',Marrocos:'🇲🇦',Marrocos:'🇲🇦',Nigéria:'🇳🇬',Nigeria:'🇳🇬',Senegal:'🇸🇳'})[n] || '⚽'
+const flag = n => {
+  const key = String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()
+  const codes = {
+    argentina:'ar', brasil:'br', chile:'cl', colombia:'co', equador:'ec', paraguai:'py', uruguai:'uy', venezuela:'ve',
+    'africa do sul':'za', argelia:'dz', camaroes:'cm', egito:'eg', gana:'gh', marrocos:'ma', nigeria:'ng', senegal:'sn'
+  }
+  const code = codes[key]
+  return code
+    ? `<img class="team-flag" src="https://flagcdn.com/w40/${code}.png" alt="Bandeira de ${esc(n)}" title="${esc(n)}" loading="eager" decoding="async" onerror="this.style.display='none'">`
+    : '⚽'
+}
 const teamName = id => state.teams.find(t => t.id === id)?.name || '—'
 const playerName = id => { const p=state.players.find(x=>x.id===id); return p ? (p.full_name||p.name||'—') : '—' }
 const fmtDate = v => v ? new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}) : '—'
