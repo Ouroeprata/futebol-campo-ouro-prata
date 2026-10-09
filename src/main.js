@@ -134,6 +134,7 @@ async function loadCompetitionData(){
   const mids=state.matches.map(x=>x.id)
   const er=mids.length?await supabase.from('match_events').select('*').in('match_id',mids).order('created_at',{ascending:true}):{data:[]}; state.allEvents=er.data||[]
   state.matches.sort((x,y)=>new Date(x.scheduled_at||0)-new Date(y.scheduled_at||0))
+  await ensureThirdPlaceMatch();
   await syncKnockoutBracket();
 }
 
@@ -214,11 +215,11 @@ function gamesView(){
   const eliminatorias=state.matches.filter(m=>m.phase_type&&m.phase_type!=='classificatoria');
   const phaseOrder={quartas:1,semifinal:2,final:3};
   const phaseKeys=[...new Set(eliminatorias.map(m=>`${m.phase_name||'Fase seguinte'}|${m.phase_type||'mata-mata'}`))].sort((a,b)=>{const ta=a.split('|')[1],tb=b.split('|')[1];return (phaseOrder[ta]||99)-(phaseOrder[tb]||99)||a.localeCompare(b,'pt-BR')});
-  return `<section class="panel"><div class="panelhead"><div><h2>Calendário e partidas</h2><p class="muted">Os jogos da fase classificatória ficam separados das fases seguintes. Gols das fases seguintes entram na artilharia e nas estatísticas de gols das equipes.</p></div><div class="panel-actions">${canOperate()?'<button class="secondary" data-new-phase>🏆 Criar 2ª fase</button><button class="primary" data-crud="match">+ Novo jogo</button>':''}</div></div><div class="games-section-block"><div class="phase-head"><div><h3>📋 Fase classificatória</h3><p class="muted">Jogos que definem a classificação geral.</p></div><span class="tag">${classificatoria.length} jogo(s)</span></div>${classificatoria.length?matchesTable(true,m=>!m.phase_type||m.phase_type==='classificatoria'):'<div class="empty">Nenhum jogo da fase classificatória.</div>'}</div>${phaseKeys.length?`<div class="games-next-phases"><div class="phase-head"><div><h3>🏆 Fases seguintes</h3><p class="muted">Quartas de Final, Semifinal e Final ficam em blocos separados.</p></div><span class="tag">${eliminatorias.length} jogo(s)</span></div>${phaseKeys.map(key=>{const [name,type]=key.split('|');const phaseMatches=eliminatorias.filter(m=>(m.phase_name||'Fase seguinte')===name&&(m.phase_type||'mata-mata')===type);return `<div class="games-section-block knockout-block"><div class="phase-head"><div><h3>${esc(roundLabel(type))}</h3></div><span class="tag">${phaseMatches.length} jogo(s)</span></div>${matchesTable(true,m=>(m.phase_name||'Fase seguinte')===name&&(m.phase_type||'mata-mata')===type)}</div>`}).join('')}</div>`:'<div class="games-section-block"><div class="empty">Nenhuma fase seguinte criada.</div></div>'}</section>`
+  return `<section class="panel"><div class="panelhead"><div><h2>Calendário e partidas</h2><p class="muted">Os jogos da fase classificatória ficam separados das fases seguintes. Gols das fases seguintes entram na artilharia e nas estatísticas de gols das equipes.</p></div><div class="panel-actions">${canOperate()?'<button class="secondary" data-new-phase>🏆 Criar 2ª fase</button><button class="primary" data-crud="match">+ Novo jogo</button>':''}</div></div><div class="games-section-block"><div class="phase-head"><div><h3>📋 Fase classificatória</h3><p class="muted">Jogos que definem a classificação geral.</p></div><span class="tag">${classificatoria.length} jogo(s)</span></div>${classificatoria.length?matchesTable(true,m=>!m.phase_type||m.phase_type==='classificatoria'):'<div class="empty">Nenhum jogo da fase classificatória.</div>'}</div>${phaseKeys.length?`<div class="games-next-phases"><div class="phase-head"><div><h3>🏆 Fases seguintes</h3><p class="muted">Quartas de Final, Semifinal e Final ficam em blocos separados.</p></div><span class="tag">${eliminatorias.length} jogo(s)</span></div>${phaseKeys.map(key=>{const [name,type]=key.split('|');const phaseMatches=eliminatorias.filter(m=>(m.phase_name||'Fase seguinte')===name&&(m.phase_type||'mata-mata')===type);return `<div class="games-section-block knockout-block"><div class="phase-head"><div><h3>${esc(name==='3º Lugar'?'Disputa de 3º Lugar':roundLabel(type))}</h3></div><span class="tag">${phaseMatches.length} jogo(s)</span></div>${matchesTable(true,m=>(m.phase_name||'Fase seguinte')===name&&(m.phase_type||'mata-mata')===type)}</div>`}).join('')}</div>`:'<div class="games-section-block"><div class="empty">Nenhuma fase seguinte criada.</div></div>'}</section>`
 }
 function matchStatusLabel(status){return status==='agendado'?'PARTIDA NÃO INICIADA':status==='ao_vivo'?'AO VIVO':status==='encerrado'?'ENCERRADA':status.toUpperCase()}
 function phaseLabel(m){return (!m?.phase_type||m.phase_type==='classificatoria')?'Fase classificatória':roundLabel(m.phase_type)}
-function phasesGamesView(){const phaseMap=new Map();state.matches.filter(m=>m.phase_name&&m.phase_type&&m.phase_type!=='classificatoria').forEach(m=>{const key=`${m.phase_name}|${m.phase_type}`;if(!phaseMap.has(key))phaseMap.set(key,{name:m.phase_name,type:m.phase_type,matches:[]});phaseMap.get(key).matches.push(m)});if(!phaseMap.size)return '';const phaseOrder={quartas:1,semifinal:2,final:3};return `<div class="phase-cards">${[...phaseMap.values()].sort((a,b)=>(phaseOrder[a.type]||99)-(phaseOrder[b.type]||99)||a.name.localeCompare(b.name,'pt-BR')).map(p=>`<div class="phase-card"><div><h3>${esc(roundLabel(p.type))}</h3><p class="muted">${p.matches.length} jogo(s)</p></div><div class="phase-mini-list">${p.matches.sort((a,b)=>(a.bracket_order||0)-(b.bracket_order||0)).map((m,i)=>`<div><b>${m.phase_type==='final'&&Number(m.bracket_order||1)===2?'3º Lugar':'Jogo '+String(m.bracket_order||i+1).padStart(2,'0')}</b> · ${esc(m.home_source||teamName(m.home_team_id))} × ${esc(m.away_source||teamName(m.away_team_id))}</div>`).join('')}</div></div>`).join('')}</div>`}
+function phasesGamesView(){const phaseMap=new Map();state.matches.filter(m=>m.phase_name&&m.phase_type&&m.phase_type!=='classificatoria').forEach(m=>{const key=`${m.phase_name}|${m.phase_type}`;if(!phaseMap.has(key))phaseMap.set(key,{name:m.phase_name,type:m.phase_type,matches:[]});phaseMap.get(key).matches.push(m)});if(!phaseMap.size)return '';const phaseOrder={quartas:1,semifinal:2,final:3};return `<div class="phase-cards">${[...phaseMap.values()].sort((a,b)=>(phaseOrder[a.type]||99)-(phaseOrder[b.type]||99)||a.name.localeCompare(b.name,'pt-BR')).map(p=>`<div class="phase-card"><div><h3>${esc(p.name==='3º Lugar'?'Disputa de 3º Lugar':roundLabel(p.type))}</h3><p class="muted">${p.matches.length} jogo(s)</p></div><div class="phase-mini-list">${p.matches.sort((a,b)=>(a.bracket_order||0)-(b.bracket_order||0)).map((m,i)=>`<div><b>${m.phase_type==='final'&&Number(m.bracket_order||1)===2?'3º Lugar':'Jogo '+String(m.bracket_order||i+1).padStart(2,'0')}</b> · ${esc(m.home_source||teamName(m.home_team_id))} × ${esc(m.away_source||teamName(m.away_team_id))}</div>`).join('')}</div></div>`).join('')}</div>`}
 function roundLabel(v){return ({quartas:'Quartas de Final',semifinal:'Semifinal',final:'Final'})[v]||String(v||'').toUpperCase()}
 function matchesTable(selectable=false,filterFn=null){const source=(filterFn?state.matches.filter(filterFn):state.matches);if(!source.length)return `<div class="empty">Nenhum jogo cadastrado ainda.</div>`;return `<div class="tablewrap"><table><tr><th>Fase</th><th>Data</th><th>Jogo</th><th>Placar</th><th>Status</th>${selectable?'<th>Ações</th>':''}</tr>${source.map(m=>{const h=m.home_team_id?teamName(m.home_team_id):(m.home_source||'A definir'),a=m.away_team_id?teamName(m.away_team_id):(m.away_source||'A definir');const unresolved=!m.home_team_id||!m.away_team_id;const staffActions=canOperate()?`${m.status==='encerrado'?`<button class="smallbtn" data-reopen-match="${m.id}">↩ Reabrir</button>`:`<button class="smallbtn" data-edit-crud="match" data-id="${m.id}">✏️ Alterar</button>`}${m.status!=='ao_vivo'?`<button class="smallbtn" data-not-started="${m.id}">⏳ Não iniciada</button>`:''}`:'';const actions=selectable?`${staffActions}${!unresolved?`<button class="smallbtn primary" data-open-match="${m.id}">${m.status==='ao_vivo'?'🔴 Acompanhar ao vivo':'👁️ Ver partida'}</button>`:`<span class="muted">Aguardando definição</span>`}`:'';return `<tr><td><span class="tag">${esc(phaseLabel(m))}</span></td><td>${fmtDate(m.scheduled_at)}</td><td>${m.home_team_id?flag(h):'🏆'} <b>${esc(h)}</b> × <b>${esc(a)}</b> ${m.away_team_id?flag(a):'🏆'}</td><td><b>${m.home_score||0} × ${m.away_score||0}</b></td><td><span class="tag ${m.status}">${matchStatusLabel(m.status)}</span></td>${selectable?`<td>${actions}</td>`:''}</tr>`}).join('')}</table></div>`}
 
@@ -265,6 +266,34 @@ async function createPhaseGames(){
   const res=await supabase.from('matches').insert(rows);
   if(res.error)return toast(res.error.message,'error');
   document.querySelector('#phaseModal')?.remove();await load();toast(`${rows.length} jogo(s) de ${roundLabel(phaseType)} criado(s) com sucesso.`);
+}
+
+async function ensureThirdPlaceMatch(){
+  if(!state.competition)return;
+  const matches=state.matches.filter(m=>m.competition_id===state.competition.id);
+  const semi=matches.filter(m=>m.phase_type==='semifinal').sort((a,b)=>(a.bracket_order||0)-(b.bracket_order||0));
+  const final=matches.find(m=>m.phase_type==='final' && Number(m.bracket_order||1)===1);
+  const thirdExists=matches.some(m=>m.phase_type==='final' && Number(m.bracket_order||0)===2);
+  if(semi.length<2 || !final || thirdExists)return;
+  const row={
+    competition_id:state.competition.id,
+    phase_name:'3º Lugar',
+    phase_type:'final',
+    bracket_order:2,
+    home_team_id:null,
+    away_team_id:null,
+    home_source:'Perdedor Semifinal 1',
+    away_source:'Perdedor Semifinal 2',
+    source_home_match_id:semi[0].id,
+    source_away_match_id:semi[1].id,
+    scheduled_at:final.scheduled_at||null,
+    status:'agendado',
+    home_score:0,
+    away_score:0
+  };
+  const res=await supabase.from('matches').insert(row).select().single();
+  if(res.error){console.error('Não foi possível criar a disputa de 3º lugar:',res.error);return;}
+  state.matches.push(res.data);
 }
 
 async function syncKnockoutBracket(){
