@@ -31,11 +31,11 @@ const flag = n => {
 const teamName = id => state.teams.find(t => t.id === id)?.name || '—'
 const playerName = id => { const p=state.players.find(x=>x.id===id); return p ? (p.full_name||p.name||'—') : '—' }
 const fmtDate = v => v ? new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}) : '—'
-const canOperate = () => !!state.session && ['admin','organizador','arbitro','operador'].includes(state.profile?.role)
 const ADMIN_EMAIL = 'copadasnacoesouroeprata@gmail.com'
-const isAdmin = () => !!state.session && String(state.session.user?.email || '').toLowerCase() === ADMIN_EMAIL && state.profile?.role === 'admin'
-const isModerator = () => !!state.session && state.moderator?.approved === true
-const canLiveOperate = () => canOperate() || (isModerator() && state.selectedMatch?.status !== 'encerrado')
+const canOperate = () => !!state.session && ['admin','organizador','arbitro','operador'].includes(state.profile?.role)
+const isAdmin = () => !!state.session && String(state.session.user?.email||'').trim().toLowerCase()===ADMIN_EMAIL && state.profile?.role==='admin'
+const isModerator = () => !!state.session && !!state.moderator?.approved
+const canLiveOperate = () => canOperate() || (isModerator() && state.selectedMatch?.status!=='encerrado')
 const roleLabel = r => ({admin:'Administrador',organizador:'Organizador',arbitro:'Árbitro',operador:'Operador',moderador:'Moderador',publico:'Público'})[r] || 'Público'
 const cat = v => ({
   ouro: 'Ouro',
@@ -916,14 +916,16 @@ function moderatorEmail(username){return `${String(username||'').trim().toLowerC
 async function moderatorSignup(){
   const username=document.querySelector('#moderatorUsername')?.value.trim()
   const password=document.querySelector('#moderatorPassword')?.value||''
-  const confirm=document.querySelector('#moderatorPasswordConfirm')?.value||''
   if(!username||username.length<3)return toast('Informe um usuário com pelo menos 3 caracteres.','error')
   if(!/^[a-zA-Z0-9._-]+$/.test(username))return toast('O usuário deve conter apenas letras, números, ponto, hífen ou sublinhado.','error')
   if(password.length<6)return toast('A senha deve ter pelo menos 6 caracteres.','error')
-  if(password!==confirm)return toast('As senhas não conferem.','error')
   const email=moderatorEmail(username)
   const auth=await supabase.auth.signUp({email,password})
-  if(auth.error)return toast(auth.error.message,'error')
+  if(auth.error){
+    const msg=String(auth.error.message||'')
+    if(/rate limit exceeded/i.test(msg)) return toast('O Supabase atingiu o limite temporário de cadastro por e-mail. É preciso desativar a confirmação de e-mail no Supabase Auth ou aguardar o limite ser liberado.','error')
+    return toast(auth.error.message,'error')
+  }
   const uid=auth.data.user?.id
   if(!uid)return toast('O cadastro foi iniciado, mas o usuário não foi retornado pelo Supabase.','error')
   const ins=await supabase.from('moderators').insert({user_id:uid,username,approved:false})
@@ -974,7 +976,7 @@ function moderatorsView(){
     <div class="panelhead"><div><h2>🛡️ Moderadores</h2><p class="muted">Cadastro e controle de acesso dos moderadores da Central ao vivo.</p></div></div>
     ${own?`<div class="moderator-status ${own.approved?'approved':'pending'}"><b>${esc(own.username)}</b><span>${status}</span>${own.approved?`<button class="secondary" data-moderator-password>🔑 Alterar / Salvar senha</button>`:''}</div>`:''}
     ${!own&&!admin?`<div class="moderator-grid">
-      <div class="moderator-card"><h3>Cadastro de moderador</h3><p class="muted">Informe somente usuário e senha. O acesso dependerá da aprovação do administrador.</p><input id="moderatorUsername" placeholder="Usuário"><input id="moderatorPassword" type="password" placeholder="Senha"><input id="moderatorPasswordConfirm" type="password" placeholder="Confirmar senha"><button class="primary wide" data-moderator-signup>Solicitar cadastro</button></div>
+      <div class="moderator-card"><h3>Cadastro de moderador</h3><p class="muted">Informe somente usuário e senha. O cadastro não usa e-mail para o moderador. O acesso dependerá da aprovação do administrador.</p><input id="moderatorUsername" placeholder="Usuário"><input id="moderatorPassword" type="password" placeholder="Senha"><button class="primary wide" data-moderator-signup>Solicitar cadastro</button></div>
       <div class="moderator-card"><h3>Entrar como moderador</h3><p class="muted">Use o usuário e a senha já aprovados.</p><input id="moderatorLoginUsername" placeholder="Usuário"><input id="moderatorLoginPassword" type="password" placeholder="Senha"><button class="secondary wide" data-moderator-login>Entrar</button></div>
     </div>`:''}
     ${admin?`<div class="panel"><div class="panelhead"><div><h3>Aprovação de moderadores</h3><span class="muted">${pending.length} pendente(s)</span></div></div>
