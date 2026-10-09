@@ -11,7 +11,7 @@ const app = document.querySelector('#app')
 const state = {
   tab: 'dashboard', competition: null, competitions: [], matches: [], teams: [], players: [], referees: [], groups: [],
   selectedMatch: null, events: [], allEvents: [], lineups: [], votes: [], sponsors: [], media: [], session: null, profile: null, editingEventId: null,
-  reportType: null, reportMatchId: null,
+  reportType: null, reportMatchId: null, siteAccessCount: 0,
   pendingLineup: {},
   authMode: 'login', loading: false, timerStartedAt: null, timerHalf: null, timerInterval: null, eventClockSeconds: 0, eventType: 'gol', eventTimerStartedAt: null, eventTimerInterval: null, editingSubId: null
 }
@@ -54,8 +54,25 @@ async function loadProfile(session){
   return null
 }
 
+async function updateSiteAccessCount(){
+  try{
+    const key='ouro_prata_site_access_registered'
+    const alreadyRegistered=sessionStorage.getItem(key)==='1'
+    const res=alreadyRegistered
+      ? await supabase.rpc('get_site_access_count')
+      : await supabase.rpc('increment_site_access')
+    if(!res.error && res.data!==null && res.data!==undefined){
+      state.siteAccessCount=Number(res.data)||0
+      if(!alreadyRegistered) sessionStorage.setItem(key,'1')
+    }
+  }catch(e){
+    console.warn('Não foi possível atualizar o contador de acessos.',e)
+  }
+}
+
 async function load(){
   state.loading=true
+  await updateSiteAccessCount()
   const sessionRes=await supabase.auth.getSession(); state.session=sessionRes.data.session
   if(state.session){
     const userRes=await supabase.auth.getUser()
@@ -174,7 +191,7 @@ function openCompetitionConfig(){if(!canOperate())return;const c=state.competiti
 function phaseRow(p,i){return `<div class="phase-row" data-phase-row><input data-phase-name value="${esc(p.name||'Fase '+(i+1))}" placeholder="Nome da fase"><select data-phase-type><option value="classificatoria" ${p.type==='classificatoria'?'selected':''}>Classificatória</option><option value="mata-mata" ${p.type==='mata-mata'?'selected':''}>Mata-mata</option></select><button class="smallbtn" data-phase-remove>Excluir</button></div>`}
 async function saveCompetitionConfig(){if(!canOperate())return;const rows=[...document.querySelectorAll('[data-phase-row]')];const phases=rows.map((r,i)=>({name:r.querySelector('[data-phase-name]').value.trim()||`Fase ${i+1}`,type:r.querySelector('[data-phase-type]').value}));if(!phases.length)return toast('Inclua pelo menos uma fase.','error');const {error}=await supabase.from('competitions').update({group_count:Number(document.querySelector('#cfgGroupCount').value),phases}).eq('id',state.competition.id);if(error)return toast(error.message,'error');document.querySelector('#competitionConfigModal')?.remove();await load();toast('Configuração do campeonato salva.');}
 function sponsorsView(){return `<section class="panel"><div class="panelhead"><div><h2>Patrocinadores</h2><p class="muted">Parceiros oficiais da competição.</p></div>${canOperate()?'<button class="primary" data-sponsor-new>+ Incluir patrocinador</button>':''}</div><div class="flags">${state.sponsors.filter(s=>s.active).sort((a,b)=>a.sort_order-b.sort_order).map(s=>`<div class="sponsor-card">${s.logo_url?`<img src="${esc(s.logo_url)}" alt="${esc(s.name)}">`:''}<b>${esc(s.name)}</b>${s.website?`<a href="${esc(s.website)}" target="_blank">Site</a>`:''}${canOperate()?`<button class="smallbtn" data-sponsor-edit="${s.id}">Alterar</button><button class="smallbtn" data-sponsor-delete="${s.id}">Excluir</button>`:''}</div>`).join('')}</div></section>`}
-function mediaView(){const photos=state.media.filter(x=>x.category==='foto'),videos=state.media.filter(x=>x.category==='video'),files=state.media.filter(x=>!['foto','video'].includes(x.category));return `<section class="panel"><div class="panelhead"><div><h2>Fotos / Arquivos / Vídeos</h2><p class="muted">Biblioteca oficial da Copa.</p></div>${canOperate()?'<button class="primary" data-media-new>+ Adicionar foto, vídeo ou arquivo</button>':''}</div><h3>Fotos</h3><div class="media-grid">${photos.length?photos.map(mediaCard).join(''):'<div class="empty">Nenhuma foto cadastrada.</div>'}</div><h3>Vídeos</h3><div class="media-grid video-grid">${videos.length?videos.map(mediaCard).join(''):'<div class="empty">Nenhum vídeo cadastrado.</div>'}</div><h3>Arquivos</h3><div class="media-list">${files.length?files.map(mediaCard).join(''):'<div class="empty">Nenhum arquivo cadastrado.</div>'}</div></section>`}
+function mediaView(){const photos=state.media.filter(x=>x.category==='foto'),videos=state.media.filter(x=>x.category==='video'),files=state.media.filter(x=>!['foto','video'].includes(x.category));return `<section class="panel"><div class="panelhead"><div><h2>Fotos / Arquivos / Vídeos</h2><p class="muted">Biblioteca oficial da Copa.</p></div>${canOperate()?'<button class="primary" data-media-new>+ Adicionar foto, vídeo ou arquivo</button>':''}</div><div class="site-access-counter" style="margin:18px 0 22px;padding:18px 22px;border:1px solid #dbe5df;border-radius:16px;background:linear-gradient(135deg,#f7fbf8,#ffffff);display:flex;align-items:center;justify-content:space-between;gap:16px;box-shadow:0 4px 14px rgba(0,0,0,.05);"><div><div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#66756e;">Contador de acessos</div><div style="font-size:32px;font-weight:800;line-height:1.1;color:#075b3d;margin-top:4px;">${Number(state.siteAccessCount||0).toLocaleString('pt-BR')}</div><div style="font-size:13px;color:#7b8580;margin-top:3px;">acessos ao site Ouro &amp; Prata</div></div><div style="font-size:34px;opacity:.8;">👁️</div></div><h3>Fotos</h3><div class="media-grid">${photos.length?photos.map(mediaCard).join(''):'<div class="empty">Nenhuma foto cadastrada.</div>'}</div><h3>Vídeos</h3><div class="media-grid video-grid">${videos.length?videos.map(mediaCard).join(''):'<div class="empty">Nenhum vídeo cadastrado.</div>'}</div><h3>Arquivos</h3><div class="media-list">${files.length?files.map(mediaCard).join(''):'<div class="empty">Nenhum arquivo cadastrado.</div>'}</div></section>`}
 function mediaCard(x){const isImg=x.mime_type?.startsWith('image/'),isVideo=x.mime_type?.startsWith('video/');return `<div class="media-card">${isImg?`<img src="${esc(x.file_url)}" alt="${esc(x.title)}">`:isVideo?`<video src="${esc(x.file_url)}" controls preload="metadata"></video>`:'📄'}<b>${esc(x.title)}</b>${x.description?`<small>${esc(x.description)}</small>`:''}<a class="smallbtn" href="${esc(x.file_url)}" target="_blank">Abrir</a>${canOperate()?`<button class="smallbtn" data-media-delete="${x.id}">Excluir</button>`:''}</div>`}
 function reportBrandHeader(){return `<div class="report-brand"><img src="${logoCopaNacoes}" alt="Copa das Nações"><div><div class="report-brand-kicker">CAMPEONATO</div><h2>${esc(state.competition?.name||'Copa das Nações')}</h2><p>${esc(state.competition?.season||'')} • Ouro / Prata / Diamante</p></div></div>`}
 function athleteReportFilters(){return ''}
