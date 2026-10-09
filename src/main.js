@@ -134,6 +134,7 @@ async function loadCompetitionData(){
   const mids=state.matches.map(x=>x.id)
   const er=mids.length?await supabase.from('match_events').select('*').in('match_id',mids).order('created_at',{ascending:true}):{data:[]}; state.allEvents=er.data||[]
   state.matches.sort((x,y)=>new Date(x.scheduled_at||0)-new Date(y.scheduled_at||0))
+  await syncKnockoutBracket();
 }
 
 async function switchCompetition(id){
@@ -263,20 +264,56 @@ async function createPhaseGames(){
   document.querySelector('#phaseModal')?.remove();await load();toast(`${rows.length} jogo(s) de ${roundLabel(phaseType)} criado(s) com sucesso.`);
 }
 
-async function resolvePhaseMatches(){
-  const pending=state.matches.filter(m=>m.source_home_match_id||m.source_away_match_id);
-  for(const m of pending){
-    const homeSrc=m.source_home_match_id?state.matches.find(x=>String(x.id)===String(m.source_home_match_id)):null;
-    const awaySrc=m.source_away_match_id?state.matches.find(x=>String(x.id)===String(m.source_away_match_id)):null;
-    if(m.source_home_match_id && (!homeSrc||homeSrc.status!=='encerrado'))continue;
-    if(m.source_away_match_id && (!awaySrc||awaySrc.status!=='encerrado'))continue;
-    const winner=(x)=>{if(!x||x.status!=='encerrado'||x.home_score===x.away_score)return null;return x.home_score>x.away_score?x.home_team_id:x.away_team_id};
-    const home=winner(homeSrc),away=winner(awaySrc);
-    if(m.source_home_match_id&&!home)continue;
-    if(m.source_away_match_id&&!away)continue;
-    const changed=String(m.home_team_id||'')!==String(home||'')||String(m.away_team_id||'')!==String(away||'');
-    if(changed){await supabase.from('matches').update({home_team_id:home,away_team_id:away}).eq('id',m.id);}
+async function syncKnockoutBracket(){
+  if(!state.competition||!state.matches.length)return;
+  const matches=state.matches;
+  const qf=matches.filter(m=>m.phase_type==='quartas').sort((a,b)=>(a.bracket_order||0)-(b.bracket_order||0));
+  const standings=calcStandings();
+  const rankingPairs=[
+    [standings[0]?.team?.id||null,standings[7]?.team?.id||null],
+    [standings[1]?.team?.id||null,standings[6]?.team?.id||null],
+    [standings[2]?.team?.id||null,standings[5]?.team?.id||null],
+    [standings[3]?.team?.id||null,standings[4]?.team?.id||null]
+  ];
+  const updates=[];
+  for(const m of qf){
+    if(m.status!=='agendado')continue;
+    const pair=rankingPairs[Math.max(0,Number(m.bracket_order||1)-1)];
+    if(!pair)continue;
+    const nextHome=pair[0]||null,nextAway=pair[1]||null;
+    if(String(m.home_team_id||'')!==String(nextHome||'')||String(m.away_team_id||'')!==String(nextAway||'')){
+      m.home_team_id=nextHome;m.away_team_id=nextAway;
+      updates.push({id:m.id,home_team_id:nextHome,away_team_id:nextAway});
+    }
   }
+  const winnerOf=id=>{
+    const m=matches.find(x=>String(x.id)===String(id));
+    if(!m||m.status!=='encerrado'||m.home_score===m.away_score)return null;
+    return Number(m.home_score)>Number(m.away_score)?m.home_team_id:m.away_team_id;
+  };
+  for(const m of matches.filter(x=>x.phase_type==='semifinal'||x.phase_type==='final')){
+    if(m.status!=='agendado')continue;
+    const homeSrc=m.source_home_match_id?matches.find(x=>String(x.id)===String(m.source_home_match_id)):null;
+    const awaySrc=m.source_away_match_id?matches.find(x=>String(x.id)===String(m.source_away_match_id)):null;
+    const nextHome=m.source_home_match_id?winnerOf(m.source_home_match_id):m.home_team_id||null;
+    const nextAway=m.source_away_match_id?winnerOf(m.source_away_match_id):m.away_team_id||null;
+    const homeReady=!m.source_home_match_id||!!nextHome;
+    const awayReady=!m.source_away_match_id||!!nextAway;
+    const finalHome=homeReady?nextHome:null;
+    const finalAway=awayReady?nextAway:null;
+    if(String(m.home_team_id||'')!==String(finalHome||'')||String(m.away_team_id||'')!==String(finalAway||'')){
+      m.home_team_id=finalHome;m.away_team_id=finalAway;
+      updates.push({id:m.id,home_team_id:finalHome,away_team_id:finalAway});
+    }
+  }
+  for(const u of updates){
+    const {error}=await supabase.from('matches').update({home_team_id:u.home_team_id,away_team_id:u.away_team_id}).eq('id',u.id);
+    if(error)console.warn('Não foi possível atualizar o confronto automaticamente:',error.message);
+  }
+}
+
+async function resolvePhaseMatches(){
+  await syncKnockoutBracket();
 }
 
 function calcStandings(teamIds=null){const rows=state.teams.filter(t=>!teamIds||teamIds.includes(t.id)).map(t=>({team:t,j:0,v:0,e:0,d:0,gp:0,gc:0,pts:0}));const map=new Map(rows.map(r=>[r.team.id,r]));state.matches.filter(m=>m.status==='encerrado'&&(!m.phase_type||m.phase_type==='classificatoria')).forEach(m=>{const h=map.get(m.home_team_id),a=map.get(m.away_team_id);if(!h||!a)return;h.j++;a.j++;h.gp+=m.home_score||0;h.gc+=m.away_score||0;a.gp+=m.away_score||0;a.gc+=m.home_score||0;if(m.home_score>m.away_score){h.v++;h.pts+=3;a.d++}else if(m.home_score<m.away_score){a.v++;a.pts+=3;h.d++}else{h.e++;a.e++;h.pts++;a.pts++}});return rows.sort((a,b)=>b.pts-a.pts||(b.gp-b.gc)-(a.gp-a.gc)||b.gp-a.gp||a.team.name.localeCompare(b.team.name))}
