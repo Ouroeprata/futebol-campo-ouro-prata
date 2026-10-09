@@ -218,7 +218,7 @@ function gamesView(){
 }
 function matchStatusLabel(status){return status==='agendado'?'PARTIDA NÃO INICIADA':status==='ao_vivo'?'AO VIVO':status==='encerrado'?'ENCERRADA':status.toUpperCase()}
 function phaseLabel(m){return (!m?.phase_type||m.phase_type==='classificatoria')?'Fase classificatória':roundLabel(m.phase_type)}
-function phasesGamesView(){const phaseMap=new Map();state.matches.filter(m=>m.phase_name&&m.phase_type&&m.phase_type!=='classificatoria').forEach(m=>{const key=`${m.phase_name}|${m.phase_type}`;if(!phaseMap.has(key))phaseMap.set(key,{name:m.phase_name,type:m.phase_type,matches:[]});phaseMap.get(key).matches.push(m)});if(!phaseMap.size)return '';const phaseOrder={quartas:1,semifinal:2,final:3};return `<div class="phase-cards">${[...phaseMap.values()].sort((a,b)=>(phaseOrder[a.type]||99)-(phaseOrder[b.type]||99)||a.name.localeCompare(b.name,'pt-BR')).map(p=>`<div class="phase-card"><div><h3>${esc(roundLabel(p.type))}</h3><p class="muted">${p.matches.length} jogo(s)</p></div><div class="phase-mini-list">${p.matches.sort((a,b)=>(a.bracket_order||0)-(b.bracket_order||0)).map((m,i)=>`<div><b>Jogo ${String(m.bracket_order||i+1).padStart(2,'0')}</b> · ${esc(m.home_source||teamName(m.home_team_id))} × ${esc(m.away_source||teamName(m.away_team_id))}</div>`).join('')}</div></div>`).join('')}</div>`}
+function phasesGamesView(){const phaseMap=new Map();state.matches.filter(m=>m.phase_name&&m.phase_type&&m.phase_type!=='classificatoria').forEach(m=>{const key=`${m.phase_name}|${m.phase_type}`;if(!phaseMap.has(key))phaseMap.set(key,{name:m.phase_name,type:m.phase_type,matches:[]});phaseMap.get(key).matches.push(m)});if(!phaseMap.size)return '';const phaseOrder={quartas:1,semifinal:2,final:3};return `<div class="phase-cards">${[...phaseMap.values()].sort((a,b)=>(phaseOrder[a.type]||99)-(phaseOrder[b.type]||99)||a.name.localeCompare(b.name,'pt-BR')).map(p=>`<div class="phase-card"><div><h3>${esc(roundLabel(p.type))}</h3><p class="muted">${p.matches.length} jogo(s)</p></div><div class="phase-mini-list">${p.matches.sort((a,b)=>(a.bracket_order||0)-(b.bracket_order||0)).map((m,i)=>`<div><b>${m.phase_type==='final'&&Number(m.bracket_order||1)===2?'3º Lugar':'Jogo '+String(m.bracket_order||i+1).padStart(2,'0')}</b> · ${esc(m.home_source||teamName(m.home_team_id))} × ${esc(m.away_source||teamName(m.away_team_id))}</div>`).join('')}</div></div>`).join('')}</div>`}
 function roundLabel(v){return ({quartas:'Quartas de Final',semifinal:'Semifinal',final:'Final'})[v]||String(v||'').toUpperCase()}
 function matchesTable(selectable=false,filterFn=null){const source=(filterFn?state.matches.filter(filterFn):state.matches);if(!source.length)return `<div class="empty">Nenhum jogo cadastrado ainda.</div>`;return `<div class="tablewrap"><table><tr><th>Fase</th><th>Data</th><th>Jogo</th><th>Placar</th><th>Status</th>${selectable?'<th>Ações</th>':''}</tr>${source.map(m=>{const h=m.home_team_id?teamName(m.home_team_id):(m.home_source||'A definir'),a=m.away_team_id?teamName(m.away_team_id):(m.away_source||'A definir');const unresolved=!m.home_team_id||!m.away_team_id;const staffActions=canOperate()?`${m.status==='encerrado'?`<button class="smallbtn" data-reopen-match="${m.id}">↩ Reabrir</button>`:`<button class="smallbtn" data-edit-crud="match" data-id="${m.id}">✏️ Alterar</button>`}${m.status!=='ao_vivo'?`<button class="smallbtn" data-not-started="${m.id}">⏳ Não iniciada</button>`:''}`:'';const actions=selectable?`${staffActions}${!unresolved?`<button class="smallbtn primary" data-open-match="${m.id}">${m.status==='ao_vivo'?'🔴 Acompanhar ao vivo':'👁️ Ver partida'}</button>`:`<span class="muted">Aguardando definição</span>`}`:'';return `<tr><td><span class="tag">${esc(phaseLabel(m))}</span></td><td>${fmtDate(m.scheduled_at)}</td><td>${m.home_team_id?flag(h):'🏆'} <b>${esc(h)}</b> × <b>${esc(a)}</b> ${m.away_team_id?flag(a):'🏆'}</td><td><b>${m.home_score||0} × ${m.away_score||0}</b></td><td><span class="tag ${m.status}">${matchStatusLabel(m.status)}</span></td>${selectable?`<td>${actions}</td>`:''}</tr>`}).join('')}</table></div>`}
 
@@ -255,9 +255,12 @@ async function createPhaseGames(){
   }else{
     const semi=state.matches.filter(m=>m.competition_id===state.competition.id&&m.phase_type==='semifinal').sort((a,b)=>(a.bracket_order||0)-(b.bracket_order||0));
     if(semi.length<2)return toast('Crie primeiro as 2 partidas da Semifinal.','error');
-    pairs=[{hm:semi[0].id,am:semi[1].id,hs:'Vencedor Jogo 01',as:'Vencedor Jogo 02'}];
+    pairs=[
+      {hm:semi[0].id,am:semi[1].id,hs:'Vencedor Semifinal 1',as:'Vencedor Semifinal 2',kind:'final'},
+      {hm:semi[0].id,am:semi[1].id,hs:'Perdedor Semifinal 1',as:'Perdedor Semifinal 2',kind:'terceiro'}
+    ];
   }
-  const rows=pairs.map((x,i)=>({ ...base, bracket_order:i+1, home_team_id:x.h||null, away_team_id:x.a||null, home_source:x.hs, away_source:x.as, source_home_match_id:x.hm||null, source_away_match_id:x.am||null }));
+  const rows=pairs.map((x,i)=>({ ...base, bracket_order:i+1, home_team_id:x.h||null, away_team_id:x.a||null, home_source:x.hs, away_source:x.as, source_home_match_id:x.hm||null, source_away_match_id:x.am||null, phase_name: x.kind==='terceiro' ? '3º Lugar' : base.phase_name }));
   if(!(await askConfirm(`Criar ${rows.length} jogo(s) de ${roundLabel(phaseType)}?`)))return;
   const res=await supabase.from('matches').insert(rows);
   if(res.error)return toast(res.error.message,'error');
@@ -291,12 +294,19 @@ async function syncKnockoutBracket(){
     if(!m||m.status!=='encerrado'||m.home_score===m.away_score)return null;
     return Number(m.home_score)>Number(m.away_score)?m.home_team_id:m.away_team_id;
   };
+  const loserOf=id=>{
+    const m=matches.find(x=>String(x.id)===String(id));
+    if(!m||m.status!=='encerrado'||m.home_score===m.away_score)return null;
+    return Number(m.home_score)>Number(m.away_score)?m.away_team_id:m.home_team_id;
+  };
   for(const m of matches.filter(x=>x.phase_type==='semifinal'||x.phase_type==='final')){
     if(m.status!=='agendado')continue;
-    const homeSrc=m.source_home_match_id?matches.find(x=>String(x.id)===String(m.source_home_match_id)):null;
-    const awaySrc=m.source_away_match_id?matches.find(x=>String(x.id)===String(m.source_away_match_id)):null;
-    const nextHome=m.source_home_match_id?winnerOf(m.source_home_match_id):m.home_team_id||null;
-    const nextAway=m.source_away_match_id?winnerOf(m.source_away_match_id):m.away_team_id||null;
+    const isThirdPlace=Number(m.bracket_order||1)===2 && m.phase_type==='final';
+    const sourceHome=m.source_home_match_id?matches.find(x=>String(x.id)===String(m.source_home_match_id)):null;
+    const sourceAway=m.source_away_match_id?matches.find(x=>String(x.id)===String(m.source_away_match_id)):null;
+    const resolve=isThirdPlace?loserOf:winnerOf;
+    const nextHome=m.source_home_match_id?resolve(m.source_home_match_id):m.home_team_id||null;
+    const nextAway=m.source_away_match_id?resolve(m.source_away_match_id):m.away_team_id||null;
     const homeReady=!m.source_home_match_id||!!nextHome;
     const awayReady=!m.source_away_match_id||!!nextAway;
     const finalHome=homeReady?nextHome:null;
