@@ -32,7 +32,11 @@ const teamName = id => state.teams.find(t => t.id === id)?.name || '—'
 const playerName = id => { const p=state.players.find(x=>x.id===id); return p ? (p.full_name||p.name||'—') : '—' }
 const fmtDate = v => v ? new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}) : '—'
 const canOperate = () => !!state.session && ['admin','organizador','arbitro','operador'].includes(state.profile?.role)
-const roleLabel = r => ({admin:'Administrador',organizador:'Organizador',arbitro:'Árbitro',operador:'Operador',publico:'Público'})[r] || 'Público'
+const ADMIN_EMAIL = 'copadasnacoesouroeprata@gmail.com'
+const isAdmin = () => !!state.session && String(state.session.user?.email || '').toLowerCase() === ADMIN_EMAIL && state.profile?.role === 'admin'
+const isModerator = () => !!state.session && state.moderator?.approved === true
+const canLiveOperate = () => canOperate() || (isModerator() && state.selectedMatch?.status !== 'encerrado')
+const roleLabel = r => ({admin:'Administrador',organizador:'Organizador',arbitro:'Árbitro',operador:'Operador',moderador:'Moderador',publico:'Público'})[r] || 'Público'
 const cat = v => ({
   ouro: 'Ouro',
   prata: 'Prata',
