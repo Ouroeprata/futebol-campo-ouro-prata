@@ -1239,7 +1239,35 @@ function ensureTabletPortraitV20(){
 </style>`);
 }
 
-function render(){ensureCustomStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+function ensureTabletPortraitV22(){
+  if(document.querySelector('#ouroTabletPortraitV22'))return;
+  document.head.insertAdjacentHTML('beforeend',`<style id="ouroTabletPortraitV22">
+/* V22 - correção definitiva tablet vertical: layout flexível, sem coluna estreita */
+@media (min-width:500px) and (max-width:1100px) and (orientation:portrait){
+  html,body,#app{width:100%!important;min-width:0!important;max-width:none!important;overflow-x:hidden!important}
+  .layout{display:flex!important;flex-direction:row!important;width:100%!important;min-width:0!important;max-width:none!important;align-items:stretch!important}
+  .layout>aside{flex:0 0 72px!important;width:72px!important;min-width:72px!important;max-width:72px!important;box-sizing:border-box!important;overflow:hidden!important}
+  .layout>main{flex:1 1 auto!important;width:auto!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;padding:16px!important;overflow-x:hidden!important}
+  .layout>main>*{box-sizing:border-box!important;min-width:0!important;max-width:100%!important}
+  .app-header{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:space-between!important;gap:14px!important;width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+  .app-header>.brand{flex:1 1 320px!important;width:auto!important;min-width:0!important;max-width:100%!important}
+  .app-header .header-actions{display:flex!important;flex:1 1 280px!important;width:auto!important;min-width:0!important;max-width:100%!important;align-items:center!important;justify-content:flex-end!important;gap:8px!important;flex-wrap:wrap!important}
+  .competition-switch{flex:1 1 240px!important;width:auto!important;min-width:0!important;max-width:100%!important}
+  .competition-switch select{width:100%!important;max-width:100%!important}
+  .panel,.games-section-block,.games-next-phases,.hero,.sheet-content-stack,.match-events-below,.lineuppanel,.reports-page,.report-preview,.public-portal-banner{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+  .hero{display:grid!important;grid-template-columns:minmax(0,1fr) 220px!important;gap:18px!important}
+  .match-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important;width:100%!important;min-width:0!important}
+  .phase-cards{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;width:100%!important;min-width:0!important}
+  .lineup-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important;width:100%!important;min-width:0!important}
+  .media-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;width:100%!important;min-width:0!important}
+  .media-grid:not(.video-grid) .media-card{width:100%!important;max-width:100%!important;min-width:0!important}
+  .media-card{min-width:0!important;max-width:100%!important}
+  .live-sheet,.public-live-sheet{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+}
+</style>`);
+}
+
+function render(){ensureCustomStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
