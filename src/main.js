@@ -1372,6 +1372,57 @@ function ensureTabletPortraitV22(){
 </style>`);
 }
 
+function ensureReportsHorizontalFinalFix(){
+  if(document.querySelector('#ouroReportsHorizontalFinalFix'))return;
+  document.head.insertAdjacentHTML('beforeend',`<style id="ouroReportsHorizontalFinalFix">
+/* V22.5 FINAL - Relatorios tablet horizontal: elimina qualquer faixa/espaco entre menu e relatorios */
+@media (min-width:900px) and (max-width:1400px) and (orientation:landscape){
+  html,body,#app{overflow-x:hidden!important;width:100%!important;min-width:0!important}
+  .layout{width:100%!important;min-width:0!important;max-width:none!important}
+  .layout>main.reports-mode{
+    margin:0!important;
+    padding:0!important;
+    width:calc(100% - 180px)!important;
+    max-width:calc(100% - 180px)!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    overflow-x:hidden!important;
+    position:relative!important;
+    left:0!important;
+    right:auto!important;
+  }
+  .layout>main.reports-mode .reports-page{
+    display:block!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:8px 8px 20px!important;
+    box-sizing:border-box!important;
+    position:relative!important;
+    left:0!important;
+    transform:none!important;
+    overflow:visible!important;
+  }
+  .layout>main.reports-mode .report-championship-header,
+  .layout>main.reports-mode .report-tabs,
+  .layout>main.reports-mode .report-preview{
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+  .layout>main.reports-mode::before,
+  .layout>main.reports-mode::after,
+  .layout>main.reports-mode .reports-page::before,
+  .layout>main.reports-mode .reports-page::after{
+    content:none!important;
+    display:none!important;
+  }
+}
+</style>`);
+}
+
 function ensureReportsCleanStyles(){if(document.querySelector('#ouroReportsCleanStyles'))return;document.head.insertAdjacentHTML('beforeend',`<style id="ouroReportsCleanStyles">
 /* V22.5 - Relatórios: limpos, sem filtros e preparados para A4 */
 /* V22.5.2 - tablet horizontal: Relatórios respeita o menu lateral e ocupa somente a área disponível */
@@ -1441,7 +1492,7 @@ function ensureReportsCleanStyles(){if(document.querySelector('#ouroReportsClean
   .sumula-print .sumula-officials{font-size:8pt!important;margin:3mm 0!important;padding:2mm!important}
 }
 </style>`)}
-function render(){ensureCustomStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureReportsCleanStyles();app.innerHTML=`<div class="layout">${nav()}<main class="${state.tab==='relatorios'?'reports-mode':''}">${state.tab==='relatorios'?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+function render(){ensureCustomStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureReportsHorizontalFinalFix();ensureReportsCleanStyles();app.innerHTML=`<div class="layout">${nav()}<main class="${state.tab==='relatorios'?'reports-mode':''}">${state.tab==='relatorios'?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
