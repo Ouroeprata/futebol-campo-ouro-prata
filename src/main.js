@@ -1049,7 +1049,43 @@ function ensureMobileFixV15(){
 </style>`);
 }
 
-function render(){ensureCustomStyles();ensureSumulaStyles();ensureMobileFixV15();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+function ensureMobileFixV16(){
+  if(document.querySelector('#ouroMobileFixV16'))return;
+  document.head.insertAdjacentHTML('beforeend',`<style id="ouroMobileFixV16">
+/* V16 - Ver partida / Central ao vivo otimizado para celular */
+@media (max-width:700px), (orientation:portrait){
+  .live-sheet,.public-live-sheet{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;overflow:hidden!important}
+  .live-sheet .sheet-head{display:grid!important;grid-template-columns:1fr!important;width:100%!important;min-width:0!important;max-width:100%!important;gap:10px!important;box-sizing:border-box!important}
+  .live-sheet .sheet-head>div:first-child{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+  .live-sheet .match-goals{display:grid!important;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr)!important;align-items:center!important;justify-items:stretch!important;width:100%!important;min-width:0!important;max-width:100%!important;gap:5px!important;margin:10px 0!important;box-sizing:border-box!important}
+  .live-sheet .goal-team{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;width:100%!important;min-width:0!important;max-width:100%!important;gap:6px!important;box-sizing:border-box!important}
+  .live-sheet .goal-team>b{display:flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;width:100%!important;min-width:0!important;max-width:100%!important;text-align:center!important;font-size:14px!important;line-height:1.2!important;white-space:normal!important;word-break:normal!important;overflow-wrap:break-word!important}
+  .live-sheet .goal-team .team-flag{width:30px!important;height:auto!important;flex:0 0 auto!important}
+  .live-sheet .goal-buttons{display:flex!important;align-items:center!important;justify-content:center!important;gap:4px!important;width:100%!important;min-width:0!important}
+  .live-sheet .goal-buttons strong{font-size:28px!important;min-width:30px!important;line-height:1!important}
+  .live-sheet .goalbtn{width:32px!important;height:32px!important;padding:0!important}
+  .live-sheet .goal-x{font-size:22px!important;text-align:center!important}
+  .live-sheet .clock{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;margin:0!important}
+  .live-sheet .clock>div{width:100%!important;box-sizing:border-box!important;font-size:34px!important}
+  .live-sheet .officials{width:100%!important;min-width:0!important;box-sizing:border-box!important;justify-content:center!important}
+  .live-sheet .public-match-info{display:grid!important;grid-template-columns:1fr!important;gap:5px!important;width:100%!important;min-width:0!important;box-sizing:border-box!important;text-align:center!important}
+  .live-sheet .controlbar{display:grid!important;grid-template-columns:1fr 1fr!important;width:100%!important;min-width:0!important;box-sizing:border-box!important;gap:6px!important}
+  .live-sheet .controlbar button{width:100%!important;min-width:0!important;white-space:normal!important}
+  .live-sheet .sheet-content-stack{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+  .live-sheet .lineuppanel,.live-sheet .eventpanel,.live-sheet .timeline,.live-sheet .match-events-below{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;overflow:hidden!important}
+}
+@media (max-width:430px){
+  .live-sheet .match-goals{grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr)!important;gap:3px!important}
+  .live-sheet .goal-team>b{font-size:12px!important}
+  .live-sheet .goal-team .team-flag{width:26px!important}
+  .live-sheet .goal-buttons strong{font-size:25px!important}
+  .live-sheet .goalbtn{width:29px!important;height:29px!important;font-size:17px!important}
+  .live-sheet .clock>div{font-size:30px!important}
+}
+</style>`);
+}
+
+function render(){ensureCustomStyles();ensureSumulaStyles();ensureMobileFixV15();ensureMobileFixV16();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
