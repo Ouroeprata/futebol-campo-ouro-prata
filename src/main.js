@@ -1242,12 +1242,88 @@ function ensureTabletPortraitV20(){
 function ensureTabletPortraitV22(){
   if(document.querySelector('#ouroTabletPortraitV22'))return;
   document.head.insertAdjacentHTML('beforeend',`<style id="ouroTabletPortraitV22">
-/* V22 - correção definitiva tablet vertical: layout flexível, sem coluna estreita */
+/* V22.1 - tablet vertical: menu lateral com texto visível */
 @media (min-width:500px) and (max-width:1100px) and (orientation:portrait){
   html,body,#app{width:100%!important;min-width:0!important;max-width:none!important;overflow-x:hidden!important}
   .layout{display:flex!important;flex-direction:row!important;width:100%!important;min-width:0!important;max-width:none!important;align-items:stretch!important}
-  .layout>aside{flex:0 0 72px!important;width:72px!important;min-width:72px!important;max-width:72px!important;box-sizing:border-box!important;overflow:hidden!important}
-  .layout>main{flex:1 1 auto!important;width:auto!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;padding:16px!important;overflow-x:hidden!important}
+  .layout>aside{
+    flex:0 0 205px!important;
+    width:205px!important;
+    min-width:205px!important;
+    max-width:205px!important;
+    box-sizing:border-box!important;
+    overflow:visible!important;
+    padding:12px 10px!important;
+  }
+  .layout>aside .brand{
+    display:flex!important;
+    justify-content:flex-start!important;
+    align-items:center!important;
+    gap:8px!important;
+    padding:4px 6px 14px!important;
+    white-space:nowrap!important;
+  }
+  .layout>aside .brand span{
+    display:inline!important;
+    visibility:visible!important;
+    opacity:1!important;
+    white-space:nowrap!important;
+  }
+  .layout>aside .sidefoot{
+    display:block!important;
+    visibility:visible!important;
+    opacity:1!important;
+    overflow-wrap:anywhere!important;
+  }
+  .layout>aside nav{
+    display:flex!important;
+    flex-direction:column!important;
+    width:100%!important;
+    gap:5px!important;
+  }
+  .layout>aside nav button{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:42px!important;
+    padding:10px 8px!important;
+    gap:8px!important;
+    border-radius:10px!important;
+    box-sizing:border-box!important;
+    text-align:left!important;
+  }
+  .layout>aside nav button span{
+    display:inline!important;
+    visibility:visible!important;
+    opacity:1!important;
+    flex:1 1 auto!important;
+    min-width:0!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    line-height:1.2!important;
+  }
+  .layout>aside nav button i{
+    display:block!important;
+    flex:0 0 20px!important;
+    width:20px!important;
+    min-width:20px!important;
+    margin:0!important;
+    font-size:20px!important;
+    line-height:1!important;
+    text-align:center!important;
+  }
+  .layout>main{
+    flex:1 1 auto!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    box-sizing:border-box!important;
+    padding:16px!important;
+    overflow-x:hidden!important;
+    margin-left:0!important;
+  }
   .layout>main>*{box-sizing:border-box!important;min-width:0!important;max-width:100%!important}
   .app-header{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:space-between!important;gap:14px!important;width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
   .app-header>.brand{flex:1 1 320px!important;width:auto!important;min-width:0!important;max-width:100%!important}
