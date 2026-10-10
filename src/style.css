@@ -54,3 +54,44 @@
     flex-wrap:wrap;
   }
 }
+
+/* TABLET VERTICAL - EXIBIR NOMES DO MENU */
+@media (min-width:500px) and (max-width:700px) and (orientation:portrait){
+  aside{
+    width:205px!important;
+    padding:16px 10px!important;
+  }
+
+  aside .brand span{
+    display:inline!important;
+  }
+
+  aside .sidefoot{
+    display:block!important;
+  }
+
+  aside nav button{
+    justify-content:flex-start!important;
+    padding:10px 8px!important;
+    gap:8px!important;
+    font-size:13px!important;
+  }
+
+  aside nav button span{
+    display:inline!important;
+    white-space:normal!important;
+    line-height:1.2!important;
+  }
+
+  aside nav button i{
+    display:block!important;
+    flex:0 0 20px!important;
+    width:20px!important;
+  }
+
+  main{
+    margin-left:205px!important;
+    width:calc(100% - 205px)!important;
+    padding:20px 16px!important;
+  }
+}
