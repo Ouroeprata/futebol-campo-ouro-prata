@@ -1004,7 +1004,52 @@ aside nav{gap:2px!important}
 .moderator-status.approved span{color:#0b6542}
 .moderator-status.pending span{color:#9a6500}
 </style>`)}
-function render(){ensureCustomStyles();ensureSumulaStyles();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+function ensureMobileFixV15(){
+  if(document.querySelector('#ouroMobileFixV15'))return;
+  document.head.insertAdjacentHTML('beforeend',`<style id="ouroMobileFixV15">
+/* V15 - correção forte de layout para celular/portrait */
+@media (max-width:900px), (orientation:portrait){
+  html,body,#app{width:100%!important;min-width:0!important;max-width:100%!important;overflow-x:hidden!important}
+  .layout{display:grid!important;grid-template-columns:56px minmax(0,1fr)!important;width:100vw!important;min-width:0!important;max-width:100vw!important}
+  .layout>aside{width:56px!important;min-width:56px!important;max-width:56px!important;box-sizing:border-box!important;overflow:hidden!important}
+  .layout>main{width:calc(100vw - 56px)!important;min-width:0!important;max-width:calc(100vw - 56px)!important;box-sizing:border-box!important;overflow-x:hidden!important;padding:8px!important}
+  .app-header,.panel,.games-section-block,.games-next-phases,.public-portal-banner,.hero,.sheet-content-stack,.match-events-below,.lineuppanel,.reports-page,.report-preview{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+  .match-columns{display:grid!important;grid-template-columns:1fr!important;width:100%!important;min-width:0!important;max-width:100%!important;gap:10px!important}
+  .match-column-card{display:block!important;width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;padding:12px!important;overflow:hidden!important}
+  .match-col-head,.match-col-date,.match-col-teams,.match-col-actions{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+  .match-col-head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:6px!important;flex-wrap:wrap!important}
+  .match-col-teams{display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;align-items:center!important;gap:8px!important;text-align:center!important}
+  .match-col-teams>div{display:flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;min-width:0!important;width:100%!important;font-size:14px!important;line-height:1.25!important;white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important}
+  .match-col-teams>div b{display:inline!important;min-width:0!important;font-size:14px!important;line-height:1.25!important;white-space:normal!important;word-break:normal!important;overflow-wrap:break-word!important}
+  .match-col-teams>strong{font-size:20px!important;white-space:nowrap!important}
+  .team-flag{width:30px!important;height:auto!important;flex:0 0 auto!important}
+  .match-col-actions{display:flex!important;flex-wrap:wrap!important;gap:6px!important;margin-top:10px!important}
+  .match-col-actions .smallbtn{flex:1 1 100%!important;min-width:0!important}
+  .phase-head{width:100%!important;min-width:0!important;flex-wrap:wrap!important}
+  .phase-head>div{min-width:0!important;max-width:100%!important}
+  .phase-head h3,.phase-head p{white-space:normal!important;overflow-wrap:break-word!important}
+  .games-section-block{overflow:hidden!important}
+  .games-section-block .tablewrap{width:100%!important;max-width:100%!important;overflow-x:auto!important}
+  .lineup-columns{grid-template-columns:1fr!important;width:100%!important}
+  .media-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%!important}
+  .media-card{min-width:0!important;max-width:100%!important;overflow:hidden!important}
+  .media-card b,.media-card small{white-space:normal!important;overflow-wrap:break-word!important;word-break:normal!important}
+  .header-actions,.panel-actions{width:100%!important;min-width:0!important;max-width:100%!important;flex-wrap:wrap!important}
+}
+@media (max-width:480px){
+  .layout{grid-template-columns:50px minmax(0,1fr)!important}
+  .layout>aside{width:50px!important;min-width:50px!important;max-width:50px!important}
+  .layout>main{width:calc(100vw - 50px)!important;max-width:calc(100vw - 50px)!important;padding:6px!important}
+  .match-column-card{padding:10px!important}
+  .match-col-teams{gap:5px!important}
+  .match-col-teams>div,.match-col-teams>div b{font-size:13px!important}
+  .match-col-teams>strong{font-size:18px!important}
+  .team-flag{width:26px!important}
+}
+</style>`);
+}
+
+function render(){ensureCustomStyles();ensureSumulaStyles();ensureMobileFixV15();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
