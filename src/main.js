@@ -1085,7 +1085,51 @@ function ensureMobileFixV16(){
 </style>`);
 }
 
-function render(){ensureCustomStyles();ensureSumulaStyles();ensureMobileFixV15();ensureMobileFixV16();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+function ensureMediaCompactV17(){
+  if(document.querySelector('#ouroMediaCompactV17'))return;
+  document.head.insertAdjacentHTML('beforeend',`<style id="ouroMediaCompactV17">
+/* V17 - Fotos/Arquivos compactos: miniaturas menores; abertura preserva a imagem original */
+.media-grid{
+  grid-template-columns:repeat(auto-fill,minmax(125px,1fr))!important;
+  gap:10px!important;
+  align-items:start!important;
+}
+.media-grid:not(.video-grid) .media-card{
+  width:100%!important;
+  max-width:160px!important;
+  justify-self:start!important;
+  box-sizing:border-box!important;
+}
+.media-card .media-thumb{
+  width:100%!important;
+  height:88px!important;
+  object-fit:cover!important;
+  display:block!important;
+  border-radius:8px!important;
+}
+.media-card video{
+  width:100%!important;
+  height:88px!important;
+  object-fit:cover!important;
+  border-radius:8px!important;
+}
+.media-card b,.media-card small{
+  display:block!important;
+  overflow-wrap:anywhere!important;
+}
+@media(max-width:700px),(orientation:portrait){
+  /* No celular, mantém o layout que já foi aprovado na V15/V16. */
+  .media-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  .media-grid:not(.video-grid) .media-card{max-width:100%!important}
+  .media-card .media-thumb,.media-card video{height:90px!important}
+}
+@media(min-width:1200px){
+  .media-grid:not(.video-grid){grid-template-columns:repeat(auto-fill,minmax(125px,150px))!important}
+}
+</style>`);
+}
+
+function render(){ensureCustomStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
