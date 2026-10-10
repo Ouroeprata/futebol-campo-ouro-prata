@@ -95,3 +95,63 @@
     padding:20px 16px!important;
   }
 }
+/* CORREÇÃO FINAL - NOMES DO PAINEL NO TABLET VERTICAL */
+@media (min-width:500px) and (max-width:700px) and (orientation:portrait){
+
+  body .layout>aside{
+    width:205px!important;
+    min-width:205px!important;
+    max-width:205px!important;
+    flex:0 0 205px!important;
+    overflow:visible!important;
+    padding:16px 10px!important;
+  }
+
+  body .layout>aside .brand span{
+    display:inline!important;
+  }
+
+  body .layout>aside .sidefoot{
+    display:block!important;
+  }
+
+  body .layout>aside nav{
+    display:grid!important;
+    width:100%!important;
+    gap:5px!important;
+  }
+
+  body .layout>aside nav button{
+    width:100%!important;
+    height:auto!important;
+    min-height:42px!important;
+    padding:10px 8px!important;
+    justify-content:flex-start!important;
+    gap:8px!important;
+    font-size:13px!important;
+  }
+
+  body .layout>aside nav button i{
+    display:block!important;
+    width:20px!important;
+    min-width:20px!important;
+    font-size:18px!important;
+  }
+
+  body .layout>aside nav button span{
+    display:inline!important;
+    visibility:visible!important;
+    opacity:1!important;
+    white-space:normal!important;
+    line-height:1.2!important;
+  }
+
+  body .layout>main{
+    margin-left:0!important;
+    width:auto!important;
+    flex:1 1 auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    padding:20px 16px!important;
+  }
+}
