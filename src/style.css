@@ -2,3 +2,55 @@
 .modalbox select{display:block;width:100%;margin:8px 0;border:1px solid #dbe6e0;border-radius:8px;padding:9px;background:#fff}.modalbox .primary{margin-top:8px}.panelhead .panelhead{margin:0}
 
 .actions{white-space:nowrap}.actions .smallbtn{margin-right:6px}.actions .danger{background:#b32929;color:#fff}.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}.modal-actions button{flex:1}
+
+/* CORREÇÃO — TABLET EM MODO RETRATO
+   Mostra os nomes do menu e elimina o espaço vazio entre menu e conteúdo. */
+@media (min-width:500px) and (max-width:950px) and (orientation:portrait){
+  aside{
+    width:205px;
+    padding:16px 10px;
+  }
+  aside .brand{
+    font-size:14px;
+    padding:10px 6px 22px;
+    white-space:nowrap;
+  }
+  aside .brand span{
+    display:inline!important;
+    margin-left:4px;
+  }
+  aside nav button{
+    justify-content:flex-start;
+    padding:10px 8px;
+    gap:8px;
+    font-size:13px;
+  }
+  aside nav button i{
+    flex:0 0 20px;
+    width:20px;
+  }
+  aside nav button span{
+    display:inline!important;
+    white-space:normal;
+    line-height:1.2;
+  }
+  aside .sidefoot{
+    display:block;
+    left:14px;
+    width:calc(100% - 28px);
+    font-size:11px;
+    overflow-wrap:anywhere;
+  }
+  main{
+    margin-left:205px!important;
+    width:calc(100% - 205px)!important;
+    padding:20px 16px;
+  }
+  header{
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .header-actions{
+    flex-wrap:wrap;
+  }
+}
