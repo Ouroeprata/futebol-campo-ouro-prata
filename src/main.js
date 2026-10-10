@@ -1374,6 +1374,15 @@ function ensureTabletPortraitV22(){
 
 function ensureReportsCleanStyles(){if(document.querySelector('#ouroReportsCleanStyles'))return;document.head.insertAdjacentHTML('beforeend',`<style id="ouroReportsCleanStyles">
 /* V22.5 - Relatórios: limpos, sem filtros e preparados para A4 */
+/* V22.5.2 - tablet horizontal: Relatórios respeita o menu lateral e ocupa somente a área disponível */
+@media (min-width:900px) and (max-width:1600px) and (orientation:landscape){
+  .layout{display:grid!important;grid-template-columns:262px minmax(0,1fr)!important;width:100%!important;min-width:0!important;max-width:100%!important}
+  .layout>aside{position:relative!important;left:auto!important;top:auto!important;bottom:auto!important;width:262px!important;min-width:262px!important;max-width:262px!important;box-sizing:border-box!important;z-index:10!important}
+  .layout>main.reports-mode{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:12px 14px 20px!important;box-sizing:border-box!important;overflow-x:hidden!important}
+  .reports-mode .reports-page{width:100%!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;overflow:visible!important}
+  .reports-mode .report-tabs{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:flex-start!important;gap:7px!important;width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;overflow:visible!important}
+  .reports-mode .report-tabs button{flex:0 0 auto!important;min-width:0!important;max-width:100%!important;white-space:nowrap!important;box-sizing:border-box!important}
+}
 .reports-mode .app-header{display:none!important}
 .reports-mode .sidefoot{display:none!important}
 .reports-mode{padding:12px 0 20px!important;margin:0!important;width:100%!important;min-width:0!important}
