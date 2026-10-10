@@ -1129,54 +1129,64 @@ function ensureMediaCompactV17(){
 </style>`);
 }
 
-function ensureTabletPortraitFixV18(){
-  if(document.querySelector('#ouroTabletPortraitFixV18'))return;
-  document.head.insertAdjacentHTML('beforeend',`<style id="ouroTabletPortraitFixV18">
-/* V18 - tablet vertical: preserva celular e computador; corrige somente tablets em retrato */
-@media (orientation:portrait) and (min-device-width:768px){
+function ensureTabletPortraitV19(){
+  if(document.querySelector('#ouroTabletPortraitV19'))return;
+  document.head.insertAdjacentHTML('beforeend',`<style id="ouroTabletPortraitV19">
+/* V19 - tablet vertical: mantém a densidade de tablet, sem aplicar o layout de celular */
+@media (min-width:601px) and (max-width:1100px) and (orientation:portrait){
   html,body,#app{width:100%!important;min-width:0!important;max-width:100%!important;overflow-x:hidden!important}
-  .layout{display:grid!important;grid-template-columns:72px minmax(0,1fr)!important;width:100%!important;min-width:0!important;max-width:100%!important}
-  .layout>aside{width:72px!important;min-width:72px!important;max-width:72px!important;box-sizing:border-box!important;padding:10px 6px!important;overflow:hidden!important}
+  .layout{display:grid!important;grid-template-columns:64px minmax(0,1fr)!important;width:100vw!important;min-width:0!important;max-width:100vw!important}
+  .layout>aside{width:64px!important;min-width:64px!important;max-width:64px!important;box-sizing:border-box!important;overflow:hidden!important;padding:10px 5px!important}
   .layout>aside .brand span,.layout>aside .sidefoot,.layout>aside nav button span{display:none!important}
-  .layout>aside .brand{justify-content:center!important;padding:5px 0 12px!important;font-size:24px!important}
+  .layout>aside .brand{justify-content:center!important;padding:4px 0 12px!important}
   .layout>aside nav{width:100%!important;gap:4px!important}
-  .layout>aside nav button{width:100%!important;height:44px!important;min-height:44px!important;padding:7px 4px!important;justify-content:center!important;border-radius:10px!important}
-  .layout>aside nav button i{font-size:22px!important;margin:0!important}
-  .layout>main{width:100%!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;overflow-x:hidden!important;padding:12px!important}
-  .app-header,.panel,.games-section-block,.games-next-phases,.public-portal-banner,.hero,.sheet-content-stack,.match-events-below,.lineuppanel,.reports-page,.report-preview{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
-  .app-header{gap:12px!important;flex-wrap:wrap!important}
-  .app-header .brand{min-width:0!important;max-width:100%!important}
-  .app-header .brand h1{font-size:22px!important;line-height:1.2!important}
-  .app-header .brand-subtitle{font-size:12px!important}
-  .header-actions,.panel-actions{max-width:100%!important;min-width:0!important;flex-wrap:wrap!important}
-  .competition-switch{max-width:100%!important}
-  .competition-switch select{max-width:420px!important}
+  .layout>aside nav button{width:100%!important;min-height:44px!important;height:44px!important;padding:7px 3px!important;justify-content:center!important;border-radius:9px!important}
+  .layout>aside nav button i{font-size:21px!important;margin:0!important}
+  .layout>main{width:calc(100vw - 64px)!important;min-width:0!important;max-width:calc(100vw - 64px)!important;box-sizing:border-box!important;overflow-x:hidden!important;padding:14px!important}
+
+  .app-header{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px!important;flex-wrap:wrap!important}
+  .app-header>.brand{min-width:0!important;flex:1 1 430px!important}
+  .app-header .header-actions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:8px!important;flex:1 1 360px!important;min-width:0!important;max-width:100%!important;flex-wrap:wrap!important}
+  .competition-switch{max-width:100%!important;flex:1 1 240px!important;min-width:180px!important}
+  .competition-switch select{width:100%!important;max-width:100%!important}
+
+  .panel,.games-section-block,.games-next-phases,.public-portal-banner,.hero,.sheet-content-stack,.match-events-below,.lineuppanel,.reports-page,.report-preview{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+  .hero{grid-template-columns:minmax(0,1fr) 180px!important}
   .match-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%!important;min-width:0!important;max-width:100%!important;gap:12px!important}
-  .match-column-card{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;padding:12px!important;overflow:hidden!important}
-  .match-col-teams{display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;gap:7px!important;width:100%!important;min-width:0!important}
-  .match-col-teams>div{min-width:0!important;width:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;font-size:14px!important;line-height:1.2!important;white-space:normal!important;word-break:normal!important;overflow-wrap:break-word!important;text-align:center!important}
-  .match-col-teams>div b{font-size:14px!important;line-height:1.2!important;white-space:normal!important;word-break:normal!important;overflow-wrap:break-word!important}
-  .match-col-teams>strong{font-size:20px!important;white-space:nowrap!important}
-  .team-flag{width:30px!important;height:auto!important;flex:0 0 auto!important}
-  .match-col-actions{display:flex!important;flex-wrap:wrap!important;gap:7px!important;width:100%!important;margin-top:10px!important}
-  .match-col-actions .smallbtn{flex:1 1 100%!important;min-width:0!important}
-  .phase-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  .phase-card{min-width:0!important}
-  .hero{grid-template-columns:minmax(0,1fr) 190px!important;gap:14px!important}
+  .match-column-card{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;overflow:hidden!important}
+  .match-col-teams{display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;align-items:center!important;gap:8px!important;width:100%!important;min-width:0!important}
+  .match-col-teams>div,.match-col-teams>div b{min-width:0!important;white-space:normal!important;word-break:normal!important;overflow-wrap:break-word!important;font-size:14px!important;line-height:1.25!important}
+  .match-col-actions{display:flex!important;flex-wrap:wrap!important;gap:6px!important}
+  .match-col-actions .smallbtn{flex:1 1 140px!important;min-width:0!important}
+
+  .phase-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%!important}
+  .games-section-block{overflow:hidden!important}
+  .games-section-block .tablewrap{width:100%!important;max-width:100%!important;overflow-x:auto!important}
+  .lineup-columns{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:12px!important;width:100%!important}
+  .lineupteam{min-width:0!important;max-width:100%!important}
+  .lineup-player-row{grid-template-columns:minmax(0,1fr) 82px 32px!important;min-width:0!important}
+  .player-name-wrap{min-width:0!important}
+  .player-name-wrap b{font-size:12px!important;overflow-wrap:anywhere!important}
+  .starter-toggle{width:82px!important;min-width:82px!important;font-size:10px!important}
+
+  .media-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;width:100%!important;gap:10px!important}
+  .media-grid:not(.video-grid) .media-card{width:100%!important;max-width:100%!important;justify-self:stretch!important}
+  .media-card{min-width:0!important;max-width:100%!important;overflow:hidden!important}
+  .media-card .media-thumb,.media-card video{width:100%!important;height:88px!important}
+
   .dashboard-stats{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-  .lineup-columns{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
-  .lineup-player-row{grid-template-columns:minmax(0,1fr) 96px 34px!important;gap:6px!important}
-  .starter-toggle{width:96px!important;min-width:96px!important}
-  .media-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important}
-  .media-grid:not(.video-grid) .media-card{max-width:160px!important}
-  .media-card .media-thumb,.media-card video{height:95px!important}
-  .tablewrap{width:100%!important;max-width:100%!important;overflow-x:auto!important}
-  .live-sheet .sheet-head{grid-template-columns:minmax(0,1fr) 180px!important}
+  .header-actions,.panel-actions{min-width:0!important;max-width:100%!important}
+
+  .live-sheet .sheet-head{grid-template-columns:minmax(0,1fr) 150px!important}
+  .live-sheet .match-goals{display:grid!important;grid-template-columns:minmax(0,1fr) 40px minmax(0,1fr)!important;align-items:center!important;width:100%!important;min-width:0!important}
+  .live-sheet .goal-team{min-width:0!important}
+  .live-sheet .goal-team>b{white-space:normal!important;word-break:normal!important;overflow-wrap:break-word!important;font-size:15px!important}
+  .live-sheet .clock{width:100%!important}
 }
 </style>`);
 }
 
-function render(){ensureCustomStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureTabletPortraitFixV18();ensureMobileFixV15();ensureMobileFixV16();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+function render(){ensureCustomStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();app.innerHTML=`<div class="layout">${nav()}<main>${header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
