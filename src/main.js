@@ -1474,10 +1474,69 @@ function ensureReportsCleanStyles(){
   .report-athlete-table td,.report-compact-table td{font-size:11px!important}
   .report-filter-row,.report-col-filter,.cartoes-filter-row,.cartoes-col-filter,.report-filter-help,.cartoes-filter-help{display:none!important}
   .report-athlete-table .report-sortable,.cartoes-report-table .cartoes-sortable{cursor:pointer;user-select:none}
-  @media(max-width:900px){
-    .layout.reports-layout{grid-template-columns:100%!important}
+  @media (min-width:500px) and (max-width:1100px) and (orientation:portrait){
+    /* Em retrato, Relatórios deve seguir exatamente o mesmo enquadramento
+       das demais telas do tablet: menu fixo à esquerda + conteúdo à direita. */
+    .layout.reports-layout{
+      display:block!important;
+      width:100%!important;
+      min-width:0!important;
+      max-width:none!important;
+      margin:0!important;
+      padding:0!important;
+    }
+    .layout.reports-layout>aside{
+      position:fixed!important;
+      left:0!important;
+      top:0!important;
+      bottom:0!important;
+      width:180px!important;
+      min-width:180px!important;
+      max-width:180px!important;
+      margin:0!important;
+      padding:12px 8px!important;
+      box-sizing:border-box!important;
+      overflow:visible!important;
+      z-index:10!important;
+    }
+    .layout.reports-layout>main.reports-mode{
+      display:block!important;
+      margin-left:180px!important;
+      width:calc(100% - 180px)!important;
+      min-width:0!important;
+      max-width:calc(100% - 180px)!important;
+      padding:14px 14px 20px!important;
+      box-sizing:border-box!important;
+      overflow-x:hidden!important;
+      overflow-y:visible!important;
+    }
+    .layout.reports-layout>main.reports-mode>.reports-page{
+      width:100%!important;
+      min-width:0!important;
+      max-width:100%!important;
+      margin:0!important;
+      padding:0!important;
+      box-sizing:border-box!important;
+    }
+    .layout.reports-layout .report-championship-header{
+      padding:0 0 8px!important;
+      width:100%!important;
+    }
+    .layout.reports-layout .report-tabs{
+      grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      gap:7px!important;
+      padding:0 0 14px!important;
+      width:100%!important;
+    }
+    .layout.reports-layout .report-tabs button{
+      min-height:42px!important;
+      padding:8px 7px!important;
+    }
+  }
+  @media(max-width:900px) and (orientation:landscape){
+    .layout.reports-layout{grid-template-columns:262px minmax(0,1fr)!important}
     .layout.reports-layout>aside{grid-column:1!important}
-    .layout.reports-layout>main.reports-mode{grid-column:1!important}
+    .layout.reports-layout>main.reports-mode{grid-column:2!important}
   }
   @media print{
     .layout.reports-layout{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:0!important}
