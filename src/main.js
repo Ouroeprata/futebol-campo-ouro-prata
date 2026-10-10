@@ -1380,8 +1380,13 @@ function ensureReportsCleanStyles(){if(document.querySelector('#ouroReportsClean
   .layout>aside{position:relative!important;left:auto!important;top:auto!important;bottom:auto!important;width:262px!important;min-width:262px!important;max-width:262px!important;box-sizing:border-box!important;z-index:10!important}
   .layout>main.reports-mode{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:12px 14px 20px!important;box-sizing:border-box!important;overflow-x:hidden!important}
   .reports-mode .reports-page{width:100%!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;overflow:visible!important}
-  .reports-mode .report-tabs{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:flex-start!important;gap:7px!important;width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;overflow:visible!important}
-  .reports-mode .report-tabs button{flex:0 0 auto!important;min-width:0!important;max-width:100%!important;white-space:nowrap!important;box-sizing:border-box!important}
+  /* Relatórios no tablet horizontal: organiza as abas em várias linhas e evita qualquer área reservada ao lado. */
+  .layout>main.reports-mode{grid-column:2!important;grid-row:1!important}
+  .layout>main.reports-mode .reports-page{position:relative!important;left:0!important;right:auto!important;transform:none!important}
+  .reports-mode .report-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-auto-rows:minmax(40px,auto)!important;align-items:stretch!important;justify-content:stretch!important;gap:7px!important;width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;overflow:visible!important;margin:0 0 14px!important}
+  .reports-mode .report-tabs button{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;min-width:0!important;max-width:none!important;min-height:40px!important;white-space:normal!important;text-align:center!important;line-height:1.15!important;box-sizing:border-box!important;padding:8px 9px!important}
+  .reports-mode .report-tabs button:nth-child(n+9){grid-column:auto}
+  .reports-mode .report-tabs:empty{display:none!important}
 }
 .reports-mode .app-header{display:none!important}
 .reports-mode .sidefoot{display:none!important}
