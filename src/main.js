@@ -1533,6 +1533,128 @@ function ensureReportsCleanStyles(){
       padding:8px 7px!important;
     }
   }
+  @media(max-width:499px){
+    /* V22.5 - celular: Relatórios volta ao mesmo enquadramento compacto das demais abas. */
+    .layout.reports-layout{
+      display:grid!important;
+      grid-template-columns:50px minmax(0,1fr)!important;
+      grid-template-rows:1fr!important;
+      width:100vw!important;
+      min-width:0!important;
+      max-width:100vw!important;
+      margin:0!important;
+      padding:0!important;
+      gap:0!important;
+      overflow:hidden!important;
+    }
+    .layout.reports-layout>aside{
+      grid-column:1!important;
+      grid-row:1!important;
+      position:relative!important;
+      left:auto!important;
+      top:auto!important;
+      bottom:auto!important;
+      width:50px!important;
+      min-width:50px!important;
+      max-width:50px!important;
+      height:100vh!important;
+      margin:0!important;
+      padding:8px 4px!important;
+      box-sizing:border-box!important;
+      overflow:hidden!important;
+      z-index:10!important;
+    }
+    .layout.reports-layout>aside .brand{
+      display:flex!important;
+      justify-content:center!important;
+      align-items:center!important;
+      padding:4px 0 10px!important;
+    }
+    .layout.reports-layout>aside .brand span,
+    .layout.reports-layout>aside .sidefoot,
+    .layout.reports-layout>aside nav button span{
+      display:none!important;
+    }
+    .layout.reports-layout>aside nav{
+      display:flex!important;
+      flex-direction:column!important;
+      width:100%!important;
+      gap:4px!important;
+    }
+    .layout.reports-layout>aside nav button{
+      width:100%!important;
+      min-width:0!important;
+      min-height:44px!important;
+      height:44px!important;
+      padding:6px 2px!important;
+      justify-content:center!important;
+      border-radius:8px!important;
+    }
+    .layout.reports-layout>aside nav button i{
+      margin:0!important;
+      font-size:21px!important;
+    }
+    .layout.reports-layout>main.reports-mode{
+      grid-column:2!important;
+      grid-row:1!important;
+      display:block!important;
+      width:calc(100vw - 50px)!important;
+      min-width:0!important;
+      max-width:calc(100vw - 50px)!important;
+      height:100vh!important;
+      margin:0!important;
+      padding:6px!important;
+      box-sizing:border-box!important;
+      overflow-x:hidden!important;
+      overflow-y:auto!important;
+    }
+    .layout.reports-layout>main.reports-mode>.reports-page{
+      width:100%!important;
+      min-width:0!important;
+      max-width:100%!important;
+      margin:0!important;
+      padding:0!important;
+      box-sizing:border-box!important;
+    }
+    .layout.reports-layout .report-championship-header{
+      width:100%!important;
+      padding:4px 2px 6px!important;
+      margin:0!important;
+      box-sizing:border-box!important;
+    }
+    .layout.reports-layout .report-championship-title{
+      font-size:14px!important;
+      line-height:1.2!important;
+      white-space:normal!important;
+      overflow-wrap:anywhere!important;
+      word-break:normal!important;
+      text-align:left!important;
+    }
+    .layout.reports-layout .report-tabs{
+      display:grid!important;
+      grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      gap:5px!important;
+      width:100%!important;
+      min-width:0!important;
+      max-width:100%!important;
+      padding:0 0 8px!important;
+      margin:0!important;
+      box-sizing:border-box!important;
+    }
+    .layout.reports-layout .report-tabs button{
+      width:100%!important;
+      min-width:0!important;
+      max-width:100%!important;
+      min-height:42px!important;
+      padding:6px 4px!important;
+      font-size:11px!important;
+      line-height:1.1!important;
+      white-space:normal!important;
+      overflow-wrap:anywhere!important;
+      text-align:center!important;
+      box-sizing:border-box!important;
+    }
+  }
   @media(max-width:900px) and (orientation:landscape){
     .layout.reports-layout{grid-template-columns:262px minmax(0,1fr)!important}
     .layout.reports-layout>aside{grid-column:1!important}
