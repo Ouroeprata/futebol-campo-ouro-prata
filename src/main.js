@@ -1372,63 +1372,128 @@ function ensureTabletPortraitV22(){
 </style>`);
 }
 
-function ensureReportsCleanStyles(){if(document.querySelector('#ouroReportsCleanStyles'))return;document.head.insertAdjacentHTML('beforeend',`<style id="ouroReportsCleanStyles">
-/* V22.5 - Relatórios: limpos, sem filtros e preparados para A4 */
-/* V22.5.2 - tablet horizontal: Relatórios respeita o menu lateral e ocupa somente a área disponível */
-@media (min-width:900px) and (max-width:1600px) and (orientation:landscape){
-  .layout{display:grid!important;grid-template-columns:262px minmax(0,1fr)!important;width:100%!important;min-width:0!important;max-width:100%!important}
-  .layout>aside{position:relative!important;left:auto!important;top:auto!important;bottom:auto!important;width:262px!important;min-width:262px!important;max-width:262px!important;box-sizing:border-box!important;z-index:10!important}
-  .layout>main.reports-mode{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:0!important;box-sizing:border-box!important;overflow-x:hidden!important}
-  .reports-mode .reports-page{width:100%!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;overflow:visible!important}
-  /* Relatórios no tablet horizontal: organiza as abas em várias linhas e evita qualquer área reservada ao lado. */
-  .layout>main.reports-mode{grid-column:2!important;grid-row:1!important}
-  .layout>main.reports-mode .reports-page{position:relative!important;left:0!important;right:auto!important;transform:none!important}
-  .reports-mode .report-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-auto-rows:minmax(40px,auto)!important;align-items:stretch!important;justify-content:stretch!important;gap:7px!important;width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;overflow:visible!important;margin:0 0 14px!important}
-  .reports-mode .report-tabs button{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;min-width:0!important;max-width:none!important;min-height:40px!important;white-space:normal!important;text-align:center!important;line-height:1.15!important;box-sizing:border-box!important;padding:8px 9px!important}
-  .reports-mode .report-tabs button:nth-child(n+9){grid-column:auto}
-  .reports-mode .report-tabs:empty{display:none!important}
+function ensureReportsCleanStyles(){
+  if(document.querySelector('#ouroReportsCleanStyles'))return;
+  document.head.insertAdjacentHTML('beforeend',`<style id="ouroReportsCleanStyles">
+  /* V22.5 FINAL - Relatórios totalmente isolado do layout das demais telas. */
+  .layout.reports-layout{
+    display:grid!important;
+    grid-template-columns:262px minmax(0,1fr)!important;
+    grid-template-rows:1fr!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    gap:0!important;
+    column-gap:0!important;
+    margin:0!important;
+    padding:0!important;
+    align-items:stretch!important;
+  }
+  .layout.reports-layout>aside{
+    grid-column:1!important;
+    grid-row:1!important;
+    position:relative!important;
+    inset:auto!important;
+    width:262px!important;
+    min-width:262px!important;
+    max-width:262px!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+    z-index:10!important;
+  }
+  .layout.reports-layout>main.reports-mode{
+    grid-column:2!important;
+    grid-row:1!important;
+    display:block!important;
+    position:relative!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:auto!important;
+    margin:0!important;
+    padding:0!important;
+    box-sizing:border-box!important;
+    overflow-x:hidden!important;
+    overflow-y:visible!important;
+  }
+  .layout.reports-layout>main.reports-mode>.reports-page{
+    display:block!important;
+    position:relative!important;
+    left:auto!important;
+    right:auto!important;
+    top:auto!important;
+    transform:none!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:0!important;
+    box-sizing:border-box!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+  }
+  .layout.reports-layout .app-header{display:none!important}
+  .layout.reports-layout .report-championship-header{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:8px 14px 6px!important;
+    box-sizing:border-box!important;
+  }
+  .layout.reports-layout .report-tabs{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    grid-auto-rows:minmax(40px,auto)!important;
+    gap:7px!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:0 14px 14px!important;
+    box-sizing:border-box!important;
+  }
+  .layout.reports-layout .report-tabs button{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    min-height:40px!important;
+    padding:8px 9px!important;
+    box-sizing:border-box!important;
+    white-space:normal!important;
+    text-align:center!important;
+    line-height:1.15!important;
+  }
+  .report-athlete-table th,.report-athlete-table td,.report-compact-table th,.report-compact-table td{padding:3px 5px!important;line-height:1.05!important}
+  .report-athlete-table th,.report-compact-table th{font-size:10px!important}
+  .report-athlete-table td,.report-compact-table td{font-size:11px!important}
+  .report-filter-row,.report-col-filter,.cartoes-filter-row,.cartoes-col-filter,.report-filter-help,.cartoes-filter-help{display:none!important}
+  .report-athlete-table .report-sortable,.cartoes-report-table .cartoes-sortable{cursor:pointer;user-select:none}
+  @media(max-width:900px){
+    .layout.reports-layout{grid-template-columns:100%!important}
+    .layout.reports-layout>aside{grid-column:1!important}
+    .layout.reports-layout>main.reports-mode{grid-column:1!important}
+  }
+  @media print{
+    .layout.reports-layout{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:0!important}
+    .layout.reports-layout>aside,.layout.reports-layout .app-header,.layout.reports-layout .report-tabs,.layout.reports-layout .no-print{display:none!important}
+    .layout.reports-layout>main.reports-mode,.layout.reports-layout>main.reports-mode>.reports-page{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:0!important;position:static!important;box-sizing:border-box!important}
+    .report-championship-header{display:block!important;width:100%!important;margin:0 0 4mm!important;padding:0 0 3mm!important;border-bottom:1px solid #888!important}
+    .report-championship-title{font-size:13pt!important;font-weight:800!important;line-height:1.2!important;text-align:center!important}
+    .report-athlete-table,.report-compact-table{width:100%!important;max-width:100%!important;border-collapse:collapse!important;table-layout:auto!important}
+    .report-athlete-table th,.report-athlete-table td,.report-compact-table th,.report-compact-table td{padding:2px 3px!important;line-height:1.05!important;font-size:8pt!important}
+    .report-team-title{font-size:10pt!important;margin:4mm 0 2mm!important}
+    .tablewrap{width:100%!important;max-width:100%!important;overflow:visible!important}
+  }
+  </style>`);
 }
-.reports-mode .app-header{display:none!important}
-.reports-mode .sidefoot{display:none!important}
-.reports-mode{padding:0!important;margin:0!important;width:100%!important;min-width:0!important;max-width:none!important}
-.reports-mode .reports-page{margin:0!important;padding:0!important;width:100%!important;max-width:none!important;background:transparent!important;border:0!important;box-shadow:none!important}
-.reports-mode .report-tabs{margin-top:0!important}
-.report-athlete-table th,.report-athlete-table td,.report-compact-table th,.report-compact-table td{padding:3px 5px!important;line-height:1.05!important}
-.report-athlete-table th,.report-compact-table th{font-size:10px!important}
-.report-athlete-table td,.report-compact-table td{font-size:11px!important}
-.report-filter-row,.report-col-filter,.cartoes-filter-row,.cartoes-col-filter,.report-filter-help,.cartoes-filter-help{display:none!important}
-.report-athlete-table .report-sortable,.cartoes-report-table .cartoes-sortable{cursor:pointer;user-select:none}
-@media (min-width:900px) and (max-width:1600px) and (orientation:landscape){
-  /* V22.5.4 - Relatórios isolado: sem cabeçalho, sem faixa e sem espaço lateral */
-  .layout:has(>main.reports-mode){grid-template-columns:262px minmax(0,1fr)!important;column-gap:0!important;gap:0!important}
-  .layout:has(>main.reports-mode)>aside{width:262px!important;min-width:262px!important;max-width:262px!important;margin:0!important;padding-left:8px!important;padding-right:8px!important}
-  .layout:has(>main.reports-mode)>main.reports-mode{grid-column:2!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:0!important;overflow-x:hidden!important;overflow-y:visible!important}
-  .layout:has(>main.reports-mode)>main.reports-mode>.reports-page{width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:0!important;position:static!important;transform:none!important;left:auto!important;right:auto!important}
-  .layout:has(>main.reports-mode) .report-championship-header{margin:0!important;padding:8px 14px 6px!important;width:100%!important;box-sizing:border-box!important}
-  .layout:has(>main.reports-mode) .report-tabs{margin:0!important;padding:0 14px!important;width:100%!important;box-sizing:border-box!important}
-}
-@media print{
-  @page{size:A4 portrait;margin:8mm 8mm 8mm 8mm}
-  html,body,#app{width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:0!important;overflow:visible!important;background:#fff!important}
-  .layout{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:0!important}
-  .layout>aside,aside,.app-header,.report-tabs,.no-print,.report-filter-row,.report-col-filter,.cartoes-filter-row,.cartoes-col-filter,.report-filter-help,.cartoes-filter-help{display:none!important}
-  .layout>main,main{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:0!important;box-sizing:border-box!important;position:static!important;left:auto!important;right:auto!important}
-  .reports-mode{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:0!important}
-  .reports-mode .reports-page,.report-preview{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:0!important;position:static!important;left:auto!important;right:auto!important;box-sizing:border-box!important}
-  .report-title-row{display:flex!important;align-items:center!important;justify-content:space-between!important;margin:0 0 5mm!important;padding:0!important}
-  .report-title-row h2{font-size:15pt!important;margin:0!important}
-  .report-championship-header{display:block!important;width:100%!important;margin:0 0 4mm!important;padding:0 0 3mm!important;border-bottom:1px solid #888!important}
-  .report-championship-title{font-size:13pt!important;font-weight:800!important;line-height:1.2!important;text-align:center!important}
-  .report-athlete-table,.report-compact-table{width:100%!important;max-width:100%!important;border-collapse:collapse!important;table-layout:auto!important}
-  .report-athlete-table th,.report-athlete-table td,.report-compact-table th,.report-compact-table td{padding:2px 3px!important;line-height:1.05!important;font-size:8pt!important}
-  .report-team-title{font-size:10pt!important;margin:4mm 0 2mm!important}
-  .tablewrap{width:100%!important;max-width:100%!important;overflow:visible!important}
-  .sumula-print .sumula-match{padding:4mm!important}
-  .sumula-print .sumula-grid th,.sumula-print .sumula-grid td,.sumula-print>table th,.sumula-print>table td{padding:2px 3px!important;line-height:1.02!important;font-size:7.5pt!important}
-  .sumula-print .sumula-officials{font-size:8pt!important;margin:3mm 0!important;padding:2mm!important}
-}
-</style>`)}
-function render(){ensureCustomStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureReportsCleanStyles();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+
+function render(){ensureCustomStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureReportsCleanStyles();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
