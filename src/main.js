@@ -1242,25 +1242,32 @@ function ensureTabletPortraitV20(){
 function ensureTabletPortraitV22(){
   if(document.querySelector('#ouroTabletPortraitV22'))return;
   document.head.insertAdjacentHTML('beforeend',`<style id="ouroTabletPortraitV22">
-/* V22.1 - tablet vertical: menu lateral com texto visível */
+/* V22.2 - tablet vertical: menu compacto + conteúdo sem sobreposição */
 @media (min-width:500px) and (max-width:1100px) and (orientation:portrait){
   html,body,#app{width:100%!important;min-width:0!important;max-width:none!important;overflow-x:hidden!important}
-  .layout{display:flex!important;flex-direction:row!important;width:100%!important;min-width:0!important;max-width:none!important;align-items:stretch!important}
+
+  /* A barra lateral original é FIXED; portanto o conteúdo precisa reservar o mesmo espaço. */
+  .layout{display:block!important;width:100%!important;min-width:0!important;max-width:none!important}
   .layout>aside{
-    flex:0 0 205px!important;
-    width:205px!important;
-    min-width:205px!important;
-    max-width:205px!important;
+    position:fixed!important;
+    left:0!important;
+    top:0!important;
+    bottom:0!important;
+    z-index:10!important;
+    width:180px!important;
+    min-width:180px!important;
+    max-width:180px!important;
     box-sizing:border-box!important;
     overflow:visible!important;
-    padding:12px 10px!important;
+    padding:12px 8px!important;
   }
   .layout>aside .brand{
     display:flex!important;
     justify-content:flex-start!important;
     align-items:center!important;
-    gap:8px!important;
-    padding:4px 6px 14px!important;
+    gap:6px!important;
+    padding:4px 4px 12px!important;
+    font-size:15px!important;
     white-space:nowrap!important;
   }
   .layout>aside .brand span{
@@ -1268,18 +1275,23 @@ function ensureTabletPortraitV22(){
     visibility:visible!important;
     opacity:1!important;
     white-space:nowrap!important;
+    margin-left:2px!important;
   }
   .layout>aside .sidefoot{
     display:block!important;
     visibility:visible!important;
     opacity:1!important;
+    left:12px!important;
+    width:calc(100% - 24px)!important;
+    font-size:10px!important;
+    line-height:1.35!important;
     overflow-wrap:anywhere!important;
   }
   .layout>aside nav{
-    display:flex!important;
-    flex-direction:column!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
     width:100%!important;
-    gap:5px!important;
+    gap:3px!important;
   }
   .layout>aside nav button{
     display:flex!important;
@@ -1287,12 +1299,13 @@ function ensureTabletPortraitV22(){
     justify-content:flex-start!important;
     width:100%!important;
     height:auto!important;
-    min-height:42px!important;
-    padding:10px 8px!important;
-    gap:8px!important;
-    border-radius:10px!important;
+    min-height:38px!important;
+    padding:7px 7px!important;
+    gap:7px!important;
+    border-radius:9px!important;
     box-sizing:border-box!important;
     text-align:left!important;
+    font-size:12px!important;
   }
   .layout>aside nav button span{
     display:inline!important;
@@ -1302,40 +1315,55 @@ function ensureTabletPortraitV22(){
     min-width:0!important;
     white-space:normal!important;
     overflow:visible!important;
-    line-height:1.2!important;
+    line-height:1.15!important;
   }
   .layout>aside nav button i{
     display:block!important;
-    flex:0 0 20px!important;
-    width:20px!important;
-    min-width:20px!important;
+    flex:0 0 18px!important;
+    width:18px!important;
+    min-width:18px!important;
     margin:0!important;
-    font-size:20px!important;
+    font-size:18px!important;
     line-height:1!important;
     text-align:center!important;
   }
+
+  /* Conteúdo começa depois do menu fixo e não fica escondido atrás dele. */
   .layout>main{
-    flex:1 1 auto!important;
-    width:auto!important;
+    display:block!important;
+    margin-left:180px!important;
+    width:calc(100% - 180px)!important;
     min-width:0!important;
-    max-width:none!important;
+    max-width:calc(100% - 180px)!important;
     box-sizing:border-box!important;
-    padding:16px!important;
+    padding:14px 14px 20px!important;
     overflow-x:hidden!important;
-    margin-left:0!important;
   }
   .layout>main>*{box-sizing:border-box!important;min-width:0!important;max-width:100%!important}
-  .app-header{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:space-between!important;gap:14px!important;width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
-  .app-header>.brand{flex:1 1 320px!important;width:auto!important;min-width:0!important;max-width:100%!important}
-  .app-header .header-actions{display:flex!important;flex:1 1 280px!important;width:auto!important;min-width:0!important;max-width:100%!important;align-items:center!important;justify-content:flex-end!important;gap:8px!important;flex-wrap:wrap!important}
-  .competition-switch{flex:1 1 240px!important;width:auto!important;min-width:0!important;max-width:100%!important}
+
+  .app-header{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:10px!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+    margin-bottom:16px!important;
+  }
+  .app-header>.brand{flex:1 1 220px!important;width:auto!important;min-width:0!important;max-width:100%!important}
+  .app-header .header-actions{display:flex!important;flex:1 1 220px!important;width:auto!important;min-width:0!important;max-width:100%!important;align-items:center!important;justify-content:flex-end!important;gap:6px!important;flex-wrap:wrap!important}
+  .competition-switch{flex:1 1 190px!important;width:auto!important;min-width:0!important;max-width:100%!important}
   .competition-switch select{width:100%!important;max-width:100%!important}
+
   .panel,.games-section-block,.games-next-phases,.hero,.sheet-content-stack,.match-events-below,.lineuppanel,.reports-page,.report-preview,.public-portal-banner{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
-  .hero{display:grid!important;grid-template-columns:minmax(0,1fr) 220px!important;gap:18px!important}
-  .match-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important;width:100%!important;min-width:0!important}
-  .phase-cards{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;width:100%!important;min-width:0!important}
-  .lineup-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important;width:100%!important;min-width:0!important}
-  .media-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;width:100%!important;min-width:0!important}
+  .hero{display:grid!important;grid-template-columns:minmax(0,1fr) 170px!important;gap:12px!important}
+  .match-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;width:100%!important;min-width:0!important}
+  .phase-cards{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;width:100%!important;min-width:0!important}
+  .lineup-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;width:100%!important;min-width:0!important}
+  .media-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;width:100%!important;min-width:0!important}
   .media-grid:not(.video-grid) .media-card{width:100%!important;max-width:100%!important;min-width:0!important}
   .media-card{min-width:0!important;max-width:100%!important}
   .live-sheet,.public-live-sheet{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
