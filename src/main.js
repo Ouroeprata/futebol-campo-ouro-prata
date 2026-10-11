@@ -1901,7 +1901,28 @@ document.addEventListener('click',async e=>{
   if(t.matches('[data-new-phase]')){openPhaseModal();return}
   if(t.matches('[data-phase-create]')){await createPhaseGames();return}
   if(t.matches('[data-lineup-status]')){lineupStatusModal(t.dataset.lineupStatus);return}
-  if(t.matches('[data-lineup-choice]')){const id=t.dataset.lineupChoice,st=t.dataset.status,btn=document.querySelector(`[data-lineup-status="${id}"]`);if(btn){btn.dataset.status=st;btn.textContent=lineupStatusLabel(st);btn.className=`statusbtn ${st==='suspenso'?'status-suspenso':st==='titular'?'status-titular':st==='nao_compareceu'?'status-nao_compareceu':'status-reserva'}`;const row=btn.closest('[data-player-row]');row?.classList.toggle('is-suspended',st==='suspenso');row?.classList.toggle('is-absent',st==='nao_compareceu'||st==='suspenso');row?.classList.toggle('is-present',st==='titular'||st==='reserva');const cb=row?.querySelector('[data-lineup-present]');if(cb){cb.checked=st==='titular'||st==='reserva';cb.disabled=st==='suspenso'||!canLiveOperate()||state.selectedMatch?.status==='encerrado';}}document.querySelector('#lineupStatusModal')?.remove();const teamEl=btn?.closest('.lineupteam');updateLineupCounts(teamEl);}}document.querySelector('#lineupStatusModal')?.remove();setTimeout(()=>document.querySelector(`[data-player-row="${id}"]`)?.scrollIntoView({block:'nearest'}),0);return}
+  if(t.matches('[data-lineup-choice]')){
+    const id=t.dataset.lineupChoice;
+    const st=t.dataset.status;
+    const btn=document.querySelector(`[data-lineup-status="${id}"]`);
+    if(btn){
+      btn.dataset.status=st;
+      btn.textContent=lineupStatusLabel(st);
+      btn.className=`statusbtn ${st==='suspenso'?'status-suspenso':st==='titular'?'status-titular':st==='nao_compareceu'?'status-nao_compareceu':'status-reserva'}`;
+      const row=btn.closest('[data-player-row]');
+      row?.classList.toggle('is-suspended',st==='suspenso');
+      row?.classList.toggle('is-absent',st==='nao_compareceu'||st==='suspenso');
+      row?.classList.toggle('is-present',st==='titular'||st==='reserva');
+      const cb=row?.querySelector('[data-lineup-present]');
+      if(cb){
+        cb.checked=st==='titular'||st==='reserva';
+        cb.disabled=st==='suspenso'||!canLiveOperate()||state.selectedMatch?.status==='encerrado';
+      }
+      updateLineupCounts(btn.closest('.lineupteam'));
+    }
+    document.querySelector('#lineupStatusModal')?.remove();
+    return;
+  }
   if(t.matches('[data-score-inc]')){await adjustScore(t.dataset.scoreInc,1);return}
   if(t.matches('[data-score-dec]')){await adjustScore(t.dataset.scoreDec,-1);return}
   if(t.matches('[data-minute-adjust]')){await adjustMinute(Number(t.dataset.minuteAdjust));return}
