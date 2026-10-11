@@ -500,7 +500,7 @@ function list(title,items,type){
   const data = type==='team' ? state.teams : type==='player' ? state.players : type==='referee' ? state.referees : [];
   if(type==='player'){
     const rows=data.slice().sort((a,b)=>(Number(a.registration_number)||999999)-(Number(b.registration_number)||999999)).map(r=>`<tr><td><b>${esc(r.registration_number??'—')}</b></td><td><b>${r.photo_url?`<img class="avatar-sm" src="${esc(r.photo_url)}" alt="">`:''}${esc(r.full_name||r.name)}</b></td><td>${esc(r.nickname||'—')}</td><td>${esc(r.position||'—')}</td><td>${r.birth_date?new Date(r.birth_date+'T00:00:00').toLocaleDateString('pt-BR'):'—'}</td><td>${esc(cat(r.category))}</td><td><b>${esc(r.shirt_number??'—')}</b></td><td>${esc(teamName(r.team_id)||'—')}</td>${canLiveOperate()?`<td class="actions"><button class="smallbtn" data-edit-crud="player" data-id="${r.id}">✏️ Alterar</button><button class="danger smallbtn" data-delete-crud="player" data-id="${r.id}">🗑️ Excluir</button></td>`:''}</tr>`).join('');
-    return `<section class="panel"><div class="panelhead athlete-panel-head"><div><h2>${title}</h2><p class="muted">Consulte, cadastre, transfira e confira os atletas inscritos neste campeonato.</p></div><div class="athlete-actions"><button class="secondary" data-athlete-consult>🔎 Consultar</button>${canLiveOperate()?'<button class="primary" data-crud="player">➕ Incluir</button>':''}<button class="secondary" data-player-export>📋 Transferir Atletas</button><button class="secondary" data-athlete-inscritos>📋 Inscritos</button><span class="tag">${items.length} registros</span></div></div>${data.length?`<div class="tablewrap"><table><tr><th>Nº</th><th>Nome Completo</th><th>Apelido</th><th>Posição</th><th>Data Nascimento</th><th>Categoria</th><th>Camisa</th><th>Time</th>${canLiveOperate()?'<th>Ações</th>':''}</tr>${rows}</table></div>`:`<div class="empty">Nenhum registro cadastrado.</div>`}</section>`;
+    return `<section class="panel"><div class="panelhead athlete-panel-head"><div><h2>${title}</h2><p class="muted">Consulte, cadastre, transfira e confira os atletas inscritos neste campeonato.</p></div><div class="athlete-actions"><button class="secondary" data-athlete-consult>🔎 Consultar</button>${canLiveOperate()?'<button class="primary" data-crud="player">➕ Incluir</button>':''}<button class="secondary" data-player-export>📋 Transferir Atletas</button><span class="tag">${items.length} registros</span></div></div>${data.length?`<div class="tablewrap"><table><tr><th>Nº</th><th>Nome Completo</th><th>Apelido</th><th>Posição</th><th>Data Nascimento</th><th>Categoria</th><th>Camisa</th><th>Time</th>${canLiveOperate()?'<th>Ações</th>':''}</tr>${rows}</table></div>`:`<div class="empty">Nenhum registro cadastrado.</div>`}</section>`;
   }
   const rows = data.map(r=>{
     const label = type==='team' ? flag(r.name)+' '+esc(r.name) : esc(r.name);
@@ -1391,7 +1391,7 @@ function ensureAthleteToolbarStyles(){if(document.querySelector('#ouroAthleteToo
 .athlete-actions [data-athlete-consult]{order:1!important}
 .athlete-actions [data-crud=\"player\"]{order:2!important}
 .athlete-actions [data-player-export]{order:3!important}
-.athlete-actions [data-athlete-inscritos]{order:4!important}</style>`)}
+</style>`)}
 
 function ensureReportsCleanStyles(){
   if(document.querySelector('#ouroReportsCleanStyles'))return;
