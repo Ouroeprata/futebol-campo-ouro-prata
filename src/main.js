@@ -491,11 +491,13 @@ function lineupStatusModal(id){const btn=document.querySelector(`[data-lineup-st
 function playerDataModal(id){const p=state.players.find(x=>String(x.id)===String(id));if(!p)return;const birth=p.birth_date?new Date(p.birth_date+'T00:00:00').toLocaleDateString('pt-BR'):'—';document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="playerDataModal"><div class="modalbox player-data-modal"><button class="close" data-close>×</button><div class="eyebrow">VERIFICAÇÃO DO ATLETA</div><h2>${esc(p.full_name||p.name||'Atleta')}</h2><div class="player-data-grid"><div><small>Nº cadastro</small><b>${esc(p.registration_number??'—')}</b></div><div><small>Camisa</small><b>${esc(p.shirt_number??'—')}</b></div><div><small>Apelido</small><b>${esc(p.nickname||'—')}</b></div><div><small>Posição</small><b>${esc(p.position||'—')}</b></div><div><small>Data nascimento</small><b>${birth}</b></div><div><small>Categoria</small><b>${esc(cat(p.category)||'—')}</b></div><div><small>Equipe</small><b>${flag(teamName(p.team_id))} ${esc(teamName(p.team_id)||'—')}</b></div></div>${p.photo_url?`<img class="player-data-photo" src="${esc(p.photo_url)}" alt="">`:''}<div class="modal-actions"><button class="secondary" data-close>Fechar</button></div></div></div>`)}
 function votePanel(m){const candidates=state.players.filter(p=>state.lineups.some(l=>l.match_id===m.id&&l.player_id===p.id&&l.status==='titular'));const counts=state.votes.reduce((a,v)=>(a[v.player_id]=(a[v.player_id]||0)+1,a),{});return `<div class="votepanel"><h3>Melhor jogador da partida</h3>${candidates.length?candidates.sort((a,b)=>(counts[b.id]||0)-(counts[a.id]||0)).map(p=>`<button class="vote" data-vote="${p.id}" ${!state.session?'disabled':''}>⭐ ${esc(p.name)} <b>${counts[p.id]||0}</b></button>`).join(''):'<div class="muted">Defina a escalação titular para liberar os candidatos.</div>'}</div>`}
 function standingsView(){const rows=state.teams.map(t=>({team:t,j:0,v:0,e:0,d:0,gp:0,gc:0,pts:0}));const map=new Map(rows.map(r=>[r.team.id,r]));state.matches.filter(m=>m.status==='encerrado').forEach(m=>{const h=map.get(m.home_team_id),a=map.get(m.away_team_id);if(!h||!a)return;h.j++;a.j++;h.gp+=m.home_score||0;h.gc+=m.away_score||0;a.gp+=m.away_score||0;a.gc+=m.home_score||0;if(m.home_score>m.away_score){h.v++;h.pts+=3;a.d++}else if(m.home_score<m.away_score){a.v++;a.pts+=3;h.d++}else{h.e++;a.e++;h.pts++;a.pts++}});rows.sort((a,b)=>b.pts-a.pts||(b.gp-b.gc)-(a.gp-a.gc)||b.gp-a.gp||a.team.name.localeCompare(b.team.name));return `<section class="panel"><div class="panelhead"><div><h2>Classificação geral</h2><p class="muted">Calculada automaticamente com as partidas encerradas.</p></div><span class="tag">${state.matches.filter(m=>m.status==='encerrado').length} jogos concluídos</span></div>${classificationTabs('geral')}<div class="tablewrap"><table><tr><th>#</th><th>Time</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>Pts</th></tr>${rows.map((r,i)=>`<tr><td><b>${i+1}</b></td><td>${flag(r.team.name)} ${esc(r.team.name)}</td><td>${r.j}</td><td>${r.v}</td><td>${r.e}</td><td>${r.d}</td><td>${r.gp}</td><td>${r.gc}</td><td>${r.gp-r.gc}</td><td><b>${r.pts}</b></td></tr>`).join('')}</table></div></section>`}
+function athleteConsultModal(){document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="athleteConsultModal"><div class="modalbox wide athlete-consult-modal"><button class="close" data-close>×</button><div class="eyebrow">ATLETAS</div><h2>Consultar atletas</h2><input id="athleteConsultSearch" placeholder="Digite nome, nº de cadastro, apelido ou time" autocomplete="off"><div id="athleteConsultResults"></div></div></div>`);const input=document.querySelector('#athleteConsultSearch');const renderResults=()=>{const q=(input?.value||'').trim().toLowerCase();const rows=state.players.filter(p=>!q||[p.registration_number,p.full_name,p.name,p.nickname,teamName(p.team_id)].some(v=>String(v||'').toLowerCase().includes(q))).sort((a,b)=>(Number(a.registration_number)||999999)-(Number(b.registration_number)||999999));const box=document.querySelector('#athleteConsultResults');if(!box)return;box.innerHTML=rows.length?`<div class="tablewrap"><table><tr><th>Nº</th><th>Nome</th><th>Time</th><th>Categoria</th><th>Camisa</th></tr>${rows.map(p=>`<tr><td><b>${esc(p.registration_number??'—')}</b></td><td>${esc(p.full_name||p.name||'—')}</td><td>${flag(teamName(p.team_id))} ${esc(teamName(p.team_id)||'—')}</td><td>${esc(cat(p.category)||'—')}</td><td>${esc(p.shirt_number??'—')}</td></tr>`).join('')}</table></div>`:`<div class="empty">Nenhum atleta encontrado.</div>`};input?.addEventListener('input',renderResults);renderResults();setTimeout(()=>input?.focus(),50)}
+function athleteInscritosModal(){const grouped=state.teams.map(t=>({team:t,players:state.players.filter(p=>p.team_id===t.id)})).filter(x=>x.players.length);document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="athleteInscritosModal"><div class="modalbox wide athlete-inscritos-modal"><button class="close" data-close>×</button><div class="eyebrow">ATLETAS</div><h2>Atletas inscritos</h2><p class="muted">${state.players.length} atleta(s) inscrito(s) neste campeonato.</p>${grouped.length?grouped.map(g=>`<div class="athlete-inscritos-group"><h3>${flag(g.team.name)} ${esc(g.team.name)} <span class="tag">${g.players.length}</span></h3><div class="tablewrap"><table><tr><th>Nº</th><th>Atleta</th><th>Categoria</th><th>Camisa</th></tr>${g.players.slice().sort((a,b)=>(Number(a.registration_number)||999999)-(Number(b.registration_number)||999999)).map(p=>`<tr><td>${esc(p.registration_number??'—')}</td><td>${esc(p.full_name||p.name||'—')}</td><td>${esc(cat(p.category)||'—')}</td><td>${esc(p.shirt_number??'—')}</td></tr>`).join('')}</table></div></div>`).join(''):`<div class="empty">Nenhum atleta inscrito.</div>`}</div></div>`)}
 function list(title,items,type){
   const data = type==='team' ? state.teams : type==='player' ? state.players : type==='referee' ? state.referees : [];
   if(type==='player'){
     const rows=data.slice().sort((a,b)=>(Number(a.registration_number)||999999)-(Number(b.registration_number)||999999)).map(r=>`<tr><td><b>${esc(r.registration_number??'—')}</b></td><td><b>${r.photo_url?`<img class="avatar-sm" src="${esc(r.photo_url)}" alt="">`:''}${esc(r.full_name||r.name)}</b></td><td>${esc(r.nickname||'—')}</td><td>${esc(r.position||'—')}</td><td>${r.birth_date?new Date(r.birth_date+'T00:00:00').toLocaleDateString('pt-BR'):'—'}</td><td>${esc(cat(r.category))}</td><td><b>${esc(r.shirt_number??'—')}</b></td><td>${esc(teamName(r.team_id)||'—')}</td>${canLiveOperate()?`<td class="actions"><button class="smallbtn" data-edit-crud="player" data-id="${r.id}">✏️ Alterar</button><button class="danger smallbtn" data-delete-crud="player" data-id="${r.id}">🗑️ Excluir</button></td>`:''}</tr>`).join('');
-    return `<section class="panel"><div class="panelhead"><h2>${title}</h2><div class="panelhead"><span class="tag">${items.length} registros</span><button class="secondary" data-player-export>📋 Transferir atletas</button>${canLiveOperate()?'<button class="primary" data-crud="player">➕ Incluir</button>':''}</div></div>${data.length?`<div class="tablewrap"><table><tr><th>Nº</th><th>Nome Completo</th><th>Apelido</th><th>Posição</th><th>Data Nascimento</th><th>Categoria</th><th>Camisa</th><th>Time</th>${canLiveOperate()?'<th>Ações</th>':''}</tr>${rows}</table></div>`:`<div class="empty">Nenhum registro cadastrado.</div>`}</section>`;
+    return `<section class="panel"><div class="panelhead athlete-panel-head"><div><h2>${title}</h2><p class="muted">Consulte, cadastre, transfira e confira os atletas inscritos neste campeonato.</p></div><div class="athlete-actions"><button class="secondary" data-athlete-consult>🔎 Consultar</button>${canLiveOperate()?'<button class="primary" data-crud="player">➕ Incluir</button>':''}<button class="secondary" data-player-export>📋 Transferir Atletas</button><button class="secondary" data-athlete-inscritos>📋 Inscritos</button><span class="tag">${items.length} registros</span></div></div>${data.length?`<div class="tablewrap"><table><tr><th>Nº</th><th>Nome Completo</th><th>Apelido</th><th>Posição</th><th>Data Nascimento</th><th>Categoria</th><th>Camisa</th><th>Time</th>${canLiveOperate()?'<th>Ações</th>':''}</tr>${rows}</table></div>`:`<div class="empty">Nenhum registro cadastrado.</div>`}</section>`;
   }
   const rows = data.map(r=>{
     const label = type==='team' ? flag(r.name)+' '+esc(r.name) : esc(r.name);
@@ -1374,6 +1376,13 @@ function ensureTabletPortraitV22(){
 </style>`);
 }
 
+function ensureAthleteToolbarStyles(){if(document.querySelector('#ouroAthleteToolbarStyles'))return;document.head.insertAdjacentHTML('beforeend',`<style id="ouroAthleteToolbarStyles">.athlete-panel-head{align-items:flex-start!important;gap:12px!important}.athlete-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}.athlete-actions .tag{white-space:nowrap}.athlete-consult-modal,.athlete-inscritos-modal{max-width:980px}.athlete-inscritos-group{margin:12px 0 16px}.athlete-inscritos-group h3{display:flex;align-items:center;gap:8px;margin:0 0 7px;color:#15553f}.athlete-inscritos-group h3 .tag{margin-left:auto}@media(max-width:700px){.athlete-panel-head{display:block!important}.athlete-actions{justify-content:flex-start;margin-top:10px}.athlete-actions button{flex:1 1 auto;min-width:125px}}@media(max-width:499px){.athlete-actions{gap:5px}.athlete-actions button{min-width:0;font-size:10px;padding:7px 6px!important}.athlete-actions .tag{width:100%}}
+/* V22.5 - ordem fixa dos comandos da aba Atletas */
+.athlete-actions [data-athlete-consult]{order:1!important}
+.athlete-actions [data-crud=\"player\"]{order:2!important}
+.athlete-actions [data-player-export]{order:3!important}
+.athlete-actions [data-athlete-inscritos]{order:4!important}</style>`)}
+
 function ensureReportsCleanStyles(){
   if(document.querySelector('#ouroReportsCleanStyles'))return;
   document.head.insertAdjacentHTML('beforeend',`<style id="ouroReportsCleanStyles">
@@ -1657,10 +1666,68 @@ function ensureReportsCleanStyles(){
       box-sizing:border-box!important;
     }
   }
-  @media(max-width:900px) and (orientation:landscape){
-    .layout.reports-layout{grid-template-columns:262px minmax(0,1fr)!important}
-    .layout.reports-layout>aside{grid-column:1!important}
-    .layout.reports-layout>main.reports-mode{grid-column:2!important}
+  @media(min-width:700px) and (orientation:landscape){
+    /* V22.5 FIX DEFINITIVO - Relatórios: menu lateral realmente fixo.
+       Não usar sticky/grid aqui: o menu sai do fluxo e fica preso à viewport;
+       somente a coluna de Relatórios recebe rolagem. */
+    html:has(.layout.reports-layout),
+    body:has(.layout.reports-layout),
+    #app:has(.layout.reports-layout){
+      width:100%!important;
+      height:100%!important;
+      min-height:100%!important;
+      overflow:hidden!important;
+    }
+    .layout.reports-layout{
+      display:block!important;
+      position:relative!important;
+      width:100vw!important;
+      height:100vh!important;
+      min-width:0!important;
+      max-width:none!important;
+      margin:0!important;
+      padding:0!important;
+      overflow:hidden!important;
+    }
+    .layout.reports-layout>aside{
+      position:fixed!important;
+      left:0!important;
+      top:0!important;
+      bottom:0!important;
+      width:262px!important;
+      min-width:262px!important;
+      max-width:262px!important;
+      height:100vh!important;
+      max-height:100vh!important;
+      margin:0!important;
+      box-sizing:border-box!important;
+      overflow:hidden!important;
+      z-index:1000!important;
+    }
+    .layout.reports-layout>main.reports-mode{
+      position:relative!important;
+      display:block!important;
+      width:calc(100vw - 262px)!important;
+      min-width:0!important;
+      max-width:calc(100vw - 262px)!important;
+      height:100vh!important;
+      max-height:100vh!important;
+      margin:0 0 0 262px!important;
+      padding:0!important;
+      box-sizing:border-box!important;
+      overflow-x:auto!important;
+      overflow-y:auto!important;
+      overscroll-behavior:contain!important;
+      -webkit-overflow-scrolling:touch!important;
+    }
+    .layout.reports-layout>main.reports-mode>.reports-page{
+      width:100%!important;
+      min-width:0!important;
+      max-width:none!important;
+      margin:0!important;
+      padding:0!important;
+      box-sizing:border-box!important;
+    }
   }
   @media print{
     .layout.reports-layout{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:0!important}
@@ -1676,7 +1743,7 @@ function ensureReportsCleanStyles(){
   </style>`);
 }
 
-function render(){ensureCustomStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureReportsCleanStyles();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+function render(){ensureCustomStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureReportsCleanStyles();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
@@ -1879,6 +1946,8 @@ function openUserMenu(){document.body.insertAdjacentHTML('beforeend',`<div class
 document.addEventListener('click',async e=>{
   const t=e.target.closest('button,a');
   if(!t)return;
+  if(t.matches('[data-athlete-consult]')){athleteConsultModal();return}
+  if(t.matches('[data-athlete-inscritos]')){athleteInscritosModal();return}
   if(t.matches('[data-player-export]')){await openPlayerExportModal();return}
   if(t.matches('[data-export-check-all]')){document.querySelectorAll('[data-export-player]').forEach(x=>x.checked=true);return}
   if(t.matches('[data-export-uncheck-all]')){document.querySelectorAll('[data-export-player]').forEach(x=>x.checked=false);return}
