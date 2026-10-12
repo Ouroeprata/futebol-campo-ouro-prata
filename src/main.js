@@ -12,7 +12,7 @@ const state = {
   tab: 'dashboard', competition: null, competitions: [], matches: [], teams: [], players: [], referees: [], groups: [],
   selectedMatch: null, events: [], allEvents: [], lineups: [], votes: [], sponsors: [], media: [], session: null, profile: null, editingEventId: null,
   reportType: null, reportMatchId: null, siteAccessCount: 0, moderator: null, moderatorRequests: [], publicVotes: [],
-  pendingLineup: {}, lineupDirty: false,
+  pendingLineup: {}, lineupDirty: false, matchStartLineupMatchId: null, matchStartLineup: {},
   authMode: 'login', loading: false, timerStartedAt: null, timerHalf: null, timerInterval: null, eventClockSeconds: 0, eventHalf: '1T', eventType: 'gol', eventTimerStartedAt: null, eventTimerInterval: null, editingSubId: null
 }
 
@@ -1003,7 +1003,10 @@ async function adjustMinute(delta){return adjustClock(delta*60)}
 async function adjustSecond(delta){return adjustClock(delta)}
 
 async function updateMatch(values){if(!canLiveOperate()||!state.selectedMatch)return toast('Acesso operacional necessário.','error');const id=state.selectedMatch.id;const {data,error}=await supabase.from('matches').update(values).eq('id',id).select('*').single();if(error)return toast(error.message,'error');state.selectedMatch=data;const idx=state.matches.findIndex(x=>x.id===id);if(idx>=0)state.matches[idx]=data;else state.matches.push(data);render();return data;}
-async function startHalf(half){if(!canLiveOperate())return toast('Entre com perfil autorizado.','error');const m=state.selectedMatch;if(!m||m.status==='encerrado')return;if(state.timerHalf===half&&state.timerStartedAt){toast(half==='1T'?'1º tempo já está em andamento.':'2º tempo já está em andamento.');return}const now=new Date().toISOString();let values={status:'ao_vivo'};if(state.timerStartedAt&&state.timerHalf&&state.timerHalf!==half){const elapsed=Math.max(0,Math.floor((Date.now()-new Date(state.timerStartedAt).getTime())/1000));const oldField=state.timerHalf==='2T'?'second_half_elapsed_seconds':'first_half_elapsed_seconds';values[oldField]=(m[oldField]||0)+elapsed}if(half==='1T')values.first_half_started_at=now;else values.second_half_started_at=now;state.timerHalf=half;state.timerStartedAt=now;await updateMatch(values);stopTicker();startTicker()}
+function captureMatchStartLineup(){const m=state.selectedMatch;if(!m)return;const map={};(state.lineups||[]).filter(l=>l.match_id===m.id).forEach(l=>{map[String(l.player_id)]=String(l.status||'nao_compareceu')});document.querySelectorAll('[data-player-row]').forEach(row=>{const id=row.dataset.playerRow;const btn=row.querySelector('[data-lineup-status]');if(id&&btn)map[String(id)]=String(btn.dataset.status||'nao_compareceu')});state.matchStartLineupMatchId=m.id;state.matchStartLineup=map}
+function getInitialSubstitutionStatusMap(matchId){const map={};if(state.matchStartLineupMatchId===matchId&&state.matchStartLineup&&Object.keys(state.matchStartLineup).length){Object.assign(map,state.matchStartLineup);return map}(state.lineups||[]).filter(l=>l.match_id===matchId).forEach(l=>{map[String(l.player_id)]=String(l.status||'nao_compareceu')});return map}
+function getCurrentSubstitutionStatusMap(matchId){const map=getInitialSubstitutionStatusMap(matchId);const events=(state.events||[]).filter(e=>e.match_id===matchId&&e.type==='substituicao'&&e.player_id&&e.related_player_id).slice().sort((a,b)=>{const ha=a.half==='2T'?2:1,hb=b.half==='2T'?2:1;return ha-hb||(((Number(a.minute)||0)*60+(Number(a.second)||0))-((Number(b.minute)||0)*60+(Number(b.second)||0)))||String(a.created_at||'').localeCompare(String(b.created_at||''))});events.forEach(e=>{const out=String(e.player_id),inn=String(e.related_player_id);if(map[out]==='titular'&&map[inn]==='reserva'){map[out]='reserva';map[inn]='titular'}});return map}
+async function startHalf(half){if(!canLiveOperate())return toast('Entre com perfil autorizado.','error');const m=state.selectedMatch;if(!m||m.status==='encerrado')return;if(state.timerHalf===half&&state.timerStartedAt){toast(half==='1T'?'1º tempo já está em andamento.':'2º tempo já está em andamento.');return}if(state.matchStartLineupMatchId!==m.id||!Object.keys(state.matchStartLineup||{}).length)captureMatchStartLineup();const now=new Date().toISOString();let values={status:'ao_vivo'};if(state.timerStartedAt&&state.timerHalf&&state.timerHalf!==half){const elapsed=Math.max(0,Math.floor((Date.now()-new Date(state.timerStartedAt).getTime())/1000));const oldField=state.timerHalf==='2T'?'second_half_elapsed_seconds':'first_half_elapsed_seconds';values[oldField]=(m[oldField]||0)+elapsed}if(half==='1T')values.first_half_started_at=now;else values.second_half_started_at=now;state.timerHalf=half;state.timerStartedAt=now;await updateMatch(values);stopTicker();startTicker()}
 async function pause(){if(!canLiveOperate()||!state.selectedMatch)return;const m=state.selectedMatch;if(!state.timerStartedAt){stopTicker();return}const elapsed=Math.max(0,Math.floor((Date.now()-new Date(state.timerStartedAt).getTime())/1000));const field=state.timerHalf==='2T'?'second_half_elapsed_seconds':'first_half_elapsed_seconds';const values={[field]:(m[field]||0)+elapsed};state.timerStartedAt=null;stopTicker();await updateMatch(values);state.timerHalf=state.timerHalf||'1T';render();toast('Cronômetro pausado e tempo salvo.');}
 async function resetMatchClock(){if(!canLiveOperate()||!state.selectedMatch)return;const m=state.selectedMatch;if(m.status==='encerrado')return toast('Partida encerrada. Reabra para corrigir o tempo.','error');const half=state.timerHalf||'1T';if(!(await askConfirm('Zerar o tempo do '+(half==='2T'?'2º':'1º')+' tempo?')))return;stopTicker();state.timerStartedAt=null;state.timerHalf=half;const field=half==='2T'?'second_half_elapsed_seconds':'first_half_elapsed_seconds';await updateMatch({[field]:0});render();toast('Tempo zerado.');}
 async function finishMatch(){if(!canLiveOperate())return toast('Entre com perfil autorizado.','error');if(!(await confirmLeaveLineup()))return;if(!confirm('Encerrar esta partida e confirmar o placar?'))return;if(state.timerStartedAt)await pause();await updateMatch({status:'encerrado',finished_at:new Date().toISOString()});state.timerStartedAt=null;stopTicker();state.timerHalf=null;await loadMatchDetails(state.selectedMatch.id,false);await loadCompetitionData();await resolvePhaseMatches();await loadCompetitionData();render()}
@@ -1024,8 +1027,7 @@ async function addEvent(){
     if(!player_id||!related_player_id)return toast('Informe quem sai e quem entra.','error');
     if(player_id===related_player_id)return toast('O atleta que sai não pode ser o mesmo que entra.','error');
     if(suspendedIds.has(String(player_id))||suspendedIds.has(String(related_player_id)))return toast('Atleta suspenso não pode participar de ocorrências ou substituições nesta partida.','error');
-    const lineupStatus=new Map((state.lineups||[]).filter(l=>l.match_id===m.id).map(l=>[String(l.player_id),String(l.status||'')]));
-    document.querySelectorAll('[data-player-row]').forEach(row=>{const btn=row.querySelector('[data-lineup-status]');const id=row.dataset.playerRow;if(id&&btn)lineupStatus.set(String(id),String(btn.dataset.status||''));});
+    const lineupStatus=new Map(Object.entries(getCurrentSubstitutionStatusMap(m.id)));
     if(lineupStatus.get(String(player_id))!=='titular')return toast('Quem sai deve ser um atleta Titular.','error');
     if(lineupStatus.get(String(related_player_id))!=='reserva')return toast('Quem entra deve ser um atleta Reserva.','error');
   }
@@ -1035,8 +1037,8 @@ async function addEvent(){
   const payload={match_id:m.id,team_id,player_id,related_player_id,minute,second,half,added_minute:null,description:type==='substituicao'?`Substituição: ${playerName(player_id)} por ${playerName(related_player_id)}`:null,type,created_by:state.session.user.id};
   const {error}=await supabase.from('match_events').insert(payload);if(error)return toast(error.message,'error');
   if(type==='substituicao'){
-    const updateLineupStatus=async(playerId,status)=>{const existing=state.lineups.find(l=>l.match_id===m.id&&String(l.player_id)===String(playerId));if(existing){const {error:e}=await supabase.from('match_lineups').update({status,starter_position:status==='titular'?1:null}).eq('match_id',m.id).eq('player_id',playerId);if(e)throw e}else{const {error:e}=await supabase.from('match_lineups').insert({match_id:m.id,player_id:playerId,status,starter_position:status==='titular'?1:null});if(e)throw e}};
-    try{await updateLineupStatus(player_id,'reserva');await updateLineupStatus(related_player_id,'titular')}catch(e){return toast(e.message||'Não foi possível atualizar a escalação após a substituição.','error')}
+    // A condição Titular/Reserva da Súmula permanece como foi cadastrada no início da partida.
+    // A elegibilidade das próximas substituições é calculada pelos eventos já registrados.
   }
   if(type==='gol'||type==='gol_contra'){const scoringTeam=type==='gol_contra'?(team_id===m.home_team_id?m.away_team_id:m.home_team_id):team_id;const field=scoringTeam===m.home_team_id?'home_score':'away_score';await supabase.from('matches').update({[field]:(m[field]||0)+1}).eq('id',m.id)}
   await loadMatchDetails(m.id,false);const fresh=await supabase.from('matches').select('*').eq('id',m.id).maybeSingle();if(fresh.data){state.selectedMatch=fresh.data;const idx=state.matches.findIndex(x=>x.id===m.id);if(idx>=0)state.matches[idx]=fresh.data;}state.eventType='gol';render();toast(type==='substituicao'?'Substituição salva.':'Ocorrência salva.');
@@ -2234,6 +2236,10 @@ async function openMatchFromButton(id){
     }
 
     if(state.selectedMatch && String(state.selectedMatch.id)!==String(id) && !(await confirmLeaveLineup())) return;
+    if(!state.selectedMatch || String(state.selectedMatch.id)!==String(id)){
+      state.matchStartLineupMatchId=null;
+      state.matchStartLineup={};
+    }
     state.lineupDirty=false;
     state.tab='ao_vivo';
 
@@ -2349,13 +2355,7 @@ function bind(){document.querySelectorAll('[data-open-match]').forEach(b=>{b.typ
   const fillEventPlayers=()=>{
     const team=document.querySelector('#eventTeam')?.value||'';
     const matchId=state.selectedMatch?.id;
-    const lineupStatus=new Map();
-    (state.lineups||[]).filter(l=>l.match_id===matchId).forEach(l=>lineupStatus.set(String(l.player_id),String(l.status||'')));
-    document.querySelectorAll('[data-player-row]').forEach(row=>{
-      const btn=row.querySelector('[data-lineup-status]');
-      const id=row.dataset.playerRow;
-      if(id&&btn)lineupStatus.set(String(id),String(btn.dataset.status||''));
-    });
+    const lineupStatus=new Map(Object.entries(getCurrentSubstitutionStatusMap(matchId)));
     const ps=state.players.filter(p=>{
       if(String(p.team_id)!==String(team))return false;
       const status=lineupStatus.get(String(p.id));
