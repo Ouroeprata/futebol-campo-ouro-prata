@@ -2075,6 +2075,93 @@ function ensureReportsCleanStyles(){
       box-sizing:border-box!important;
     }
   }
+  @media (min-width:700px) and (orientation:landscape){
+    /* V22.5 - somente Relatórios no tablet horizontal: igualar a estrutura
+       da barra lateral das demais abas e impedir sobreposição do rodapé. */
+    .layout.reports-layout>aside{
+      display:flex!important;
+      flex-direction:column!important;
+      align-items:stretch!important;
+      justify-content:flex-start!important;
+      padding:12px 10px!important;
+      overflow:hidden!important;
+    }
+    .layout.reports-layout>aside .brand{
+      flex:0 0 auto!important;
+      width:100%!important;
+      box-sizing:border-box!important;
+      margin:0!important;
+      padding:4px 6px 12px!important;
+    }
+    .layout.reports-layout>aside nav{
+      flex:1 1 auto!important;
+      min-height:0!important;
+      width:100%!important;
+      display:flex!important;
+      flex-direction:column!important;
+      gap:3px!important;
+      overflow-y:auto!important;
+      overflow-x:hidden!important;
+      padding:0 2px!important;
+      box-sizing:border-box!important;
+    }
+    .layout.reports-layout>aside nav button{
+      flex:0 0 36px!important;
+      width:100%!important;
+      height:36px!important;
+      min-height:36px!important;
+      max-height:36px!important;
+      margin:0!important;
+      padding:6px 8px!important;
+      box-sizing:border-box!important;
+      display:flex!important;
+      align-items:center!important;
+      justify-content:flex-start!important;
+      gap:8px!important;
+      white-space:nowrap!important;
+      overflow:hidden!important;
+      font-size:12px!important;
+      line-height:1!important;
+    }
+    .layout.reports-layout>aside nav button i{
+      flex:0 0 19px!important;
+      width:19px!important;
+      min-width:19px!important;
+      margin:0!important;
+      font-size:18px!important;
+      line-height:1!important;
+      text-align:center!important;
+    }
+    .layout.reports-layout>aside nav button span{
+      display:inline!important;
+      flex:1 1 auto!important;
+      min-width:0!important;
+      white-space:nowrap!important;
+      overflow:hidden!important;
+      text-overflow:ellipsis!important;
+    }
+    .layout.reports-layout>aside .sidefoot{
+      position:static!important;
+      flex:0 0 auto!important;
+      width:100%!important;
+      max-width:100%!important;
+      margin:10px 0 0!important;
+      padding:8px 2px 4px!important;
+      box-sizing:border-box!important;
+      font-size:10px!important;
+      line-height:1.3!important;
+      overflow:hidden!important;
+    }
+    .layout.reports-layout>aside .sidefoot-credit{
+      display:block!important;
+      margin-top:5px!important;
+      font-size:12px!important;
+      line-height:1.2!important;
+      white-space:nowrap!important;
+      overflow:hidden!important;
+      text-overflow:ellipsis!important;
+    }
+  }
   .report-voting-summary{display:flex;gap:18px;flex-wrap:wrap;margin:0 0 10px;padding:9px 11px;border:1px solid #dfe9e4;border-radius:9px;background:#f7faf8;color:#48675c;font-size:12px}.report-voting-table th:nth-child(1),.report-voting-table td:nth-child(1){width:5%;text-align:center}.report-voting-table th:nth-child(5),.report-voting-table td:nth-child(5),.report-voting-table th:nth-child(6),.report-voting-table td:nth-child(6){text-align:center;white-space:nowrap}.report-voting-table th,.report-voting-table td{padding:6px 8px}@media print{
     .layout.reports-layout{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:0!important}
     .layout.reports-layout>aside,.layout.reports-layout .app-header,.layout.reports-layout .report-tabs,.layout.reports-layout .no-print{display:none!important}
