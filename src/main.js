@@ -1386,10 +1386,14 @@ function ensureTabletPortraitV20(){
   .phase-card{min-width:0!important;max-width:none!important}
   .lineup-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important;width:100%!important}
   .lineupteam{min-width:0!important;max-width:none!important}
-  .lineup-player-row{grid-template-columns:minmax(0,1fr) 90px 34px!important;min-width:0!important}
+  /* V22.5 - súmula/escalação no tablet vertical: 4 colunas reais (nome | categoria | situação | consulta) */
+  .lineup-player-row{grid-template-columns:minmax(0,1fr) 64px 82px 34px!important;min-width:0!important;gap:5px!important;padding:8px 6px!important}
+  .lineup-category{width:100%!important;min-width:0!important;box-sizing:border-box!important;font-size:9px!important;padding:5px 3px!important}
+  .statusbtn{width:82px!important;min-width:82px!important;box-sizing:border-box!important;font-size:10px!important;padding:7px 3px!important;white-space:nowrap!important}
+  .verify-player-btn{width:34px!important;min-width:34px!important;padding:6px 2px!important}
   .player-name-wrap{min-width:0!important}
-  .player-name-wrap b{font-size:12px!important;overflow-wrap:anywhere!important}
-  .starter-toggle{width:90px!important;min-width:90px!important;font-size:10px!important}
+  .player-name-wrap b{font-size:12px!important;overflow-wrap:anywhere!important;line-height:1.2!important}
+  .starter-toggle{width:82px!important;min-width:82px!important;font-size:10px!important}
   .media-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;width:100%!important}
   .media-grid:not(.video-grid) .media-card{width:100%!important;max-width:none!important;justify-self:stretch!important}
   .media-card{min-width:0!important;max-width:none!important}
