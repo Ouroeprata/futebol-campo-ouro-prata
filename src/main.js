@@ -1020,7 +1020,15 @@ async function addEvent(){
   const second=elapsed%60;
   const half=state.eventHalf||'1T';
   if(!team_id)return toast('Selecione a equipe.','error');
-  if(type==='substituicao'){if(!player_id||!related_player_id)return toast('Informe quem sai e quem entra.','error');if(player_id===related_player_id)return toast('O atleta que sai não pode ser o mesmo que entra.','error');if(suspendedIds.has(String(player_id))||suspendedIds.has(String(related_player_id)))return toast('Atleta suspenso não pode participar de ocorrências ou substituições nesta partida.','error');}
+  if(type==='substituicao'){
+    if(!player_id||!related_player_id)return toast('Informe quem sai e quem entra.','error');
+    if(player_id===related_player_id)return toast('O atleta que sai não pode ser o mesmo que entra.','error');
+    if(suspendedIds.has(String(player_id))||suspendedIds.has(String(related_player_id)))return toast('Atleta suspenso não pode participar de ocorrências ou substituições nesta partida.','error');
+    const lineupStatus=new Map((state.lineups||[]).filter(l=>l.match_id===m.id).map(l=>[String(l.player_id),String(l.status||'')]));
+    document.querySelectorAll('[data-player-row]').forEach(row=>{const btn=row.querySelector('[data-lineup-status]');const id=row.dataset.playerRow;if(id&&btn)lineupStatus.set(String(id),String(btn.dataset.status||''));});
+    if(lineupStatus.get(String(player_id))!=='titular')return toast('Quem sai deve ser um atleta Titular.','error');
+    if(lineupStatus.get(String(related_player_id))!=='reserva')return toast('Quem entra deve ser um atleta Reserva.','error');
+  }
   else if(!player_id)return toast('Selecione o atleta.','error');
   if(player_id&&suspendedIds.has(String(player_id)))return toast('Atleta suspenso: ocorrência bloqueada.','error');
   if(!(await askConfirm(type==='substituicao'?'Salvar esta substituição?':'Salvar esta ocorrência?')))return;
@@ -2338,7 +2346,31 @@ function bindCartoesReportFilters(){if(!document.querySelector('#cartoesReportRo
 
 function bindAthleteReportFilters(){const blocks=[...document.querySelectorAll('[data-athlete-report-block]')];const norm=v=>String(v||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');const applyBlock=block=>{const inputs=[...block.querySelectorAll('.report-col-filter')];const tbody=block.querySelector('tbody');if(!tbody)return;const rows=[...tbody.querySelectorAll('tr[data-athlete-report-row]')];const filters=inputs.map(i=>norm(i.value.trim()));rows.forEach(r=>{const cells=[...r.children];const ok=filters.every((f,i)=>!f||norm(cells[i]?.textContent||'').includes(f));r.style.display=ok?'':'none'});const activeRows=rows.slice().sort((a,b)=>{const av=a.children[Number(block.dataset.sortCol||0)]?.dataset.sort||a.children[Number(block.dataset.sortCol||0)]?.textContent||'';const bv=b.children[Number(block.dataset.sortCol||0)]?.dataset.sort||b.children[Number(block.dataset.sortCol||0)]?.textContent||'';const ai=Number(av),bi=Number(bv);if(av!==''&&bv!==''&&Number.isFinite(ai)&&Number.isFinite(bi))return (ai-bi)*(block.dataset.sortDir==='desc'?-1:1);return String(av).localeCompare(String(bv),'pt-BR',{numeric:true,sensitivity:'base'})*(block.dataset.sortDir==='desc'?-1:1)});activeRows.forEach(r=>tbody.appendChild(r));const empty=block.querySelector('.report-filter-empty');if(empty)empty.remove();if(rows.length&&!rows.some(r=>r.style.display!=='none')){tbody.insertAdjacentHTML('beforeend','<tr class="report-filter-empty"><td colspan="8" class="muted">Nenhuma linha corresponde aos filtros.</td></tr>')}};blocks.forEach(block=>{block.dataset.sortCol='0';block.dataset.sortDir='asc';block.querySelectorAll('.report-col-filter').forEach(i=>i.addEventListener('input',()=>applyBlock(block)));block.querySelectorAll('.report-sortable').forEach(th=>th.addEventListener('click',()=>{const idx=Number(th.dataset.sortCol);if(Number(block.dataset.sortCol)===idx)block.dataset.sortDir=block.dataset.sortDir==='asc'?'desc':'asc';else{block.dataset.sortCol=String(idx);block.dataset.sortDir='asc'}block.querySelectorAll('.report-sort-indicator').forEach(x=>x.textContent='');th.querySelector('.report-sort-indicator').textContent=block.dataset.sortDir==='asc'?' ↑':' ↓';applyBlock(block)}));applyBlock(block)})}
 function bind(){document.querySelectorAll('[data-open-match]').forEach(b=>{b.type='button';b.onclick=async e=>{e.preventDefault();e.stopImmediatePropagation();await openMatchFromButton(b.dataset.openMatch)}});document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=async()=>{await navigateFromLive(b.dataset.tab,null)});document.querySelectorAll('[data-tab-direct]').forEach(b=>b.onclick=async()=>{await navigateFromLive(b.dataset.tabDirect,null)});document.querySelector('#competitionSelector')?.addEventListener('change',e=>switchCompetition(e.target.value));document.querySelector('[data-new-competition]')?.addEventListener('click',()=>openCompetitionModal());document.querySelectorAll('[data-edit-competition]').forEach(b=>b.onclick=()=>openCompetitionModal(b.dataset.editCompetition));document.querySelectorAll('[data-select-competition]').forEach(b=>b.onclick=()=>switchCompetition(b.dataset.selectCompetition));document.querySelectorAll('[data-crud]').forEach(b=>b.onclick=()=>crudModal(b.dataset.crud));document.querySelectorAll('[data-edit-crud]').forEach(b=>b.onclick=()=>crudModal(b.dataset.editCrud,b.dataset.id));document.querySelectorAll('[data-delete-crud]').forEach(b=>b.onclick=()=>deleteCrud(b.dataset.deleteCrud,b.dataset.id));document.querySelectorAll('[data-save-crud]').forEach(b=>b.onclick=()=>saveCrud(b.dataset.saveCrud,b.dataset.id));document.querySelector('#authBtn')?.addEventListener('click',()=>state.session?openUserMenu():openAuth());document.querySelectorAll('[data-event-clock-adjust]').forEach(b=>b.onclick=()=>{adjustEventClock(Number(b.dataset.eventClockAdjust));render()});document.querySelectorAll('[data-event-timer]').forEach(b=>b.onclick=()=>{b.dataset.eventTimer==='reset'?resetEventTimer():toggleEventTimer()});document.querySelectorAll('[data-event-half]').forEach(b=>b.onclick=()=>{if(b.disabled)return;const nextHalf=b.dataset.eventHalf;if(state.eventHalf===nextHalf)return;const wasRunning=!!state.eventTimerStartedAt;state.eventHalf=nextHalf;state.eventClockSeconds=0;stopEventTicker();state.eventTimerStartedAt=wasRunning?new Date().toISOString():null;render()});
-  const fillEventPlayers=()=>{const team=document.querySelector('#eventTeam')?.value||'';const suspendedIds=new Set((state.lineups||[]).filter(l=>l.match_id===state.selectedMatch?.id&&l.status==='suspenso').map(l=>String(l.player_id)));const ps=state.players.filter(p=>p.team_id===team&&!suspendedIds.has(String(p.id))).sort((a,b)=>(Number(a.shirt_number)||999)-(Number(b.shirt_number)||999));const opts='<option value="">Selecione o atleta</option>'+ps.map(p=>`<option value="${p.id}">${p.shirt_number?`Nº ${p.shirt_number} - `:''}${esc(p.full_name||p.name)} - ${esc(teamName(p.team_id))}</option>`).join('');['#eventPlayer','#eventSubOut','#eventSubIn'].forEach(sel=>{const el=document.querySelector(sel);if(el)el.innerHTML=opts})};
+  const fillEventPlayers=()=>{
+    const team=document.querySelector('#eventTeam')?.value||'';
+    const matchId=state.selectedMatch?.id;
+    const lineupStatus=new Map();
+    (state.lineups||[]).filter(l=>l.match_id===matchId).forEach(l=>lineupStatus.set(String(l.player_id),String(l.status||'')));
+    document.querySelectorAll('[data-player-row]').forEach(row=>{
+      const btn=row.querySelector('[data-lineup-status]');
+      const id=row.dataset.playerRow;
+      if(id&&btn)lineupStatus.set(String(id),String(btn.dataset.status||''));
+    });
+    const ps=state.players.filter(p=>{
+      if(String(p.team_id)!==String(team))return false;
+      const status=lineupStatus.get(String(p.id));
+      return status==='titular'||status==='reserva';
+    }).sort((a,b)=>(Number(a.shirt_number)||999)-(Number(b.shirt_number)||999));
+    const option=(p)=>`<option value="${p.id}">${p.shirt_number?`Nº ${p.shirt_number} - `:''}${esc(p.full_name||p.name)} - ${esc(teamName(p.team_id))}</option>`;
+    const titulares=ps.filter(p=>lineupStatus.get(String(p.id))==='titular');
+    const reservas=ps.filter(p=>lineupStatus.get(String(p.id))==='reserva');
+    const outEl=document.querySelector('#eventSubOut');
+    const inEl=document.querySelector('#eventSubIn');
+    if(outEl)outEl.innerHTML='<option value="">Selecione o atleta titular</option>'+titulares.map(option).join('');
+    if(inEl)inEl.innerHTML='<option value="">Selecione o atleta reserva</option>'+reservas.map(option).join('');
+    const normalEl=document.querySelector('#eventPlayer');
+    if(normalEl)normalEl.innerHTML='<option value="">Selecione o atleta</option>'+ps.map(option).join('');
+  };
   document.querySelector('#eventTeam')?.addEventListener('change',fillEventPlayers);fillEventPlayers();
   document.querySelectorAll('[data-event-type]').forEach(btn=>btn.onclick=()=>{if(btn.disabled)return;const type=btn.dataset.eventType;state.eventType=type;const sel=document.querySelector('#eventType');if(sel)sel.value=type;document.querySelectorAll('[data-event-type]').forEach(x=>x.classList.toggle('selected',x.dataset.eventType===type));const sub=document.querySelector('#substitutionPlayers'),normal=document.querySelector('#normalEventPlayer');const isSub=type==='substituicao';if(sub)sub.style.display=isSub?'grid':'none';if(normal)normal.style.display=isSub?'none':'block';fillEventPlayers()});
 const eventButtons=[...document.querySelectorAll('[data-action="event"]')];eventButtons.slice(1).forEach(b=>b.remove());
