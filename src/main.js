@@ -367,10 +367,37 @@ function phaseRow(p,i){return `<div class="phase-row" data-phase-row><input data
 async function saveCompetitionConfig(){if(!canOperate())return;const rows=[...document.querySelectorAll('[data-phase-row]')];const phases=rows.map((r,i)=>({name:r.querySelector('[data-phase-name]').value.trim()||`Fase ${i+1}`,type:r.querySelector('[data-phase-type]').value}));if(!phases.length)return toast('Inclua pelo menos uma fase.','error');const {error}=await supabase.from('competitions').update({group_count:Number(document.querySelector('#cfgGroupCount').value),phases}).eq('id',state.competition.id);if(error)return toast(error.message,'error');document.querySelector('#competitionConfigModal')?.remove();await load();toast('Configuração do campeonato salva.');}
 function sponsorsView(){return `<section class="panel"><div class="panelhead"><div><h2>Patrocinadores</h2><p class="muted">Parceiros oficiais da competição.</p></div>${canOperate()?'<button class="primary" data-sponsor-new>+ Incluir patrocinador</button>':''}</div><div class="flags">${state.sponsors.filter(s=>s.active).sort((a,b)=>a.sort_order-b.sort_order).map(s=>`<div class="sponsor-card">${s.logo_url?`<img src="${esc(s.logo_url)}" alt="${esc(s.name)}">`:''}<b>${esc(s.name)}</b>${s.website?`<a href="${esc(s.website)}" target="_blank">Site</a>`:''}${canOperate()?`<button class="smallbtn" data-sponsor-edit="${s.id}">Alterar</button><button class="smallbtn" data-sponsor-delete="${s.id}">Excluir</button>`:''}</div>`).join('')}</div></section>`}
 function votingWindow(){
-  const start=new Date('2026-12-09T00:00:00-03:00'), end=new Date('2026-12-20T11:30:00-03:00'), now=new Date();
-  if(now<start)return {open:false,phase:'before',start,end,label:'A votação abrirá em 09/12/2026.'};
-  if(now>end)return {open:false,phase:'after',start,end,label:'A votação foi encerrada em 20/12/2026 às 11h30.'};
-  return {open:true,phase:'open',start,end,label:'Votação aberta até 20/12/2026 às 11h30.'};
+  const startRaw=state.competition?.voting_start_at||'2026-12-09T00:00:00-03:00';
+  const endRaw=state.competition?.voting_end_at||'2026-12-20T11:30:00-03:00';
+  const start=new Date(startRaw), end=new Date(endRaw), now=new Date();
+  const fmt=d=>d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  if(now<start)return {open:false,phase:'before',start,end,label:`A votação abrirá em ${fmt(start)}.`};
+  if(now>end)return {open:false,phase:'after',start,end,label:`A votação foi encerrada em ${fmt(end)}.`};
+  return {open:true,phase:'open',start,end,label:`Votação aberta até ${fmt(end)}.`};
+}
+function localDateTimeInputValue(value){
+  const d=new Date(value); if(Number.isNaN(d.getTime()))return '';
+  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(d).reduce((o,p)=>(o[p.type]=p.value,o),{});
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+function openVotingConfig(){
+  if(!isAdmin())return toast('Somente o administrador pode alterar o período da votação.','error');
+  const win=votingWindow();
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="votingConfigModal"><div class="modalbox config-modal"><button class="close" data-close>×</button><div class="eyebrow">VOTAÇÃO PÚBLICA</div><h2>Configurar período da votação</h2><p class="muted">O administrador pode definir ou alterar a data e o horário de abertura e encerramento.</p><label>Data e hora de início<input id="voteStartAt" type="datetime-local" value="${localDateTimeInputValue(win.start.toISOString())}"></label><label>Data e hora de encerramento<input id="voteEndAt" type="datetime-local" value="${localDateTimeInputValue(win.end.toISOString())}"></label><div class="notice">O horário utilizado pelo sistema é o horário de Brasília (UTC−3).</div><div class="modal-actions"><button class="secondary" data-close>Cancelar</button><button class="primary" data-voting-config-save>💾 Salvar período</button></div></div></div>`);
+}
+async function saveVotingConfig(){
+  if(!isAdmin())return toast('Somente o administrador pode alterar o período da votação.','error');
+  const startValue=document.querySelector('#voteStartAt')?.value||'', endValue=document.querySelector('#voteEndAt')?.value||'';
+  if(!startValue||!endValue)return toast('Informe a data e hora de início e de encerramento.','error');
+  const start=new Date(startValue), end=new Date(endValue);
+  if(Number.isNaN(start.getTime())||Number.isNaN(end.getTime()))return toast('Data ou horário inválido.','error');
+  if(end<=start)return toast('O encerramento deve ser posterior ao início da votação.','error');
+  if(!await askConfirm('Confirma ALTERAR o período da votação?'))return;
+  const {data,error}=await supabase.from('competitions').update({voting_start_at:start.toISOString(),voting_end_at:end.toISOString()}).eq('id',state.competition.id).select().single();
+  if(error)return toast(error.message,'error');
+  state.competition=data||{...state.competition,voting_start_at:start.toISOString(),voting_end_at:end.toISOString()};
+  const idx=state.competitions.findIndex(c=>c.id===state.competition.id); if(idx>=0)state.competitions[idx]=state.competition;
+  document.querySelector('#votingConfigModal')?.remove(); render(); toast('Período da votação alterado com sucesso.');
 }
 function voteDeviceId(){
   const key='ouro_prata_voting_device_id';
@@ -400,7 +427,8 @@ function publicVoteCard(type,title,description){
 }
 function publicVotingView(){
   const win=votingWindow();
-  return `<section class="panel public-voting-page"><div class="panelhead"><div><span class="eyebrow">VOTAÇÃO PÚBLICA</span><h2>🏆 Melhor atleta do campeonato</h2><p class="muted">Cada celular/navegador poderá registrar somente 01 voto para cada categoria: campeonato e final.</p></div><span class="status ${win.open?'ao_vivo':''}">${win.open?'● VOTAÇÃO ABERTA':'○ '+(win.phase==='before'?'AGUARDANDO ABERTURA':'ENCERRADA')}</span></div><div class="public-voting-period"><b>Período:</b> 09/12/2026 até 20/12/2026 às 11h30. <span>São permitidos no máximo 02 votos por dispositivo: 01 em cada categoria.</span></div><div class="public-voting-grid">${publicVoteCard('campeonato','Melhor atleta do campeonato','Escolha 01 atleta entre todos os atletas inscritos na competição.')}${publicVoteCard('final','Melhor atleta da final','Escolha 01 atleta entre os atletas das duas equipes classificadas para a final.')}</div></section>`
+  const adminButton=isAdmin()?'<button class="secondary" data-voting-config>⚙️ Configurar período</button>':'';
+  return `<section class="panel public-voting-page"><div class="panelhead"><div><span class="eyebrow">VOTAÇÃO PÚBLICA</span><h2>🏆 Melhor atleta do campeonato</h2><p class="muted">Cada celular/navegador poderá registrar somente 01 voto para cada categoria: campeonato e final.</p></div><div class="panel-actions"><span class="status ${win.open?'ao_vivo':''}">${win.open?'● VOTAÇÃO ABERTA':'○ '+(win.phase==='before'?'AGUARDANDO ABERTURA':'ENCERRADA')}</span>${adminButton}</div></div><div class="public-voting-period"><b>Período:</b> ${win.start.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})} até ${win.end.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}. <span>São permitidos no máximo 02 votos por dispositivo: 01 em cada categoria.</span></div><div class="public-voting-grid">${publicVoteCard('campeonato','Melhor atleta do campeonato','Escolha 01 atleta entre todos os atletas inscritos na competição.')}${publicVoteCard('final','Melhor atleta da final','Escolha 01 atleta entre os atletas das duas equipes classificadas para a final.')}</div></section>`
 }
 async function submitPublicVote(type,playerId,button){
   const win=votingWindow(); if(!win.open)return toast(win.label,'error');
@@ -1440,12 +1468,18 @@ function ensureTabletPortraitV22(){
 function ensureMediaTabletLandscapeStyles(){
   if(document.querySelector('#ouroMediaTabletLandscape'))return;
   document.head.insertAdjacentHTML('beforeend',`<style id="ouroMediaTabletLandscape">
-  /* V22.5 - tablet horizontal: Fotos, vídeos e arquivos lado a lado. */
-  @media (min-width:700px) and (max-width:1100px) and (orientation:landscape){
+  /* V22.5 - tablet horizontal: Fotos, vídeos e arquivos sempre lado a lado. */
+  @media (min-width:700px) and (max-width:1400px) and (orientation:landscape){
     .media-grid,.media-list{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;width:100%!important;min-width:0!important;align-items:start!important}
     .media-grid:not(.video-grid) .media-card,.media-list .media-card{width:100%!important;max-width:none!important;min-width:0!important;justify-self:stretch!important;box-sizing:border-box!important}
+    .media-card{min-width:0!important;overflow:hidden!important}
     .media-card .media-thumb,.media-card video{width:100%!important;height:105px!important;object-fit:cover!important}
     .media-card b,.media-card small{overflow-wrap:anywhere!important}
+  }
+  /* Alguns tablets Android reportam viewport diferente; pointer:coarse garante o ajuste sem alterar desktop. */
+  @media (min-width:700px) and (max-width:1400px) and (orientation:landscape) and (pointer:coarse){
+    .media-grid,.media-list{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important}
+    .media-card .media-thumb,.media-card video{height:115px!important}
   }
   </style>`)
 }
@@ -2035,6 +2069,8 @@ document.addEventListener('click',async e=>{
   if(t.matches('[data-moderator-password]')){openModeratorPasswordModal();return}
   if(t.matches('[data-moderator-save-password]')){await changeModeratorPassword();return}
   if(t.matches('[data-save-competition]')){await saveCompetition(t.dataset.saveCompetition||'');return}
+  if(t.matches('[data-voting-config]')){openVotingConfig();return}
+  if(t.matches('[data-voting-config-save]')){await saveVotingConfig();return}
   if(t.matches('[data-sponsor-save]')){await saveSponsor(t.dataset.sponsorSave||'');return}
   if(t.matches('[data-media-save]')){await saveMedia();return}
   if(t.matches('[data-open-match]')){e.preventDefault();e.stopPropagation();await openMatchFromButton(t.dataset.openMatch);return}
