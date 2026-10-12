@@ -1520,6 +1520,52 @@ function ensureMediaTabletLandscapeStyles(){
   </style>`)
 }
 
+function ensureMediaTabletLandscapeV23(){
+  if(document.querySelector('#ouroMediaTabletLandscapeV23'))return;
+  document.head.insertAdjacentHTML('beforeend',`<style id="ouroMediaTabletLandscapeV23">
+  /* V23 - tablet horizontal: garante Fotos, Vídeos e Arquivos lado a lado em tablets Android. */
+  @media (min-width:700px) and (max-width:1800px) and (orientation:landscape) and (pointer:coarse){
+    .layout main .panel .media-grid,
+    .layout main .panel .media-list{
+      display:grid!important;
+      grid-template-columns:repeat(4,minmax(0,1fr))!important;
+      gap:12px!important;
+      width:100%!important;
+      min-width:0!important;
+      max-width:100%!important;
+      align-items:stretch!important;
+    }
+    .layout main .panel .media-grid .media-card,
+    .layout main .panel .media-list .media-card{
+      display:flex!important;
+      flex-direction:column!important;
+      width:100%!important;
+      min-width:0!important;
+      max-width:none!important;
+      justify-self:stretch!important;
+      box-sizing:border-box!important;
+      overflow:hidden!important;
+    }
+    .layout main .panel .media-card .media-thumb,
+    .layout main .panel .media-card video{
+      width:100%!important;
+      height:120px!important;
+      min-height:120px!important;
+      object-fit:cover!important;
+      display:block!important;
+      flex:0 0 120px!important;
+    }
+    .layout main .panel .media-card b,
+    .layout main .panel .media-card small{
+      display:block!important;
+      min-width:0!important;
+      overflow-wrap:anywhere!important;
+      word-break:break-word!important;
+    }
+  }
+  </style>`);
+}
+
 function ensureAthleteToolbarStyles(){if(document.querySelector('#ouroAthleteToolbarStyles'))return;document.head.insertAdjacentHTML('beforeend',`<style id="ouroAthleteToolbarStyles">.athlete-panel-head{align-items:flex-start!important;gap:12px!important}.athlete-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}.athlete-actions .tag{white-space:nowrap}.athlete-consult-modal,.athlete-inscritos-modal{max-width:980px}.athlete-inscritos-group{margin:12px 0 16px}.athlete-inscritos-group h3{display:flex;align-items:center;gap:8px;margin:0 0 7px;color:#15553f}.athlete-inscritos-group h3 .tag{margin-left:auto}@media(max-width:700px){.athlete-panel-head{display:block!important}.athlete-actions{justify-content:flex-start;margin-top:10px}.athlete-actions button{flex:1 1 auto;min-width:125px}}@media(max-width:499px){.athlete-actions{gap:5px}.athlete-actions button{min-width:0;font-size:10px;padding:7px 6px!important}.athlete-actions .tag{width:100%}}
 /* V22.5 - ordem fixa dos comandos da aba Atletas */
 .athlete-actions [data-athlete-consult]{order:1!important}
@@ -1888,7 +1934,7 @@ function ensureReportsCleanStyles(){
 }
 
 function ensureEventHalfStyles(){if(document.getElementById('event-half-styles'))return;const st=document.createElement('style');st.id='event-half-styles';st.textContent='.event-half-selector{display:flex;gap:8px;flex-wrap:wrap}.event-half-btn{transition:all .15s ease}.event-half-btn.event-half-active{background:#087f5b!important;color:#fff!important;border-color:#087f5b!important;box-shadow:0 0 0 2px rgba(8,127,91,.12) inset}.event-half-btn.event-half-active:hover{background:#066b4d!important;color:#fff!important}.event-half-btn:disabled{opacity:.55}';document.head.appendChild(st)}
-function render(){ensureCustomStyles();ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureMediaTabletLandscapeStyles();ensureReportsCleanStyles();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+function render(){ensureCustomStyles();ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsCleanStyles();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
