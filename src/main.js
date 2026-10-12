@@ -33,8 +33,23 @@ const playerName = id => { const p=state.players.find(x=>x.id===id); return p ? 
 const fmtDate = v => v ? new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}) : '—'
 const ADMIN_EMAIL = 'copadasnacoesouroeprata@gmail.com'
 const canOperate = () => !!state.session && ['admin','organizador','arbitro','operador'].includes(state.profile?.role)
+const getLineupStarterOverflowTeams = () => {
+  if(state.tab!=='ao_vivo' || !state.selectedMatch) return []
+  const teams = [...document.querySelectorAll('.lineupteam[data-lineup-team]')]
+  return teams.map(teamEl => {
+    const count = [...teamEl.querySelectorAll('[data-lineup-status]')].filter(b => b.dataset.status==='titular').length
+    return {teamId:teamEl.dataset.lineupTeam, count}
+  }).filter(x => x.count > 11)
+}
+const validateLineupStarterLimit = () => {
+  const invalid = getLineupStarterOverflowTeams()
+  if(!invalid.length) return true
+  alert('FAVOR CONFERIR O NÚMERO DE TITULARES')
+  return false
+}
 const hasUnsavedLineupChanges = () => state.tab==='ao_vivo' && !!state.selectedMatch && !!state.lineupDirty
 const confirmLeaveLineup = async () => {
+  if(!validateLineupStarterLimit()) return false
   if(!hasUnsavedLineupChanges()) return true
   return await askConfirm('Você fez alterações na Súmula / Escalação que ainda não foram salvas.\n\nDeseja sair sem salvar a situação dos atletas?')
 }
@@ -154,7 +169,7 @@ async function loadCompetitionData(){
 
 async function switchCompetition(id){
   const next=state.competitions.find(x=>x.id===id); if(!next)return
-  if(!confirmLeaveLineup()) return
+  if(!(await confirmLeaveLineup())) return
   state.competition=next; state.tab='dashboard'; state.reportType=null; state.lineupDirty=false
   await loadCompetitionData(); render()
 }
@@ -991,7 +1006,7 @@ async function updateMatch(values){if(!canLiveOperate()||!state.selectedMatch)re
 async function startHalf(half){if(!canLiveOperate())return toast('Entre com perfil autorizado.','error');const m=state.selectedMatch;if(!m||m.status==='encerrado')return;if(state.timerHalf===half&&state.timerStartedAt){toast(half==='1T'?'1º tempo já está em andamento.':'2º tempo já está em andamento.');return}const now=new Date().toISOString();let values={status:'ao_vivo'};if(state.timerStartedAt&&state.timerHalf&&state.timerHalf!==half){const elapsed=Math.max(0,Math.floor((Date.now()-new Date(state.timerStartedAt).getTime())/1000));const oldField=state.timerHalf==='2T'?'second_half_elapsed_seconds':'first_half_elapsed_seconds';values[oldField]=(m[oldField]||0)+elapsed}if(half==='1T')values.first_half_started_at=now;else values.second_half_started_at=now;state.timerHalf=half;state.timerStartedAt=now;await updateMatch(values);stopTicker();startTicker()}
 async function pause(){if(!canLiveOperate()||!state.selectedMatch)return;const m=state.selectedMatch;if(!state.timerStartedAt){stopTicker();return}const elapsed=Math.max(0,Math.floor((Date.now()-new Date(state.timerStartedAt).getTime())/1000));const field=state.timerHalf==='2T'?'second_half_elapsed_seconds':'first_half_elapsed_seconds';const values={[field]:(m[field]||0)+elapsed};state.timerStartedAt=null;stopTicker();await updateMatch(values);state.timerHalf=state.timerHalf||'1T';render();toast('Cronômetro pausado e tempo salvo.');}
 async function resetMatchClock(){if(!canLiveOperate()||!state.selectedMatch)return;const m=state.selectedMatch;if(m.status==='encerrado')return toast('Partida encerrada. Reabra para corrigir o tempo.','error');const half=state.timerHalf||'1T';if(!(await askConfirm('Zerar o tempo do '+(half==='2T'?'2º':'1º')+' tempo?')))return;stopTicker();state.timerStartedAt=null;state.timerHalf=half;const field=half==='2T'?'second_half_elapsed_seconds':'first_half_elapsed_seconds';await updateMatch({[field]:0});render();toast('Tempo zerado.');}
-async function finishMatch(){if(!canLiveOperate())return toast('Entre com perfil autorizado.','error');if(!confirmLeaveLineup())return;if(!confirm('Encerrar esta partida e confirmar o placar?'))return;if(state.timerStartedAt)await pause();await updateMatch({status:'encerrado',finished_at:new Date().toISOString()});state.timerStartedAt=null;stopTicker();state.timerHalf=null;await loadMatchDetails(state.selectedMatch.id,false);await loadCompetitionData();await resolvePhaseMatches();await loadCompetitionData();render()}
+async function finishMatch(){if(!canLiveOperate())return toast('Entre com perfil autorizado.','error');if(!(await confirmLeaveLineup()))return;if(!confirm('Encerrar esta partida e confirmar o placar?'))return;if(state.timerStartedAt)await pause();await updateMatch({status:'encerrado',finished_at:new Date().toISOString()});state.timerStartedAt=null;stopTicker();state.timerHalf=null;await loadMatchDetails(state.selectedMatch.id,false);await loadCompetitionData();await resolvePhaseMatches();await loadCompetitionData();render()}
 async function addEvent(){
   if(!canLiveOperate())return toast('Acesso operacional necessário.','error');
   const m=state.selectedMatch;if(!m)return;if(m.status==='encerrado')return toast('Partida encerrada: não é permitido registrar ocorrências.','error');
@@ -1019,7 +1034,7 @@ async function addEvent(){
   await loadMatchDetails(m.id,false);const fresh=await supabase.from('matches').select('*').eq('id',m.id).maybeSingle();if(fresh.data){state.selectedMatch=fresh.data;const idx=state.matches.findIndex(x=>x.id===m.id);if(idx>=0)state.matches[idx]=fresh.data;}state.eventType='gol';render();toast(type==='substituicao'?'Substituição salva.':'Ocorrência salva.');
 }
 
-async function saveLineup(){if(!canLiveOperate())return toast('Acesso operacional necessário.','error');const m=state.selectedMatch;if(!m)return;if(m.status==='encerrado')return toast('Partida encerrada: a súmula/escalação está bloqueada. Reabra a partida para alterar.','error');const rows=[...document.querySelectorAll('[data-lineup-status]')].map((b,i)=>{const id=b.dataset.lineupStatus;const status=b.dataset.status||'nao_compareceu';return {match_id:m.id,player_id:id,status,starter_position:status==='titular'?i+1:null}});const del=await supabase.from('match_lineups').delete().eq('match_id',m.id);if(del.error)return toast(del.error.message,'error');const {error}=rows.length?await supabase.from('match_lineups').insert(rows):{error:null};if(error)return toast(error.message,'error');state.lineupDirty=false;await loadMatchDetails(m.id);toast('Situação dos atletas salva.');}
+async function saveLineup(){if(!canLiveOperate())return toast('Acesso operacional necessário.','error');const m=state.selectedMatch;if(!m)return;if(m.status==='encerrado')return toast('Partida encerrada: a súmula/escalação está bloqueada. Reabra a partida para alterar.','error');if(!validateLineupStarterLimit())return;const rows=[...document.querySelectorAll('[data-lineup-status]')].map((b,i)=>{const id=b.dataset.lineupStatus;const status=b.dataset.status||'nao_compareceu';return {match_id:m.id,player_id:id,status,starter_position:status==='titular'?i+1:null}});const del=await supabase.from('match_lineups').delete().eq('match_id',m.id);if(del.error)return toast(del.error.message,'error');const {error}=rows.length?await supabase.from('match_lineups').insert(rows):{error:null};if(error)return toast(error.message,'error');state.lineupDirty=false;await loadMatchDetails(m.id);toast('Situação dos atletas salva.');}
 async function vote(player_id){if(!state.session)return openAuth();const {error}=await supabase.from('match_votes').insert({match_id:state.selectedMatch.id,player_id,voter_id:state.session.user.id,vote_type:'melhor_jogador'});if(error)return toast(error.message,'error');toast('Voto registrado.','ok');}
 async function reopenMatch(id){if(!canOperate())return;const ok=await askConfirm('Reabrir esta partida para correção? O placar e os eventos serão preservados.');if(!ok)return;const {error}=await supabase.from('matches').update({status:'agendado',finished_at:null,reopened_at:new Date().toISOString(),reopened_by:state.session.user.id}).eq('id',id);if(error)return toast(error.message,'error');toast('Partida reaberta. Agora você pode alterar resultado e eventos.');await load();}
 async function saveScoreCorrection(){if(!canOperate())return;const m=state.selectedMatch;if(!m?.reopened_at)return toast('Reabra a partida antes de corrigir o resultado.','error');const home=Math.max(0,Number(document.querySelector('#corrHome')?.value)||0),away=Math.max(0,Number(document.querySelector('#corrAway')?.value)||0);const {error}=await supabase.from('matches').update({home_score:home,away_score:away}).eq('id',m.id);if(error)return toast(error.message,'error');await loadMatchDetails(m.id,false);await load();toast('Resultado corrigido.');}
@@ -2210,7 +2225,7 @@ async function openMatchFromButton(id){
       return;
     }
 
-    if(state.selectedMatch && String(state.selectedMatch.id)!==String(id) && !confirmLeaveLineup()) return;
+    if(state.selectedMatch && String(state.selectedMatch.id)!==String(id) && !(await confirmLeaveLineup())) return;
     state.lineupDirty=false;
     state.tab='ao_vivo';
 
