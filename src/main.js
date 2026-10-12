@@ -11,7 +11,7 @@ const app = document.querySelector('#app')
 const state = {
   tab: 'dashboard', competition: null, competitions: [], matches: [], teams: [], players: [], referees: [], groups: [],
   selectedMatch: null, events: [], allEvents: [], lineups: [], votes: [], sponsors: [], media: [], session: null, profile: null, editingEventId: null,
-  reportType: null, reportMatchId: null, siteAccessCount: 0, moderator: null, moderatorRequests: [],
+  reportType: null, reportMatchId: null, siteAccessCount: 0, moderator: null, moderatorRequests: [], publicVotes: [],
   pendingLineup: {},
   authMode: 'login', loading: false, timerStartedAt: null, timerHalf: null, timerInterval: null, eventClockSeconds: 0, eventHalf: '1T', eventType: 'gol', eventTimerStartedAt: null, eventTimerInterval: null, editingSubId: null
 }
@@ -118,7 +118,7 @@ async function load(){
 async function loadCompetitionData(){
   if(!state.competition)return
   localStorage.setItem('ouro_prata_competition_id',state.competition.id)
-  state.selectedMatch=null; state.events=[]; state.lineups=[]; state.votes=[]
+  state.selectedMatch=null; state.events=[]; state.lineups=[]; state.votes=[]; state.publicVotes=[]
   const cid=state.competition.id
   const [mr,tr,gr,sr,mdr,rr]=await Promise.all([
     supabase.from('matches').select('*').eq('competition_id',cid),
@@ -133,6 +133,7 @@ async function loadCompetitionData(){
   const pr=tids.length?await supabase.from('players').select('*').in('team_id',tids):{data:[]}; state.players=pr.data||[]
   const mids=state.matches.map(x=>x.id)
   const er=mids.length?await supabase.from('match_events').select('*').in('match_id',mids).order('created_at',{ascending:true}):{data:[]}; state.allEvents=er.data||[]
+  const vr=await supabase.rpc('get_championship_vote_counts',{p_competition_id:cid}); state.publicVotes=vr.error?[]:(vr.data||[]);
   state.matches.sort((x,y)=>new Date(x.scheduled_at||0)-new Date(y.scheduled_at||0))
   await ensureThirdPlaceMatch();
   await syncKnockoutBracket();
@@ -187,9 +188,9 @@ function subscribe(){
     }).subscribe()
 }
 
-function nav(){return `<aside><div class="brand">⚽ <span>OURO & PRATA</span></div><nav>${[['dashboard','Painel','🏠'],['campeonatos','Campeonatos','🏆'],['jogos','Jogos','📅'],['ao_vivo','Ao vivo','📡'],['times','Times','⚽'],['atletas','Atletas','👤'],['arbitragem','Arbitragem','🚩'],['grupos','Grupos','🗂️'],['classificacao','Classificação','📊'],['patrocinadores','Patrocinadores','⭐'],['midia','Fotos / Arquivos','🖼️'],['relatorios','Relatórios','📄'],['moderadores','Moderadores','🛡️']].map(x=>`<button class="${state.tab===x[0]?'active':''}" data-tab="${x[0]}"><i>${x[2]}</i><span>${x[1]}</span></button>`).join('')}</nav><div class="sidefoot">${esc(state.competition?.name||'Nenhum campeonato')}<br><small>${state.competition?.season||''}</small></div></aside>`}
+function nav(){return `<aside><div class="brand">⚽ <span>OURO & PRATA</span></div><nav>${[['dashboard','Painel','🏠'],['campeonatos','Campeonatos','🏆'],['jogos','Jogos','📅'],['ao_vivo','Ao vivo','📡'],['times','Times','⚽'],['atletas','Atletas','👤'],['arbitragem','Arbitragem','🚩'],['grupos','Grupos','🗂️'],['classificacao','Classificação','📊'],['patrocinadores','Patrocinadores','⭐'],['midia','Fotos / Arquivos','🖼️'],['relatorios','Relatórios','📄'],['votacao','Votação','🗳️'],['moderadores','Moderadores','🛡️']].map(x=>`<button class="${state.tab===x[0]?'active':''}" data-tab="${x[0]}"><i>${x[2]}</i><span>${x[1]}</span></button>`).join('')}</nav><div class="sidefoot">${esc(state.competition?.name||'Nenhum campeonato')}<br><small>${state.competition?.season||''}</small></div></aside>`}
 function header(){return `<header class="app-header"><div class="brand"><img class="app-logo" src="${logoOuroPrata}" alt="Seleção Ouro e Prata"><div><div class="eyebrow">GESTÃO ESPORTIVA • ONLINE</div><h1>${title()}</h1><div class="brand-subtitle">${esc(state.competition?.name||'Nenhum campeonato')} ${state.competition?.season?`• ${state.competition.season}`:''}</div></div></div><div class="header-actions"><label class="competition-switch"><span>CAMPEONATO</span><select id="competitionSelector">${state.competitions.map(c=>`<option value="${c.id}" ${c.id===state.competition?.id?'selected':''}>${esc(c.name)}${c.season?` • ${c.season}`:''}</option>`).join('')}</select></label><span class="pill">● ${state.session?'CONECTADO':'MODO PÚBLICO'}</span><button class="userbtn" id="authBtn">${state.session?`👤 ${esc(state.moderator?.username||state.profile?.full_name||state.session.user.email)} · ${state.moderator?'Moderador':roleLabel(state.profile?.role)}`:'🔐 Entrar'}</button></div></header>`}
-function title(){return ({dashboard:'Painel geral',campeonatos:'Campeonatos',jogos:'Jogos',ao_vivo:'Central ao vivo',times:'Times',atletas:'Atletas',arbitragem:'Arbitragem',grupos:'Classificação por grupo',classificacao:'Classificação geral',patrocinadores:'Patrocinadores',midia:'Fotos e arquivos',relatorios:'Relatórios',moderadores:'Moderadores'})[state.tab]}
+function title(){return ({dashboard:'Painel geral',campeonatos:'Campeonatos',jogos:'Jogos',ao_vivo:'Central ao vivo',times:'Times',atletas:'Atletas',arbitragem:'Arbitragem',grupos:'Classificação por grupo',classificacao:'Classificação geral',patrocinadores:'Patrocinadores',midia:'Fotos e arquivos',relatorios:'Relatórios',votacao:'Votação pública',moderadores:'Moderadores'})[state.tab]}
 function card(title,value,sub=''){return `<div class="card"><div class="muted">${title}</div><div class="big">${value}</div><div class="muted">${sub}</div></div>`}
 function content(){
   if(state.tab==='campeonatos') return competitionsView()
@@ -204,6 +205,7 @@ function content(){
   if(state.tab==='patrocinadores') return sponsorsView()
   if(state.tab==='midia') return mediaView()
   if(state.tab==='relatorios') return reportsView()
+  if(state.tab==='votacao') return publicVotingView()
   if(state.tab==='moderadores') return moderatorsView()
 }
 function competitionStatusLabel(s){return ({active:'ATIVO',completed:'REALIZADO',archived:'ARQUIVADO',draft:'EM PREPARAÇÃO'})[s]||String(s||'ATIVO').toUpperCase()}
@@ -364,6 +366,55 @@ function openCompetitionConfig(){if(!canOperate())return;const c=state.competiti
 function phaseRow(p,i){return `<div class="phase-row" data-phase-row><input data-phase-name value="${esc(p.name||'Fase '+(i+1))}" placeholder="Nome da fase"><select data-phase-type><option value="classificatoria" ${p.type==='classificatoria'?'selected':''}>Classificatória</option><option value="mata-mata" ${p.type==='mata-mata'?'selected':''}>Mata-mata</option></select><button class="smallbtn" data-phase-remove>Excluir</button></div>`}
 async function saveCompetitionConfig(){if(!canOperate())return;const rows=[...document.querySelectorAll('[data-phase-row]')];const phases=rows.map((r,i)=>({name:r.querySelector('[data-phase-name]').value.trim()||`Fase ${i+1}`,type:r.querySelector('[data-phase-type]').value}));if(!phases.length)return toast('Inclua pelo menos uma fase.','error');const {error}=await supabase.from('competitions').update({group_count:Number(document.querySelector('#cfgGroupCount').value),phases}).eq('id',state.competition.id);if(error)return toast(error.message,'error');document.querySelector('#competitionConfigModal')?.remove();await load();toast('Configuração do campeonato salva.');}
 function sponsorsView(){return `<section class="panel"><div class="panelhead"><div><h2>Patrocinadores</h2><p class="muted">Parceiros oficiais da competição.</p></div>${canOperate()?'<button class="primary" data-sponsor-new>+ Incluir patrocinador</button>':''}</div><div class="flags">${state.sponsors.filter(s=>s.active).sort((a,b)=>a.sort_order-b.sort_order).map(s=>`<div class="sponsor-card">${s.logo_url?`<img src="${esc(s.logo_url)}" alt="${esc(s.name)}">`:''}<b>${esc(s.name)}</b>${s.website?`<a href="${esc(s.website)}" target="_blank">Site</a>`:''}${canOperate()?`<button class="smallbtn" data-sponsor-edit="${s.id}">Alterar</button><button class="smallbtn" data-sponsor-delete="${s.id}">Excluir</button>`:''}</div>`).join('')}</div></section>`}
+function votingWindow(){
+  const start=new Date('2026-12-09T00:00:00-03:00'), end=new Date('2026-12-20T11:30:00-03:00'), now=new Date();
+  if(now<start)return {open:false,phase:'before',start,end,label:'A votação abrirá em 09/12/2026.'};
+  if(now>end)return {open:false,phase:'after',start,end,label:'A votação foi encerrada em 20/12/2026 às 11h30.'};
+  return {open:true,phase:'open',start,end,label:'Votação aberta até 20/12/2026 às 11h30.'};
+}
+function voteDeviceId(){
+  const key='ouro_prata_voting_device_id';
+  let id=localStorage.getItem(key)||'';
+  if(!id){
+    const m=document.cookie.match(/(?:^|; )ouro_prata_voting_device_id=([^;]+)/); id=m?decodeURIComponent(m[1]):'';
+  }
+  if(!id){id=(crypto?.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`);localStorage.setItem(key,id);document.cookie=`ouro_prata_voting_device_id=${encodeURIComponent(id)}; max-age=31536000; path=/; SameSite=Lax`}
+  else{localStorage.setItem(key,id)}
+  return id;
+}
+function voteLocalKey(type){return `ouro_prata_vote_${state.competition?.id||'sem'}_${type}`}
+function localVote(type){return localStorage.getItem(voteLocalKey(type))||''}
+function finalMatch(){return state.matches.find(m=>m.phase_type==='final'&&Number(m.bracket_order||1)===1)||state.matches.find(m=>m.phase_type==='final'&&m.phase_name!=='3º Lugar')||null}
+function publicVoteCounts(type){const out={};(state.publicVotes||[]).filter(v=>v.vote_type===type).forEach(v=>out[v.player_id]=Number(v.total)||0);return out}
+function publicVotingCandidates(type){
+  if(type==='campeonato')return state.players.slice().sort((a,b)=>String(a.full_name||a.name||'').localeCompare(String(b.full_name||b.name||''),'pt-BR'));
+  const fm=finalMatch(); if(!fm?.home_team_id||!fm?.away_team_id)return [];
+  const tids=new Set([fm.home_team_id,fm.away_team_id]);
+  return state.players.filter(p=>tids.has(p.team_id)).sort((a,b)=>String(a.full_name||a.name||'').localeCompare(String(b.full_name||b.name||''),'pt-BR'));
+}
+function publicVoteCard(type,title,description){
+  const win=votingWindow(), counts=publicVoteCounts(type), candidates=publicVotingCandidates(type), chosen=localVote(type);
+  const closed=!win.open||!!chosen;
+  const disabled=closed?'disabled':'';
+  return `<div class="public-vote-card"><div class="public-vote-card-head"><div><span class="eyebrow">${type==='campeonato'?'🏆 CAMPEONATO':'🏅 FINAL'}</span><h3>${title}</h3><p class="muted">${description}</p></div><span class="tag">${Object.values(counts).reduce((a,b)=>a+b,0)} voto(s)</span></div>${type==='final'&&!candidates.length?`<div class="empty">A votação da final ficará disponível quando as duas equipes da final estiverem definidas.</div>`:candidates.length?`<div class="public-vote-list">${candidates.map(p=>`<button class="public-vote-option ${chosen===String(p.id)?'selected':''}" data-public-vote="${p.id}" data-public-vote-type="${type}" ${disabled}><span class="public-vote-player">${p.photo_url?`<img src="${esc(p.photo_url)}" alt="">`:flag(teamName(p.team_id))}<span><b>${esc(p.full_name||p.name||'Atleta')}</b><small>${esc(teamName(p.team_id)||'')} · ${esc(cat(p.category)||'')}</small></span></span><strong>${counts[p.id]||0}</strong></button>`).join('')}</div>`:`<div class="empty">Nenhum atleta disponível para votação.</div>`}<small class="public-vote-status">${chosen?'Seu voto nesta categoria já foi registrado.':win.label}</small></div>`
+}
+function publicVotingView(){
+  const win=votingWindow();
+  return `<section class="panel public-voting-page"><div class="panelhead"><div><span class="eyebrow">VOTAÇÃO PÚBLICA</span><h2>🏆 Melhor atleta do campeonato</h2><p class="muted">Cada celular/navegador poderá registrar somente 01 voto para cada categoria: campeonato e final.</p></div><span class="status ${win.open?'ao_vivo':''}">${win.open?'● VOTAÇÃO ABERTA':'○ '+(win.phase==='before'?'AGUARDANDO ABERTURA':'ENCERRADA')}</span></div><div class="public-voting-period"><b>Período:</b> 09/12/2026 até 20/12/2026 às 11h30. <span>São permitidos no máximo 02 votos por dispositivo: 01 em cada categoria.</span></div><div class="public-voting-grid">${publicVoteCard('campeonato','Melhor atleta do campeonato','Escolha 01 atleta entre todos os atletas inscritos na competição.')}${publicVoteCard('final','Melhor atleta da final','Escolha 01 atleta entre os atletas das duas equipes classificadas para a final.')}</div></section>`
+}
+async function submitPublicVote(type,playerId,button){
+  const win=votingWindow(); if(!win.open)return toast(win.label,'error');
+  if(localVote(type))return toast('Você já registrou seu voto nesta categoria.','error');
+  const deviceId=voteDeviceId();
+  document.querySelectorAll(`[data-public-vote-type="${type}"]`).forEach(b=>b.disabled=true);
+  const res=await supabase.rpc('register_championship_vote',{p_competition_id:state.competition.id,p_player_id:playerId,p_vote_type:type,p_device_id:deviceId});
+  if(res.error)return render(),toast(res.error.message||'Não foi possível registrar o voto.','error');
+  const data=res.data||{}; if(!data.ok)return render(),toast(data.message||'Não foi possível registrar o voto.','error');
+  localStorage.setItem(voteLocalKey(type),String(playerId));
+  state.publicVotes=(await supabase.rpc('get_championship_vote_counts',{p_competition_id:state.competition.id})).data||state.publicVotes;
+  render(); toast('Voto registrado com sucesso.','ok');
+}
+
 function mediaView(){const photos=state.media.filter(x=>x.category==='foto'),videos=state.media.filter(x=>x.category==='video'),files=state.media.filter(x=>!['foto','video'].includes(x.category));return `<section class="panel"><div class="panelhead"><div><h2>Fotos / Arquivos / Vídeos</h2><p class="muted">Biblioteca oficial da Copa.</p></div>${canOperate()?'<button class="primary" data-media-new>+ Adicionar foto, vídeo ou arquivo</button>':''}</div><h3>Fotos</h3><div class="media-grid">${photos.length?photos.map(mediaCard).join(''):'<div class="empty">Nenhuma foto cadastrada.</div>'}</div><h3>Vídeos</h3><div class="media-grid video-grid">${videos.length?videos.map(mediaCard).join(''):'<div class="empty">Nenhum vídeo cadastrado.</div>'}</div><h3>Arquivos</h3><div class="media-list">${files.length?files.map(mediaCard).join(''):'<div class="empty">Nenhum arquivo cadastrado.</div>'}</div></section>`}
 function mediaCard(x){const isImg=x.mime_type?.startsWith('image/'),isVideo=x.mime_type?.startsWith('video/');return `<div class="media-card">${isImg?`<img class="media-thumb" src="${esc(x.file_url)}" alt="${esc(x.title)}" loading="lazy">`:isVideo?`<video src="${esc(x.file_url)}" controls preload="metadata"></video>`:'📄'}<b>${esc(x.title)}</b>${x.description?`<small>${esc(x.description)}</small>`:''}<a class="smallbtn" href="${esc(x.file_url)}" target="_blank">Abrir</a>${canOperate()?`<button class="smallbtn" data-media-delete="${x.id}">Excluir</button>`:''}</div>`}
 function reportBrandHeader(){return `<div class="report-brand"><img src="${logoCopaNacoes}" alt="Copa das Nações"><div><div class="report-brand-kicker">CAMPEONATO</div><h2>${esc(state.competition?.name||'Copa das Nações')}</h2><p>${esc(state.competition?.season||'')} • Ouro / Prata / Diamante</p></div></div>`}
@@ -1386,6 +1437,19 @@ function ensureTabletPortraitV22(){
 </style>`);
 }
 
+function ensureMediaTabletLandscapeStyles(){
+  if(document.querySelector('#ouroMediaTabletLandscape'))return;
+  document.head.insertAdjacentHTML('beforeend',`<style id="ouroMediaTabletLandscape">
+  /* V22.5 - tablet horizontal: Fotos, vídeos e arquivos lado a lado. */
+  @media (min-width:700px) and (max-width:1100px) and (orientation:landscape){
+    .media-grid,.media-list{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;width:100%!important;min-width:0!important;align-items:start!important}
+    .media-grid:not(.video-grid) .media-card,.media-list .media-card{width:100%!important;max-width:none!important;min-width:0!important;justify-self:stretch!important;box-sizing:border-box!important}
+    .media-card .media-thumb,.media-card video{width:100%!important;height:105px!important;object-fit:cover!important}
+    .media-card b,.media-card small{overflow-wrap:anywhere!important}
+  }
+  </style>`)
+}
+
 function ensureAthleteToolbarStyles(){if(document.querySelector('#ouroAthleteToolbarStyles'))return;document.head.insertAdjacentHTML('beforeend',`<style id="ouroAthleteToolbarStyles">.athlete-panel-head{align-items:flex-start!important;gap:12px!important}.athlete-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}.athlete-actions .tag{white-space:nowrap}.athlete-consult-modal,.athlete-inscritos-modal{max-width:980px}.athlete-inscritos-group{margin:12px 0 16px}.athlete-inscritos-group h3{display:flex;align-items:center;gap:8px;margin:0 0 7px;color:#15553f}.athlete-inscritos-group h3 .tag{margin-left:auto}@media(max-width:700px){.athlete-panel-head{display:block!important}.athlete-actions{justify-content:flex-start;margin-top:10px}.athlete-actions button{flex:1 1 auto;min-width:125px}}@media(max-width:499px){.athlete-actions{gap:5px}.athlete-actions button{min-width:0;font-size:10px;padding:7px 6px!important}.athlete-actions .tag{width:100%}}
 /* V22.5 - ordem fixa dos comandos da aba Atletas */
 .athlete-actions [data-athlete-consult]{order:1!important}
@@ -1754,7 +1818,7 @@ function ensureReportsCleanStyles(){
 }
 
 function ensureEventHalfStyles(){if(document.getElementById('event-half-styles'))return;const st=document.createElement('style');st.id='event-half-styles';st.textContent='.event-half-selector{display:flex;gap:8px;flex-wrap:wrap}.event-half-btn{transition:all .15s ease}.event-half-btn.event-half-active{background:#087f5b!important;color:#fff!important;border-color:#087f5b!important;box-shadow:0 0 0 2px rgba(8,127,91,.12) inset}.event-half-btn.event-half-active:hover{background:#066b4d!important;color:#fff!important}.event-half-btn:disabled{opacity:.55}';document.head.appendChild(st)}
-function render(){ensureCustomStyles();ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureReportsCleanStyles();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+function render(){ensureCustomStyles();ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureMediaTabletLandscapeStyles();ensureReportsCleanStyles();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
@@ -1878,7 +1942,7 @@ function bind(){document.querySelectorAll('[data-open-match]').forEach(b=>{b.typ
   document.querySelector('#eventTeam')?.addEventListener('change',fillEventPlayers);fillEventPlayers();
   document.querySelectorAll('[data-event-type]').forEach(btn=>btn.onclick=()=>{if(btn.disabled)return;const type=btn.dataset.eventType;state.eventType=type;const sel=document.querySelector('#eventType');if(sel)sel.value=type;document.querySelectorAll('[data-event-type]').forEach(x=>x.classList.toggle('selected',x.dataset.eventType===type));const sub=document.querySelector('#substitutionPlayers'),normal=document.querySelector('#normalEventPlayer');const isSub=type==='substituicao';if(sub)sub.style.display=isSub?'grid':'none';if(normal)normal.style.display=isSub?'none':'block';fillEventPlayers()});
 const eventButtons=[...document.querySelectorAll('[data-action="event"]')];eventButtons.slice(1).forEach(b=>b.remove());
-  document.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{const a=b.dataset.action;if(a==='start1')await startHalf('1T');if(a==='start2')await startHalf('2T');if(a==='pause')await pause();if(a==='resetMatchClock')await resetMatchClock();if(a==='finish')await finishMatch();if(a==='event')await addEvent();if(a==='sub')await addSub();if(a==='saveLineup')await saveLineup();if(a==='saveScoreCorrection')await saveScoreCorrection()});document.querySelectorAll('[data-vote]').forEach(b=>b.onclick=()=>vote(b.dataset.vote));document.querySelectorAll('[data-reopen-match]').forEach(b=>b.onclick=()=>reopenMatch(b.dataset.reopenMatch));document.querySelectorAll('[data-not-started]').forEach(b=>b.onclick=()=>markNotStarted(b.dataset.notStarted));document.querySelectorAll('[data-sponsor-new]').forEach(b=>b.onclick=()=>sponsorModal());document.querySelectorAll('[data-sponsor-edit]').forEach(b=>b.onclick=()=>sponsorModal(b.dataset.sponsorEdit));document.querySelectorAll('[data-sponsor-delete]').forEach(b=>b.onclick=()=>deleteSponsor(b.dataset.sponsorDelete));document.querySelectorAll('[data-media-new]').forEach(b=>b.onclick=()=>mediaModal());document.querySelectorAll('[data-media-delete]').forEach(b=>b.onclick=()=>deleteMedia(b.dataset.mediaDelete));document.querySelectorAll('[data-event-edit]').forEach(b=>b.onclick=()=>{state.editingEventId=b.dataset.eventEdit;render()});document.querySelectorAll('[data-event-delete]').forEach(b=>b.onclick=()=>deleteEvent(b.dataset.eventDelete));document.querySelectorAll('[data-event-save]').forEach(b=>b.onclick=()=>saveEventInline(b.dataset.eventSave));document.querySelectorAll('[data-event-update]').forEach(b=>b.onclick=()=>updateEvent(b.dataset.eventUpdate));document.querySelectorAll('[data-event-edit-cancel]').forEach(b=>b.onclick=()=>{state.editingEventId=null;render()});document.querySelectorAll('[data-report]').forEach(b=>b.onclick=async()=>{state.reportType=b.dataset.report;state.reportMatchId=null;render();if(b.dataset.report==='sumula'&&state.matches.length){await loadReportMatch(state.matches[0].id)}});document.querySelector('#reportMatchSelect')?.addEventListener('change',e=>loadReportMatch(e.target.value));bindAthleteReportFilters();bindCartoesReportFilters();document.querySelector('[data-sponsor-save]')?.addEventListener('click',e=>saveSponsor(e.target.dataset.sponsorSave||''));document.querySelector('[data-media-save]')?.addEventListener('click',saveMedia);document.querySelector('[data-configure-competition]')?.addEventListener('click',openCompetitionConfig);document.querySelector('[data-report-print]')?.addEventListener('click',()=>window.print());document.querySelectorAll('[data-player-data]').forEach(b=>b.onclick=()=>playerDataModal(b.dataset.playerData));document.querySelectorAll('[data-lineup-present]').forEach(cb=>cb.onchange=()=>{const row=cb.closest('[data-player-row]');const btn=row?.querySelector('[data-lineup-status]');if(btn&&!cb.checked){btn.dataset.status='nao_compareceu';btn.textContent='Ausente';btn.className='statusbtn status-nao_compareceu';}else if(btn&&cb.checked&&btn.dataset.status==='nao_compareceu'){btn.dataset.status='reserva';btn.textContent='Reserva';btn.className='statusbtn status-reserva';}row?.classList.toggle('is-present',cb.checked);row?.classList.toggle('is-absent',!cb.checked);updateLineupCounts(row?.closest('.lineupteam'))});}
+  document.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{const a=b.dataset.action;if(a==='start1')await startHalf('1T');if(a==='start2')await startHalf('2T');if(a==='pause')await pause();if(a==='resetMatchClock')await resetMatchClock();if(a==='finish')await finishMatch();if(a==='event')await addEvent();if(a==='sub')await addSub();if(a==='saveLineup')await saveLineup();if(a==='saveScoreCorrection')await saveScoreCorrection()});document.querySelectorAll('[data-vote]').forEach(b=>b.onclick=()=>vote(b.dataset.vote));document.querySelectorAll('[data-reopen-match]').forEach(b=>b.onclick=()=>reopenMatch(b.dataset.reopenMatch));document.querySelectorAll('[data-not-started]').forEach(b=>b.onclick=()=>markNotStarted(b.dataset.notStarted));document.querySelectorAll('[data-sponsor-new]').forEach(b=>b.onclick=()=>sponsorModal());document.querySelectorAll('[data-sponsor-edit]').forEach(b=>b.onclick=()=>sponsorModal(b.dataset.sponsorEdit));document.querySelectorAll('[data-sponsor-delete]').forEach(b=>b.onclick=()=>deleteSponsor(b.dataset.sponsorDelete));document.querySelectorAll('[data-media-new]').forEach(b=>b.onclick=()=>mediaModal());document.querySelectorAll('[data-media-delete]').forEach(b=>b.onclick=()=>deleteMedia(b.dataset.mediaDelete));document.querySelectorAll('[data-event-edit]').forEach(b=>b.onclick=()=>{state.editingEventId=b.dataset.eventEdit;render()});document.querySelectorAll('[data-event-delete]').forEach(b=>b.onclick=()=>deleteEvent(b.dataset.eventDelete));document.querySelectorAll('[data-event-save]').forEach(b=>b.onclick=()=>saveEventInline(b.dataset.eventSave));document.querySelectorAll('[data-event-update]').forEach(b=>b.onclick=()=>updateEvent(b.dataset.eventUpdate));document.querySelectorAll('[data-event-edit-cancel]').forEach(b=>b.onclick=()=>{state.editingEventId=null;render()});document.querySelectorAll('[data-public-vote]').forEach(b=>b.onclick=()=>submitPublicVote(b.dataset.publicVoteType,b.dataset.publicVote,b));document.querySelectorAll('[data-report]').forEach(b=>b.onclick=async()=>{state.reportType=b.dataset.report;state.reportMatchId=null;render();if(b.dataset.report==='sumula'&&state.matches.length){await loadReportMatch(state.matches[0].id)}});document.querySelector('#reportMatchSelect')?.addEventListener('change',e=>loadReportMatch(e.target.value));bindAthleteReportFilters();bindCartoesReportFilters();document.querySelector('[data-sponsor-save]')?.addEventListener('click',e=>saveSponsor(e.target.dataset.sponsorSave||''));document.querySelector('[data-media-save]')?.addEventListener('click',saveMedia);document.querySelector('[data-configure-competition]')?.addEventListener('click',openCompetitionConfig);document.querySelector('[data-report-print]')?.addEventListener('click',()=>window.print());document.querySelectorAll('[data-player-data]').forEach(b=>b.onclick=()=>playerDataModal(b.dataset.playerData));document.querySelectorAll('[data-lineup-present]').forEach(cb=>cb.onchange=()=>{const row=cb.closest('[data-player-row]');const btn=row?.querySelector('[data-lineup-status]');if(btn&&!cb.checked){btn.dataset.status='nao_compareceu';btn.textContent='Ausente';btn.className='statusbtn status-nao_compareceu';}else if(btn&&cb.checked&&btn.dataset.status==='nao_compareceu'){btn.dataset.status='reserva';btn.textContent='Reserva';btn.className='statusbtn status-reserva';}row?.classList.toggle('is-present',cb.checked);row?.classList.toggle('is-absent',!cb.checked);updateLineupCounts(row?.closest('.lineupteam'))});}
 
 function moderatorEmail(username){return `${String(username||'').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'')}@moderadores.ouroprata.local`}
 async function moderatorSignup(){
