@@ -1451,7 +1451,7 @@ function ensureTabletPortraitV22(){
     line-height:1.35!important;
     overflow-wrap:anywhere!important;
   }
-  .layout>aside .sidefoot .sidefoot-credit{display:inline!important;font-size:10px!important;line-height:1.35!important;font-weight:600!important;white-space:nowrap!important;}
+  .layout>aside .sidefoot .sidefoot-credit{display:inline!important;font-size:12px!important;line-height:1.15!important;font-weight:400!important;white-space:nowrap!important;}
   .layout>aside nav{
     display:grid!important;
     grid-template-columns:1fr!important;
@@ -1534,6 +1534,126 @@ function ensureTabletPortraitV22(){
   .live-sheet,.public-live-sheet{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
 }
 </style>`);
+}
+
+function ensureTabletLandscapePanelStyles(){
+  if(document.querySelector('#ouroTabletLandscapePanelFix'))return;
+  document.head.insertAdjacentHTML('beforeend',`<style id="ouroTabletLandscapePanelFix">
+  /* V22.5 - painel lateral no tablet horizontal: não remontar botões nem sobrepor o rodapé. */
+  @media (min-width:700px) and (max-width:1800px) and (orientation:landscape) and (pointer:coarse){
+    html,body,#app{width:100%!important;min-width:0!important;max-width:none!important;overflow-x:hidden!important}
+    .layout:not(.reports-layout){
+      display:block!important;
+      width:100%!important;
+      min-width:0!important;
+      max-width:none!important;
+      position:relative!important;
+    }
+    .layout:not(.reports-layout)>aside{
+      position:fixed!important;
+      left:0!important;
+      top:0!important;
+      bottom:0!important;
+      width:262px!important;
+      min-width:262px!important;
+      max-width:262px!important;
+      height:100vh!important;
+      max-height:100vh!important;
+      margin:0!important;
+      padding:12px 10px!important;
+      box-sizing:border-box!important;
+      display:flex!important;
+      flex-direction:column!important;
+      overflow:hidden!important;
+      z-index:1000!important;
+    }
+    .layout:not(.reports-layout)>aside .brand{
+      flex:0 0 auto!important;
+      width:100%!important;
+      box-sizing:border-box!important;
+      margin:0!important;
+      padding:4px 6px 12px!important;
+      white-space:nowrap!important;
+    }
+    .layout:not(.reports-layout)>aside nav{
+      flex:1 1 auto!important;
+      min-height:0!important;
+      width:100%!important;
+      display:flex!important;
+      flex-direction:column!important;
+      gap:3px!important;
+      overflow-y:auto!important;
+      overflow-x:hidden!important;
+      padding:0 2px!important;
+      box-sizing:border-box!important;
+      scrollbar-width:thin!important;
+    }
+    .layout:not(.reports-layout)>aside nav button{
+      flex:0 0 36px!important;
+      width:100%!important;
+      height:36px!important;
+      min-height:36px!important;
+      max-height:36px!important;
+      margin:0!important;
+      padding:6px 8px!important;
+      box-sizing:border-box!important;
+      display:flex!important;
+      align-items:center!important;
+      justify-content:flex-start!important;
+      gap:8px!important;
+      white-space:nowrap!important;
+      overflow:hidden!important;
+      font-size:12px!important;
+      line-height:1!important;
+    }
+    .layout:not(.reports-layout)>aside nav button i{
+      flex:0 0 19px!important;
+      width:19px!important;
+      min-width:19px!important;
+      margin:0!important;
+      font-size:18px!important;
+      line-height:1!important;
+      text-align:center!important;
+    }
+    .layout:not(.reports-layout)>aside nav button span{
+      display:inline!important;
+      flex:1 1 auto!important;
+      min-width:0!important;
+      white-space:nowrap!important;
+      overflow:hidden!important;
+      text-overflow:ellipsis!important;
+    }
+    .layout:not(.reports-layout)>aside .sidefoot{
+      position:static!important;
+      flex:0 0 auto!important;
+      width:100%!important;
+      max-width:100%!important;
+      margin:10px 0 0!important;
+      padding:8px 2px 4px!important;
+      box-sizing:border-box!important;
+      font-size:10px!important;
+      line-height:1.3!important;
+      overflow:hidden!important;
+    }
+    .layout:not(.reports-layout)>aside .sidefoot-credit{
+      display:block!important;
+      margin-top:5px!important;
+      font-size:12px!important;
+      line-height:1.2!important;
+      white-space:nowrap!important;
+      overflow:hidden!important;
+      text-overflow:ellipsis!important;
+    }
+    .layout:not(.reports-layout)>main{
+      width:calc(100% - 262px)!important;
+      min-width:0!important;
+      max-width:calc(100% - 262px)!important;
+      margin-left:262px!important;
+      box-sizing:border-box!important;
+      overflow-x:hidden!important;
+    }
+  }
+  </style>`);
 }
 
 function ensureMediaTabletLandscapeStyles(){
@@ -1970,7 +2090,7 @@ function ensureReportsCleanStyles(){
 }
 
 function ensureEventHalfStyles(){if(document.getElementById('event-half-styles'))return;const st=document.createElement('style');st.id='event-half-styles';st.textContent='.event-half-selector{display:flex;gap:8px;flex-wrap:wrap}.event-half-btn{transition:all .15s ease}.event-half-btn.event-half-active{background:#087f5b!important;color:#fff!important;border-color:#087f5b!important;box-shadow:0 0 0 2px rgba(8,127,91,.12) inset}.event-half-btn.event-half-active:hover{background:#066b4d!important;color:#fff!important}.event-half-btn:disabled{opacity:.55}';document.head.appendChild(st)}
-function render(){ensureCustomStyles();ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsCleanStyles();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+function render(){ensureCustomStyles();ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsCleanStyles();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
