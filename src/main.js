@@ -255,8 +255,9 @@ function youtubeEmbedUrl(value){
   try{const u=new URL(String(value||'').trim());let id='';if(u.hostname==='youtu.be')id=u.pathname.split('/').filter(Boolean)[0]||'';else if(u.hostname.includes('youtube.com')){if(u.pathname==='/watch')id=u.searchParams.get('v')||'';else if(/^\/(live|embed|shorts)\//.test(u.pathname))id=u.pathname.split('/').filter(Boolean)[1]||'';}if(id&&/^[A-Za-z0-9_-]{6,}$/.test(id))return `https://www.youtube.com/embed/${id}?autoplay=0&playsinline=1&rel=0`;return ''}catch{return ''}
 }
 async function loadYoutubeStreams(){
- state.youtubeStream=null;state.youtubeRequests=[];if(!state.competition)return;
- try{const r=await supabase.from('youtube_live_streams').select('*').eq('competition_id',String(state.competition.id)).order('criado_em',{ascending:false});if(r.error){console.warn('Falha ao carregar transmissões do YouTube:',r.error.message);return;}const rows=r.data||[];state.youtubeStream=rows.find(x=>String(x.status||'').toLowerCase()==='aprovado')||null;state.youtubeRequests=rows.filter(x=>String(x.status||'').toLowerCase()==='pendente');}catch(e){console.warn('Falha ao carregar transmissão do YouTube.',e)}
+ /* Manter a transmissão atual enquanto consulta o banco. Limpar youtubeStream antes da resposta fazia o player receber um estado transitório vazio e podia provocar reinício em atualizações da tela. */
+ state.youtubeRequests=state.youtubeRequests||[];if(!state.competition)return;
+ try{const r=await supabase.from('youtube_live_streams').select('*').eq('competition_id',String(state.competition.id)).order('criado_em',{ascending:false});if(r.error){console.warn('Falha ao carregar transmissões do YouTube:',r.error.message);return;}const rows=r.data||[];const approved=rows.find(x=>String(x.status||'').toLowerCase()==='aprovado')||null;state.youtubeStream=approved;state.youtubeRequests=rows.filter(x=>String(x.status||'').toLowerCase()==='pendente');}catch(e){console.warn('Falha ao carregar transmissão do YouTube.',e)}
 }
 function canApproveYoutube(){return isAdmin()||isModerator()}
 function youtubeLivePanel(){
@@ -278,7 +279,7 @@ async function deleteYoutubeStream(id){
 function ensureYoutubePersistentHost(){
  let host=document.getElementById('youtubePersistentPlayer');if(host)return host;
  host=document.createElement('div');host.id='youtubePersistentPlayer';host.className='youtube-persistent-player';
- host.innerHTML='<div class="youtube-persistent-head"><strong>▶ YouTube ao vivo — reprodução contínua</strong><button type="button" class="secondary" data-youtube-return>Voltar à Central ao vivo</button></div><div class="youtube-player-frame-slot" id="youtubePersistentFrameSlot"></div><button type="button" class="secondary" data-youtube-expand>⛶ Aumentar tela</button>';
+ host.innerHTML='<div class="youtube-persistent-head"><strong>▶ YouTube ao vivo</strong><div class="youtube-persistent-actions"><button type="button" class="secondary" data-youtube-return>Voltar à Central ao vivo</button><button type="button" class="secondary" data-youtube-expand>⛶ Tela cheia</button></div></div><div class="youtube-player-frame-slot" id="youtubePersistentFrameSlot"></div>';
  document.body.appendChild(host);
  host.querySelector('[data-youtube-return]').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();state.selectedMatch=null;state.tab=state.tab==='ao_vivo'?'dashboard':'ao_vivo';render();if(state.tab==='ao_vivo')requestAnimationFrame(()=>document.querySelector('.youtube-live-panel')?.scrollIntoView({behavior:'auto',block:'start'}));});
  host.querySelector('[data-youtube-expand]').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else if(host.requestFullscreen)await host.requestFullscreen();else toast('Tela cheia não é suportada neste navegador.','error');}catch(e){toast('Não foi possível ampliar o vídeo.','error');}});
@@ -322,7 +323,8 @@ function syncYoutubePersistentPlayer(){
  const stream=state.youtubeStream,streamId=stream?.id==null?'':String(stream.id);let frame=slot.querySelector('#youtubeLiveFrame');
  /* Não remove nem recria o iframe em atualizações de estado transitórias. */
  if(!streamId){if(frame){host.hidden=false;return;}host.hidden=true;return;}
- if(frame&&String(frame.dataset.youtubeStreamId||'')!==streamId){frame.remove();frame=null;}
+ /* Depois de criado, não substituir o iframe durante cliques/atualizações da interface.
+    A troca do src ou a recriação do iframe reinicia o vídeo do YouTube. */
  if(!frame){const src=youtubeEmbedUrl(stream.youtube_url);if(!src){host.hidden=true;return;}frame=document.createElement('iframe');frame.id='youtubeLiveFrame';frame.dataset.youtubeStreamId=streamId;frame.src=src;frame.title='Transmissão ao vivo do YouTube';frame.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';frame.allowFullscreen=true;frame.loading='eager';slot.appendChild(frame);}
  host.hidden=false;
 }
@@ -2388,7 +2390,7 @@ body > #youtubePersistentPlayer #youtubePersistentFrameSlot{display:block!import
 body > #youtubePersistentPlayer #youtubePersistentFrameSlot iframe{display:block!important;width:100%!important;height:100%!important;min-height:0!important;border:0!important}
 body > #youtubePersistentPlayer .youtube-persistent-head{font-size:9px!important;gap:3px!important;margin:0 0 3px!important}
 body > #youtubePersistentPlayer .youtube-persistent-head strong{font-size:9px!important}
-body > #youtubePersistentPlayer .youtube-persistent-head button,body > #youtubePersistentPlayer>[data-youtube-expand]{font-size:9px!important;padding:2px 4px!important}
+body > #youtubePersistentPlayer .youtube-persistent-head button{font-size:9px!important;padding:2px 4px!important}.youtube-persistent-actions{display:flex!important;align-items:center!important;gap:4px!important;flex-wrap:wrap!important}.youtube-persistent-head{flex-wrap:wrap!important}
 @media(max-width:900px){body > #youtubePersistentPlayer,body > #youtubePersistentPlayer.youtube-on-live-tab{top:98px!important;right:6px!important;width:190px!important;max-width:calc(100vw - 300px)!important}}
 @media(max-width:600px){body > #youtubePersistentPlayer,body > #youtubePersistentPlayer.youtube-on-live-tab{top:98px!important;right:5px!important;width:145px!important;max-width:calc(100vw - 290px)!important}}
 `;}
