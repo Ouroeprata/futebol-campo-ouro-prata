@@ -255,9 +255,8 @@ function youtubeEmbedUrl(value){
   try{const u=new URL(String(value||'').trim());let id='';if(u.hostname==='youtu.be')id=u.pathname.split('/').filter(Boolean)[0]||'';else if(u.hostname.includes('youtube.com')){if(u.pathname==='/watch')id=u.searchParams.get('v')||'';else if(/^\/(live|embed|shorts)\//.test(u.pathname))id=u.pathname.split('/').filter(Boolean)[1]||'';}if(id&&/^[A-Za-z0-9_-]{6,}$/.test(id))return `https://www.youtube.com/embed/${id}?autoplay=0&playsinline=1&rel=0`;return ''}catch{return ''}
 }
 async function loadYoutubeStreams(){
- /* Manter a transmissão atual enquanto consulta o banco. Limpar youtubeStream antes da resposta fazia o player receber um estado transitório vazio e podia provocar reinício em atualizações da tela. */
- state.youtubeRequests=state.youtubeRequests||[];if(!state.competition)return;
- try{const r=await supabase.from('youtube_live_streams').select('*').eq('competition_id',String(state.competition.id)).order('criado_em',{ascending:false});if(r.error){console.warn('Falha ao carregar transmissões do YouTube:',r.error.message);return;}const rows=r.data||[];const approved=rows.find(x=>String(x.status||'').toLowerCase()==='aprovado')||null;state.youtubeStream=approved;state.youtubeRequests=rows.filter(x=>String(x.status||'').toLowerCase()==='pendente');}catch(e){console.warn('Falha ao carregar transmissão do YouTube.',e)}
+ state.youtubeStream=null;state.youtubeRequests=[];if(!state.competition)return;
+ try{const r=await supabase.from('youtube_live_streams').select('*').eq('competition_id',String(state.competition.id)).order('criado_em',{ascending:false});if(r.error){console.warn('Falha ao carregar transmissões do YouTube:',r.error.message);return;}const rows=r.data||[];state.youtubeStream=rows.find(x=>String(x.status||'').toLowerCase()==='aprovado')||null;state.youtubeRequests=rows.filter(x=>String(x.status||'').toLowerCase()==='pendente');}catch(e){console.warn('Falha ao carregar transmissão do YouTube.',e)}
 }
 function canApproveYoutube(){return isAdmin()||isModerator()}
 function youtubeLivePanel(){
