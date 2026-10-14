@@ -286,7 +286,7 @@ function ensureYoutubePersistentHost(){
 }
 function syncYoutubePersistentPlayer(){
  const host=ensureYoutubePersistentHost(),slot=host.querySelector('#youtubePersistentFrameSlot');
- const onLiveTab=state.tab==='ao_vivo';host.classList.toggle('youtube-on-live-tab',onLiveTab);const returnButton=host.querySelector('[data-youtube-return]');if(returnButton)returnButton.textContent=onLiveTab?'Ir para página inicial':'Voltar à Central ao vivo';
+ const onLiveTab=state.tab==='ao_vivo';host.classList.toggle('youtube-on-live-tab',onLiveTab);const main=document.querySelector('.layout > main');if(onLiveTab&&main){const header=main.querySelector(':scope > .app-header');if(host.parentElement!==main){if(header&&header.nextSibling)main.insertBefore(host,header.nextSibling);else main.insertBefore(host,main.firstChild);}}else if(host.parentElement!==document.body){document.body.appendChild(host);}const returnButton=host.querySelector('[data-youtube-return]');if(returnButton)returnButton.textContent=onLiveTab?'Ir para página inicial':'Voltar à Central ao vivo';
  const stream=state.youtubeStream, streamId=stream?.id==null?'':String(stream.id);let frame=slot.querySelector('#youtubeLiveFrame');
  if(!streamId){if(frame)frame.remove();host.hidden=true;return;}
  if(frame&&String(frame.dataset.youtubeStreamId||'')!==streamId){frame.remove();frame=null;}
@@ -333,6 +333,18 @@ body>#youtubePersistentPlayer #youtubePersistentFrameSlot iframe{width:100%!impo
 body>#youtubePersistentPlayer>[data-youtube-expand]{font-size:9px!important;padding:2px 4px!important}
 @media(max-width:900px){body>#youtubePersistentPlayer,body>#youtubePersistentPlayer.youtube-on-live-tab{top:98px!important;right:6px!important;width:180px!important;max-width:calc(100vw - 300px)!important}}
 @media(max-width:600px){body>#youtubePersistentPlayer,body>#youtubePersistentPlayer.youtube-on-live-tab{top:98px!important;right:5px!important;width:145px!important;max-width:calc(100vw - 300px)!important}}
+`+`
+/* V6: na aba Ao vivo, vídeo em fluxo normal, largura da área branca e rolagem da página; fora dela fica miniatura fixa. */
+main > #youtubePersistentPlayer.youtube-on-live-tab{position:relative!important;top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;height:auto!important;margin:0 0 14px!important;z-index:1!important;box-sizing:border-box!important;border-radius:0 0 12px 12px!important;box-shadow:0 2px 8px #0002!important;padding:10px!important}
+main > #youtubePersistentPlayer.youtube-on-live-tab .youtube-persistent-head{display:flex!important;align-items:center!important;justify-content:space-between!important;flex-wrap:wrap!important;gap:8px!important;font-size:14px!important;margin-bottom:8px!important}
+main > #youtubePersistentPlayer.youtube-on-live-tab .youtube-persistent-head strong{font-size:14px!important}
+main > #youtubePersistentPlayer.youtube-on-live-tab .youtube-persistent-head button{font-size:12px!important;max-width:none!important;padding:7px 10px!important}
+main > #youtubePersistentPlayer.youtube-on-live-tab #youtubePersistentFrameSlot{width:100%!important;aspect-ratio:16/9!important;height:auto!important}
+main > #youtubePersistentPlayer.youtube-on-live-tab #youtubePersistentFrameSlot iframe{width:100%!important;height:100%!important}
+main > #youtubePersistentPlayer.youtube-on-live-tab>[data-youtube-expand]{font-size:12px!important;padding:6px 9px!important;margin-top:6px!important}
+body > #youtubePersistentPlayer:not(.youtube-on-live-tab){position:fixed!important;top:96px!important;right:8px!important;left:auto!important;bottom:auto!important;width:180px!important;max-width:calc(100vw - 300px)!important;min-width:0!important;z-index:40!important}
+@media(max-width:900px){body > #youtubePersistentPlayer:not(.youtube-on-live-tab){width:155px!important;max-width:calc(100vw - 290px)!important}}
+@media(max-width:560px){body > #youtubePersistentPlayer:not(.youtube-on-live-tab){width:125px!important;max-width:calc(100vw - 285px)!important}}
 `;document.head.appendChild(st)}
 
 function content(){
