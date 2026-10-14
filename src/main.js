@@ -2328,7 +2328,25 @@ function ensureYoutubeTopAreaFix(){
  @media(max-width:560px){body>#youtubePersistentPlayer{top:92px!important;right:6px!important;width:160px!important;max-width:calc(100vw - 220px)!important}body>#youtubePersistentPlayer.youtube-on-live-tab{top:0!important;left:0!important;right:0!important;width:100%!important;max-width:100%!important}}
  `;
 }
-function render(){ensureCustomStyles();ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsCleanStyles();ensureYoutubeStyles();ensureYoutubeTopAreaFix();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;syncYoutubePersistentPlayer();bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+function ensureYoutubePlayerFixV5(){let st=document.getElementById('youtubePlayerFixV5');if(!st){st=document.createElement('style');st.id='youtubePlayerFixV5';document.head.appendChild(st)}st.textContent=`
+/* V5: player pequeno, sem cobrir os controles do jogo nem a barra lateral */
+body > #youtubePersistentPlayer,
+body > #youtubePersistentPlayer.youtube-on-live-tab{
+ position:fixed!important;top:98px!important;right:8px!important;left:auto!important;bottom:auto!important;
+ width:220px!important;min-width:0!important;max-width:calc(100vw - 300px)!important;
+ height:auto!important;max-height:none!important;box-sizing:border-box!important;
+ z-index:30!important;margin:0!important;padding:5px!important;border-radius:10px!important;
+}
+body > #youtubePersistentPlayer #youtubePersistentFrameSlot{display:block!important;width:100%!important;height:auto!important;aspect-ratio:16/9!important;overflow:hidden!important}
+body > #youtubePersistentPlayer #youtubePersistentFrameSlot iframe{display:block!important;width:100%!important;height:100%!important;min-height:0!important;border:0!important}
+body > #youtubePersistentPlayer .youtube-persistent-head{font-size:9px!important;gap:3px!important;margin:0 0 3px!important}
+body > #youtubePersistentPlayer .youtube-persistent-head strong{font-size:9px!important}
+body > #youtubePersistentPlayer .youtube-persistent-head button,body > #youtubePersistentPlayer>[data-youtube-expand]{font-size:9px!important;padding:2px 4px!important}
+@media(max-width:900px){body > #youtubePersistentPlayer,body > #youtubePersistentPlayer.youtube-on-live-tab{top:98px!important;right:6px!important;width:190px!important;max-width:calc(100vw - 300px)!important}}
+@media(max-width:600px){body > #youtubePersistentPlayer,body > #youtubePersistentPlayer.youtube-on-live-tab{top:98px!important;right:5px!important;width:145px!important;max-width:calc(100vw - 290px)!important}}
+`;}
+
+function render(){ensureCustomStyles();ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsCleanStyles();ensureYoutubeStyles();ensureYoutubeTopAreaFix();ensureYoutubePlayerFixV5();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;syncYoutubePersistentPlayer();bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
