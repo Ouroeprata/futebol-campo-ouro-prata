@@ -299,15 +299,16 @@ function syncYoutubePersistentPlayer(){
      const header=main.querySelector(':scope > .app-header');
      const mainRect=main.getBoundingClientRect();
      const top=header?header.getBoundingClientRect().bottom+window.scrollY:mainRect.top+window.scrollY;
-     host.style.setProperty('position','absolute','important');
-     host.style.setProperty('top',Math.max(0,top)+'px','important');
-     host.style.setProperty('left',Math.max(0,mainRect.left+window.scrollX)+'px','important');
+     /* Na Central ao vivo, manter o vídeo fixo na tela; o conteúdo abaixo continua rolando. */
+     host.style.setProperty('position','fixed','important');
+     host.style.setProperty('top',Math.max(0,header?header.getBoundingClientRect().bottom:mainRect.top)+'px','important');
+     host.style.setProperty('left',Math.max(0,mainRect.left)+'px','important');
      host.style.setProperty('right','auto','important');host.style.setProperty('bottom','auto','important');
      host.style.setProperty('width',Math.max(0,main.clientWidth)+'px','important');
      host.style.setProperty('max-width',Math.max(0,main.clientWidth)+'px','important');
      host.style.setProperty('min-width','0','important');host.style.setProperty('height','auto','important');
      host.style.setProperty('margin','0 0 14px','important');host.style.setProperty('padding','10px','important');
-     host.style.setProperty('box-sizing','border-box','important');host.style.setProperty('z-index','2','important');
+     host.style.setProperty('box-sizing','border-box','important');host.style.setProperty('z-index','99999','important');
      host.style.setProperty('border-radius','0 0 12px 12px','important');
      /* O player fica fora do fluxo para preservar o iframe; reservar espaço antes dos controles da Central para não cobrir botões da súmula. */
      const livePanel=main.querySelector('.youtube-live-panel');
