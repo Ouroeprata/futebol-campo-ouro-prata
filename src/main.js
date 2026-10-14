@@ -1123,16 +1123,27 @@ async function exportSelectedPlayers(){
   const msg=`Copiar ${rows.length} atleta(s) para o campeonato de destino?${duplicates.length?` ${duplicates.length} já existente(s) serão ignorado(s).`:''}`;
   if(!(await askConfirm(msg)))return;
 
-  // Insere um por vez para identificar exatamente qual atleta falhou.
+  // Insere um por vez e tenta novamente sem campos opcionais se o banco
+  // informar que alguma coluna de foto não existe nesta instalação.
   const ok=[],failed=[];
-  for(const row of rows){
-    const result=await supabase.from('players').insert(row);
+  for(const originalRow of rows){
+    let row={...originalRow};
+    let result=await supabase.from('players').insert(row);
+    const optionalColumns=['photo_path','photo_url'];
+    for(let attempt=0;result.error&&attempt<optionalColumns.length;attempt++){
+      const msg=String(result.error.message||'');
+      const missing=optionalColumns.find(col=>new RegExp('column[^\n]*'+col+'|'+col+'[^\n]*(does not exist|schema cache|not found)','i').test(msg));
+      if(!missing||!(missing in row))break;
+      delete row[missing];
+      result=await supabase.from('players').insert(row);
+    }
     if(result.error)failed.push(`${row.full_name||row.name}: ${result.error.message}`);
     else ok.push(row.full_name||row.name);
   }
 
   if(!ok.length){
-    return toast('Nenhum atleta foi copiado. '+(failed[0]||'Verifique as permissões do cadastro de atletas.'),'error');
+    const detail=failed[0]||'Verifique as permissões do cadastro de atletas.';
+    return toast('Nenhum atleta foi copiado. Motivo informado pelo banco: '+detail,'error');
   }
   document.querySelector('#playerExportModal')?.remove();
   const detail=failed.length?` ${failed.length} atleta(s) não foram copiados.`:'';
