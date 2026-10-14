@@ -309,8 +309,17 @@ function syncYoutubePersistentPlayer(){
      host.style.setProperty('margin','0 0 14px','important');host.style.setProperty('padding','10px','important');
      host.style.setProperty('box-sizing','border-box','important');host.style.setProperty('z-index','2','important');
      host.style.setProperty('border-radius','0 0 12px 12px','important');
+     /* O player fica fora do fluxo para preservar o iframe; reservar espaço antes dos controles da Central para não cobrir botões da súmula. */
+     const livePanel=main.querySelector('.youtube-live-panel');
+     if(livePanel){
+       const reserve=()=>{if(state.tab==='ao_vivo'&&host.isConnected&&livePanel.isConnected){livePanel.style.setProperty('margin-top',(host.getBoundingClientRect().height+14)+'px','important');}};
+       reserve();
+       const frame=slot.querySelector('iframe');
+       if(frame&&!frame.dataset.controlsSpaceBound){frame.dataset.controlsSpaceBound='1';frame.addEventListener('load',()=>requestAnimationFrame(reserve));}
+     }
    }
  }else{
+   const oldLivePanel=document.querySelector('.youtube-live-panel');if(oldLivePanel)oldLivePanel.style.removeProperty('margin-top');
    ['position','left','bottom','width','maxWidth','minWidth','height','margin','padding','boxSizing','borderRadius'].forEach(k=>host.style.removeProperty(k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())));
    host.style.setProperty('position','fixed','important');host.style.setProperty('top','96px','important');
    host.style.setProperty('right','8px','important');host.style.setProperty('left','auto','important');
