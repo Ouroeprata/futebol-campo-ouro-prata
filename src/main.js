@@ -321,6 +321,18 @@ body>#youtubePersistentPlayer>[data-youtube-expand]{font-size:9px!important;padd
 body>#youtubePersistentPlayer.youtube-on-live-tab{position:fixed!important;top:8px!important;right:8px!important;left:auto!important;bottom:auto!important;width:180px!important;max-width:calc(100vw - 220px)!important;z-index:40!important;border-radius:10px!important}
 @media(max-width:900px){body>#youtubePersistentPlayer,body>#youtubePersistentPlayer.youtube-on-live-tab{top:6px!important;right:6px!important;width:155px!important;max-width:calc(100vw - 190px)!important}}
 @media(max-width:560px){body>#youtubePersistentPlayer,body>#youtubePersistentPlayer.youtube-on-live-tab{top:6px!important;right:5px!important;width:125px!important;max-width:calc(100vw - 155px)!important;padding:4px!important}}
+
+/* CORRECAO FINAL: player compacto; nunca ocupar a faixa do menu lateral nem cobrir controles */
+body>#youtubePersistentPlayer{position:fixed!important;top:98px!important;right:8px!important;left:auto!important;bottom:auto!important;width:220px!important;max-width:calc(100vw - 300px)!important;min-width:0!important;height:auto!important;max-height:none!important;margin:0!important;z-index:20!important;box-sizing:border-box!important;padding:5px!important}
+body>#youtubePersistentPlayer.youtube-on-live-tab{position:fixed!important;top:98px!important;right:8px!important;left:auto!important;bottom:auto!important;width:220px!important;max-width:calc(100vw - 300px)!important;min-width:0!important;height:auto!important;max-height:none!important;z-index:20!important;border-radius:10px!important}
+body>#youtubePersistentPlayer .youtube-persistent-head{gap:3px!important;margin:0 0 3px!important;font-size:9px!important}
+body>#youtubePersistentPlayer .youtube-persistent-head strong{font-size:9px!important}
+body>#youtubePersistentPlayer .youtube-persistent-head button{font-size:9px!important;padding:2px 4px!important;max-width:78px!important}
+body>#youtubePersistentPlayer #youtubePersistentFrameSlot{width:100%!important;height:auto!important;aspect-ratio:16/9!important}
+body>#youtubePersistentPlayer #youtubePersistentFrameSlot iframe{width:100%!important;height:100%!important}
+body>#youtubePersistentPlayer>[data-youtube-expand]{font-size:9px!important;padding:2px 4px!important}
+@media(max-width:900px){body>#youtubePersistentPlayer,body>#youtubePersistentPlayer.youtube-on-live-tab{top:98px!important;right:6px!important;width:180px!important;max-width:calc(100vw - 300px)!important}}
+@media(max-width:600px){body>#youtubePersistentPlayer,body>#youtubePersistentPlayer.youtube-on-live-tab{top:98px!important;right:5px!important;width:145px!important;max-width:calc(100vw - 300px)!important}}
 `;document.head.appendChild(st)}
 
 function content(){
