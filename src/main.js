@@ -2248,7 +2248,24 @@ function ensureReportsCleanStyles(){
 function ensureEventHalfStyles(){if(document.getElementById('event-half-styles'))return;const st=document.createElement('style');st.id='event-half-styles';st.textContent='.event-half-selector{display:flex;gap:8px;flex-wrap:wrap}.event-half-btn{transition:all .15s ease}.event-half-btn.event-half-active{background:#087f5b!important;color:#fff!important;border-color:#087f5b!important;box-shadow:0 0 0 2px rgba(8,127,91,.12) inset}.event-half-btn.event-half-active:hover{background:#066b4d!important;color:#fff!important}.event-half-btn:disabled{opacity:.55}';document.head.appendChild(st)}
 function ensureYoutubePersistentHost(){
  let host=document.getElementById('youtubePersistentPlayer');
- if(!host){host=document.createElement('div');host.id='youtubePersistentPlayer';host.className='youtube-persistent-player';host.hidden=true;host.innerHTML='<div class="youtube-persistent-player-head"><span>▶ YouTube ao vivo — reprodução contínua</span><button type="button" class="secondary" data-youtube-return>Voltar à Central ao vivo</button></div><div class="youtube-player-frame-slot" id="youtubePersistentFrameSlot"></div>';document.body.appendChild(host);host.querySelector('[data-youtube-return]')?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();state.tab='ao_vivo';state.selectedMatch=null;render();requestAnimationFrame(()=>{const panel=document.querySelector('.youtube-live-panel');if(panel)panel.scrollIntoView({behavior:'smooth',block:'start'});});});}
+ if(!host){host=document.createElement('div');host.id='youtubePersistentPlayer';host.className='youtube-persistent-player';host.hidden=true;host.innerHTML='<div class="youtube-persistent-player-head"><span>▶ YouTube ao vivo — reprodução contínua</span><button type="button" class="secondary" data-youtube-return>Voltar à Central ao vivo</button></div><div class="youtube-player-frame-slot" id="youtubePersistentFrameSlot"></div>';document.body.appendChild(host);}
+ const back=host.querySelector('[data-youtube-return]');
+ if(back) back.onclick=e=>{
+   e.preventDefault(); e.stopPropagation();
+   state.tab='ao_vivo';
+   state.selectedMatch=null;
+   if(typeof state.selectedMatchId!=='undefined') state.selectedMatchId=null;
+   render();
+   const reveal=()=>{
+     const panel=document.querySelector('.youtube-live-panel');
+     if(panel){panel.scrollIntoView({behavior:'auto',block:'start'});return true;}
+     const main=document.querySelector('main');
+     if(main)main.scrollTop=0;
+     window.scrollTo({top:0,behavior:'auto'});
+     return false;
+   };
+   requestAnimationFrame(()=>{if(!reveal())setTimeout(reveal,250);});
+ };
  return host;
 }
 function syncYoutubePersistentPlayer(){
