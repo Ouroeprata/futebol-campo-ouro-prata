@@ -2252,21 +2252,38 @@ function ensureYoutubePersistentHost(){
  const back=host.querySelector('[data-youtube-return]');
  if(back) back.onclick=e=>{
    e.preventDefault(); e.stopPropagation();
+   if(host.classList.contains('youtube-central-expanded')){
+     host.classList.remove('youtube-central-expanded');
+     ['position','top','left','right','bottom','width','maxWidth','zIndex','height','borderRadius','overflow'].forEach(k=>host.style[k]='');
+     back.textContent='Voltar à Central ao vivo';
+     return;
+   }
    state.tab='ao_vivo';
-   state.selectedMatch=null;
-   if(typeof state.selectedMatchId!=='undefined') state.selectedMatchId=null;
+   state.reportType=null;
    render();
-   const reveal=()=>{
+   requestAnimationFrame(()=>requestAnimationFrame(()=>{
      const panel=document.querySelector('.youtube-live-panel');
-     if(panel){panel.scrollIntoView({behavior:'auto',block:'start'});return true;}
-     const main=document.querySelector('main');
-     if(main)main.scrollTop=0;
-     window.scrollTo({top:0,behavior:'auto'});
-     return false;
-   };
-   requestAnimationFrame(()=>{if(!reveal())setTimeout(reveal,250);});
+     const placeholder=document.querySelector('.youtube-player-placeholder');
+     if(!panel || !placeholder){window.scrollTo({top:0,behavior:'auto'});return;}
+     panel.scrollIntoView({behavior:'auto',block:'start'});
+     const rect=placeholder.getBoundingClientRect();
+     host.hidden=false;
+     host.classList.add('youtube-central-expanded');
+     host.style.position='fixed'; host.style.top=Math.max(8,rect.top)+'px';
+     host.style.left=Math.max(8,rect.left)+'px'; host.style.right='auto'; host.style.bottom='auto';
+     host.style.width=Math.max(280,Math.min(rect.width,window.innerWidth-16))+'px';
+     host.style.maxWidth='calc(100vw - 16px)'; host.style.zIndex='100000';
+     host.style.height='auto'; host.style.borderRadius='12px'; host.style.overflow='hidden';
+     back.textContent='Minimizar vídeo';
+   }));
  };
  return host;
+}
+function ensureYoutubeReturnFixStyles(){
+ if(document.getElementById('youtube-return-fix-styles'))return;
+ const st=document.createElement('style');st.id='youtube-return-fix-styles';
+ st.textContent='.youtube-persistent-player.youtube-central-expanded{position:fixed!important;right:auto!important;bottom:auto!important;width:min(1100px,calc(100vw - 16px))!important;max-width:calc(100vw - 16px)!important;box-sizing:border-box!important}.youtube-persistent-player.youtube-central-expanded .youtube-player-frame-slot{width:100%!important;aspect-ratio:16/9!important}.youtube-persistent-player.youtube-central-expanded iframe{width:100%!important;height:100%!important;display:block!important;border:0!important}';
+ document.head.appendChild(st);
 }
 function syncYoutubePersistentPlayer(){
  const host=ensureYoutubePersistentHost();
@@ -2281,7 +2298,7 @@ function syncYoutubePersistentPlayer(){
  host.classList.toggle('youtube-on-live-tab',state.tab==='ao_vivo');
 }
 function render(){
- ensureCustomStyles();ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsCleanStyles();ensureYoutubeStyles();
+ ensureCustomStyles();ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsCleanStyles();ensureYoutubeStyles();ensureYoutubeReturnFixStyles();
  const isReports=state.tab==='relatorios';
  app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;
  syncYoutubePersistentPlayer();bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker();
