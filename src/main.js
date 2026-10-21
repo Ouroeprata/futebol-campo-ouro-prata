@@ -322,12 +322,36 @@ function syncYoutubePersistentPlayer(){
  }else{
    const oldLivePanel=document.querySelector('.youtube-live-panel');if(oldLivePanel)oldLivePanel.style.removeProperty('margin-top');
    ['position','left','bottom','width','maxWidth','minWidth','height','margin','padding','boxSizing','borderRadius'].forEach(k=>host.style.removeProperty(k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())));
-   host.style.setProperty('position','fixed','important');host.style.setProperty('top','96px','important');
-   host.style.setProperty('right','8px','important');host.style.setProperty('left','auto','important');
-   host.style.setProperty('bottom','auto','important');host.style.setProperty('width','180px','important');
-   host.style.setProperty('max-width','calc(100vw - 220px)','important');host.style.setProperty('min-width','0','important');
-   host.style.setProperty('height','auto','important');host.style.setProperty('z-index','40','important');
-   host.style.setProperty('padding','5px','important');host.style.setProperty('box-sizing','border-box','important');
+   const desktop=window.matchMedia('(min-width: 1024px)').matches;
+   if(desktop){
+     const main=document.querySelector('.layout > main');
+     const header=main?.querySelector(':scope > .app-header');
+     const mainRect=main?.getBoundingClientRect();
+     host.style.setProperty('position','fixed','important');
+     host.style.setProperty('top',Math.max(0,header?header.getBoundingClientRect().bottom:mainRect?.top||0)+'px','important');
+     host.style.setProperty('left',Math.max(0,mainRect?.left||0)+'px','important');
+     host.style.setProperty('right','auto','important');host.style.setProperty('bottom','auto','important');
+     host.style.setProperty('width',Math.max(0,main?.clientWidth||window.innerWidth)+'px','important');
+     host.style.setProperty('max-width',Math.max(0,main?.clientWidth||window.innerWidth)+'px','important');
+     host.style.setProperty('height','auto','important');host.style.setProperty('z-index','40','important');
+     host.style.setProperty('padding','8px 12px','important');host.style.setProperty('box-sizing','border-box','important');
+     host.style.setProperty('border-radius','0 0 12px 12px','important');
+     const frame=slot.querySelector('iframe');
+     if(main&&!host.dataset.desktopSpaceBound){
+       host.dataset.desktopSpaceBound='1';
+       const reserveDesktop=()=>{if(window.matchMedia('(min-width: 1024px)').matches&&!onLiveTab&&host.isConnected){const currentMain=document.querySelector('.layout > main');const h=host.getBoundingClientRect().height;currentMain?.style.setProperty('padding-top',(h+12)+'px','important');}};
+       requestAnimationFrame(reserveDesktop);
+       if(frame)frame.addEventListener('load',()=>requestAnimationFrame(reserveDesktop));
+     }else if(main){const h=host.getBoundingClientRect().height;main.style.setProperty('padding-top',(h+12)+'px','important');}
+   }else{
+     const main=document.querySelector('.layout > main');main?.style.removeProperty('padding-top');
+     host.style.setProperty('position','fixed','important');host.style.setProperty('top','96px','important');
+     host.style.setProperty('right','8px','important');host.style.setProperty('left','auto','important');
+     host.style.setProperty('bottom','auto','important');host.style.setProperty('width','180px','important');
+     host.style.setProperty('max-width','calc(100vw - 220px)','important');host.style.setProperty('min-width','0','important');
+     host.style.setProperty('height','auto','important');host.style.setProperty('z-index','40','important');
+     host.style.setProperty('padding','5px','important');host.style.setProperty('box-sizing','border-box','important');
+   }
  }
  const returnButton=host.querySelector('[data-youtube-return]');if(returnButton)returnButton.textContent=onLiveTab?'Voltar ao vídeo':'Voltar à Central ao vivo';
  const stream=state.youtubeStream,streamId=stream?.id==null?'':String(stream.id);let frame=slot.querySelector('#youtubeLiveFrame');
