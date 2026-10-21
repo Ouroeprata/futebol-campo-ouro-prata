@@ -318,9 +318,12 @@ function syncYoutubePersistentPlayer(){
        if(window.matchMedia('(min-width: 1024px)').matches){
          /* Desktop: reserve room in the actual content flow, not only inside the YouTube panel.
             The panel can be elsewhere in the page, so its margin alone did not protect match events. */
+         /* A área que contém a Central ao vivo é o painel .youtube-live-panel.
+            Reservar espaço diretamente nesse painel evita que o player fixo cubra
+            a transmissão, os eventos e os controles em telas de computador. */
+         if(livePanel)livePanel.style.setProperty('margin-top',playerHeight+'px','important');
          const content=[...main.children].find(el=>!el.classList.contains('app-header'));
-         if(content)content.style.setProperty('margin-top',playerHeight+'px','important');
-         if(livePanel)livePanel.style.removeProperty('margin-top');
+         if(content)content.style.removeProperty('margin-top');
        }else if(livePanel){
          livePanel.style.setProperty('margin-top',playerHeight+'px','important');
        }
