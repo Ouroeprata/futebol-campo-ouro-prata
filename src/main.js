@@ -312,15 +312,30 @@ function syncYoutubePersistentPlayer(){
      host.style.setProperty('border-radius','0 0 12px 12px','important');
      /* O player fica fora do fluxo para preservar o iframe; reservar espaço antes dos controles da Central para não cobrir botões da súmula. */
      const livePanel=main.querySelector('.youtube-live-panel');
-     if(livePanel){
-       const reserve=()=>{if(state.tab==='ao_vivo'&&host.isConnected&&livePanel.isConnected){livePanel.style.setProperty('margin-top',(host.getBoundingClientRect().height+14)+'px','important');}};
-       reserve();
-       const frame=slot.querySelector('iframe');
-       if(frame&&!frame.dataset.controlsSpaceBound){frame.dataset.controlsSpaceBound='1';frame.addEventListener('load',()=>requestAnimationFrame(reserve));}
+     const reserve=()=>{
+       if(state.tab!=='ao_vivo'||!host.isConnected||!main.isConnected)return;
+       const playerHeight=host.getBoundingClientRect().height+14;
+       if(window.matchMedia('(min-width: 1024px)').matches){
+         /* Desktop: reserve room in the actual content flow, not only inside the YouTube panel.
+            The panel can be elsewhere in the page, so its margin alone did not protect match events. */
+         const content=[...main.children].find(el=>!el.classList.contains('app-header'));
+         if(content)content.style.setProperty('margin-top',playerHeight+'px','important');
+         if(livePanel)livePanel.style.removeProperty('margin-top');
+       }else if(livePanel){
+         livePanel.style.setProperty('margin-top',playerHeight+'px','important');
+       }
+     };
+     reserve();
+     const frame=slot.querySelector('iframe');
+     if(frame&&!frame.dataset.controlsSpaceBound){frame.dataset.controlsSpaceBound='1';frame.addEventListener('load',()=>requestAnimationFrame(reserve));}
+     if(!host.dataset.desktopReserveResizeBound){
+       host.dataset.desktopReserveResizeBound='1';
+       window.addEventListener('resize',()=>requestAnimationFrame(reserve));
      }
    }
  }else{
    const oldLivePanel=document.querySelector('.youtube-live-panel');if(oldLivePanel)oldLivePanel.style.removeProperty('margin-top');
+   const oldMain=document.querySelector('.layout > main');if(oldMain){[...oldMain.children].filter(el=>!el.classList.contains('app-header')).forEach(el=>el.style.removeProperty('margin-top'));}
    ['position','left','bottom','width','maxWidth','minWidth','height','margin','padding','boxSizing','borderRadius'].forEach(k=>host.style.removeProperty(k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())));
    const desktop=window.matchMedia('(min-width: 1024px)').matches;
    if(desktop){
