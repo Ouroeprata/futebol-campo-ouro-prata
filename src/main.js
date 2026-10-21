@@ -300,29 +300,46 @@ function syncYoutubePersistentPlayer(){
      const header=main.querySelector(':scope > .app-header');
      const mainRect=main.getBoundingClientRect();
      const top=header?header.getBoundingClientRect().bottom+window.scrollY:mainRect.top+window.scrollY;
-     /* Na Central ao vivo, manter o vídeo fixo na tela; o conteúdo abaixo continua rolando. */
+     /* Computador: player compacto no canto superior direito, alinhado à região do cabeçalho.
+        Não usar largura total nem ocupar a área dos eventos. Tablets/celulares mantêm o layout atual. */
      host.style.setProperty('position','fixed','important');
-     host.style.setProperty('top',Math.max(0,header?header.getBoundingClientRect().bottom:mainRect.top)+'px','important');
-     host.style.setProperty('left',Math.max(0,mainRect.left)+'px','important');
-     host.style.setProperty('right','auto','important');host.style.setProperty('bottom','auto','important');
-     host.style.setProperty('width',Math.max(0,main.clientWidth)+'px','important');
-     host.style.setProperty('max-width',Math.max(0,main.clientWidth)+'px','important');
-     host.style.setProperty('min-width','0','important');host.style.setProperty('height','auto','important');
-     host.style.setProperty('margin','0 0 14px','important');host.style.setProperty('padding','10px','important');
-     host.style.setProperty('box-sizing','border-box','important');host.style.setProperty('z-index','99999','important');
-     host.style.setProperty('border-radius','0 0 12px 12px','important');
+     if(window.matchMedia('(min-width: 1024px)').matches){
+       host.style.setProperty('top','10px','important');
+       host.style.setProperty('right','12px','important');host.style.setProperty('left','auto','important');
+       host.style.setProperty('bottom','auto','important');
+       host.style.setProperty('width','260px','important');
+       host.style.setProperty('max-width','calc(100vw - 24px)','important');
+       host.style.setProperty('min-width','0','important');host.style.setProperty('height','auto','important');
+       host.style.setProperty('margin','0','important');host.style.setProperty('padding','6px','important');
+       host.style.setProperty('box-sizing','border-box','important');host.style.setProperty('z-index','99999','important');
+       host.style.setProperty('border-radius','10px','important');
+       const playerSlot=slot;
+       playerSlot.style.setProperty('width','100%','important');
+       playerSlot.style.setProperty('height','auto','important');
+       playerSlot.style.setProperty('aspect-ratio','16 / 9','important');
+       playerSlot.style.setProperty('max-height','146px','important');
+       playerSlot.style.setProperty('overflow','hidden','important');
+       const playerFrame=playerSlot.querySelector('iframe');
+       if(playerFrame){playerFrame.style.setProperty('width','100%','important');playerFrame.style.setProperty('height','100%','important');}
+     }else{
+       host.style.setProperty('top',Math.max(0,header?header.getBoundingClientRect().bottom:mainRect.top)+'px','important');
+       host.style.setProperty('left',Math.max(0,mainRect.left)+'px','important');
+       host.style.setProperty('right','auto','important');host.style.setProperty('bottom','auto','important');
+       host.style.setProperty('width',Math.max(0,main.clientWidth)+'px','important');
+       host.style.setProperty('max-width',Math.max(0,main.clientWidth)+'px','important');
+       host.style.setProperty('min-width','0','important');host.style.setProperty('height','auto','important');
+       host.style.setProperty('margin','0 0 14px','important');host.style.setProperty('padding','10px','important');
+       host.style.setProperty('box-sizing','border-box','important');host.style.setProperty('z-index','99999','important');
+       host.style.setProperty('border-radius','0 0 12px 12px','important');
+     }
      /* O player fica fora do fluxo para preservar o iframe; reservar espaço antes dos controles da Central para não cobrir botões da súmula. */
      const livePanel=main.querySelector('.youtube-live-panel');
      const reserve=()=>{
        if(state.tab!=='ao_vivo'||!host.isConnected||!main.isConnected)return;
        const playerHeight=host.getBoundingClientRect().height+14;
        if(window.matchMedia('(min-width: 1024px)').matches){
-         /* Desktop: reserve room in the actual content flow, not only inside the YouTube panel.
-            The panel can be elsewhere in the page, so its margin alone did not protect match events. */
-         /* A área que contém a Central ao vivo é o painel .youtube-live-panel.
-            Reservar espaço diretamente nesse painel evita que o player fixo cubra
-            a transmissão, os eventos e os controles em telas de computador. */
-         if(livePanel)livePanel.style.setProperty('margin-top',playerHeight+'px','important');
+         /* Player compacto fica no cabeçalho; não empurrar nem cobrir os eventos. */
+         if(livePanel)livePanel.style.removeProperty('margin-top');
          const content=[...main.children].find(el=>!el.classList.contains('app-header'));
          if(content)content.style.removeProperty('margin-top');
        }else if(livePanel){
