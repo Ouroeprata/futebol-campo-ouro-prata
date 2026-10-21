@@ -300,37 +300,27 @@ function syncYoutubePersistentPlayer(){
      const header=main.querySelector(':scope > .app-header');
      const mainRect=main.getBoundingClientRect();
      const top=header?header.getBoundingClientRect().bottom+window.scrollY:mainRect.top+window.scrollY;
-     /* Computador: player compacto fixo logo abaixo do cabeçalho, entre o título
-        "Central ao vivo" e o painel "YouTube ao vivo". Somente desktop usa este layout. */
+     /* Tablet e computador: vídeo com largura total da área principal da aba.
+        Mantém o player fixo enquanto a Central ao vivo rola abaixo. */
      const desktop=window.matchMedia('(min-width: 1024px)').matches;
      host.style.setProperty('position','fixed','important');
-     if(desktop){
-       const headerBottom=header?header.getBoundingClientRect().bottom:mainRect.top;
-       host.style.setProperty('top',Math.max(8,headerBottom+8)+'px','important');
-       host.style.setProperty('right',Math.max(12,window.innerWidth-mainRect.right+12)+'px','important');
-       host.style.setProperty('left','auto','important');host.style.setProperty('bottom','auto','important');
-       host.style.setProperty('width','320px','important');
-       host.style.setProperty('max-width','calc(100vw - 24px)','important');
-       host.style.setProperty('min-width','0','important');host.style.setProperty('height','auto','important');
-       host.style.setProperty('margin','0','important');host.style.setProperty('padding','6px','important');
-       host.style.setProperty('box-sizing','border-box','important');host.style.setProperty('z-index','99999','important');
-       host.style.setProperty('border-radius','10px','important');
-       slot.style.setProperty('width','100%','important');slot.style.setProperty('height','auto','important');
-       slot.style.setProperty('aspect-ratio','16 / 9','important');slot.style.setProperty('max-height','180px','important');
-       slot.style.setProperty('overflow','hidden','important');
-       const iframe=slot.querySelector('iframe');if(iframe){iframe.style.setProperty('width','100%','important');iframe.style.setProperty('height','100%','important');}
-     }else{
-       /* Tablet/celular: preservar exatamente o layout anterior da V33. */
-       host.style.setProperty('top',Math.max(0,header?header.getBoundingClientRect().bottom:mainRect.top)+'px','important');
-       host.style.setProperty('left',Math.max(0,mainRect.left)+'px','important');
-       host.style.setProperty('right','auto','important');host.style.setProperty('bottom','auto','important');
-       host.style.setProperty('width',Math.max(0,main.clientWidth)+'px','important');
-       host.style.setProperty('max-width',Math.max(0,main.clientWidth)+'px','important');
-       host.style.setProperty('min-width','0','important');host.style.setProperty('height','auto','important');
-       host.style.setProperty('margin','0 0 14px','important');host.style.setProperty('padding','10px','important');
-       host.style.setProperty('box-sizing','border-box','important');host.style.setProperty('z-index','99999','important');
-       host.style.setProperty('border-radius','0 0 12px 12px','important');
-     }
+     const headerBottom=header?header.getBoundingClientRect().bottom:mainRect.top;
+     host.style.setProperty('top',Math.max(0,headerBottom+4)+'px','important');
+     host.style.setProperty('left',Math.max(0,mainRect.left)+'px','important');
+     host.style.setProperty('right','auto','important');host.style.setProperty('bottom','auto','important');
+     host.style.setProperty('width',Math.max(0,main.clientWidth)+'px','important');
+     host.style.setProperty('max-width',Math.max(0,main.clientWidth)+'px','important');
+     host.style.setProperty('min-width','0','important');host.style.setProperty('height','auto','important');
+     host.style.setProperty('margin','0','important');host.style.setProperty('padding',desktop?'6px':'8px','important');
+     host.style.setProperty('box-sizing','border-box','important');host.style.setProperty('z-index','99999','important');
+     host.style.setProperty('border-radius','0 0 12px 12px','important');
+     slot.style.setProperty('display','block','important');
+     slot.style.setProperty('width','100%','important');slot.style.setProperty('max-width','100%','important');
+     slot.style.setProperty('height','auto','important');slot.style.setProperty('aspect-ratio','16 / 9','important');
+     slot.style.removeProperty('max-height');
+     slot.style.setProperty('overflow','hidden','important');
+     const iframe=slot.querySelector('iframe');
+     if(iframe){iframe.style.setProperty('display','block','important');iframe.style.setProperty('width','100%','important');iframe.style.setProperty('height','100%','important');iframe.style.setProperty('border','0','important');}
      const livePanel=main.querySelector('.youtube-live-panel');
      const reserve=()=>{
        if(state.tab!=='ao_vivo'||!host.isConnected||!main.isConnected)return;
