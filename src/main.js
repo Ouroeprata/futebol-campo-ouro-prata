@@ -219,7 +219,7 @@ function subscribe(){
 
 function nav(){return `<aside><div class="brand">⚽ <span>OURO & PRATA</span></div><nav>${[['dashboard','Painel','🏠'],['campeonatos','Campeonatos','🏆'],['jogos','Jogos','📅'],['ao_vivo','Ao vivo','📡'],['times','Times','⚽'],['atletas','Atletas','👤'],['arbitragem','Arbitragem','🚩'],['grupos','Grupos','🗂️'],['classificacao','Classificação','📊'],['patrocinadores','Patrocinadores','⭐'],['midia','Fotos / Arquivos','🖼️'],['relatorios','Relatórios','📄'],['votacao','Votação','🗳️'],['banco_dados','Banco de Dados','🗄️'],['moderadores','Moderadores','🛡️'],['inscricoes_jogos','Inscrições de Jogos','📝']].map(x=>`<button class="${state.tab===x[0]?'active':''}" data-tab="${x[0]}"><i>${x[2]}</i><span>${x[1]}</span></button>`).join('')}</nav><div class="sidefoot">${esc(state.competition?.name||'Nenhum campeonato')}<br><small>${state.competition?.season||''}</small><br><span class="sidefoot-credit">Desenvolvido por LUCKMANN</span></div></aside>`}
 function header(){return `<header class="app-header"><div class="brand"><img class="app-logo" src="${logoOuroPrata}" alt="Seleção Ouro e Prata"><div><div class="eyebrow">GESTÃO ESPORTIVA • ONLINE</div><h1>${title()}</h1><div class="brand-subtitle">${esc(state.competition?.name||'Nenhum campeonato')} ${state.competition?.season?`• ${state.competition.season}`:''}</div></div></div><div class="header-actions"><label class="competition-switch"><span>CAMPEONATO</span><select id="competitionSelector">${state.competitions.map(c=>`<option value="${c.id}" ${c.id===state.competition?.id?'selected':''}>${esc(c.name)}${c.season?` • ${c.season}`:''}</option>`).join('')}</select></label><span class="pill">● ${state.session?'CONECTADO':'MODO PÚBLICO'}</span><button class="userbtn" id="authBtn">${state.session?`👤 ${esc(state.moderator?.username||state.profile?.full_name||state.session.user.email)} · ${state.moderator?'Moderador':roleLabel(state.profile?.role)}`:'🔐 Entrar'}</button></div></header>`}
-function title(){return ({dashboard:'Painel geral',campeonatos:'Campeonatos',jogos:'Jogos',ao_vivo:'Central ao vivo',times:'Times',atletas:'Atletas',arbitragem:'Arbitragem',grupos:'Classificação por grupo',classificacao:'Classificação geral',patrocinadores:'Patrocinadores',midia:'Fotos e arquivos',relatorios:'Relatórios',votacao:'Votação pública',banco_dados:'Banco de Dados',moderadores:'Moderadores'})[state.tab]}
+function title(){return ({inscricoes_jogos:'Inscrições de Jogos',dashboard:'Painel geral',campeonatos:'Campeonatos',jogos:'Jogos',ao_vivo:'Central ao vivo',times:'Times',atletas:'Atletas',arbitragem:'Arbitragem',grupos:'Classificação por grupo',classificacao:'Classificação geral',patrocinadores:'Patrocinadores',midia:'Fotos e arquivos',relatorios:'Relatórios',votacao:'Votação pública',banco_dados:'Banco de Dados',moderadores:'Moderadores'})[state.tab]}
 function card(title,value,sub=''){return `<div class="card"><div class="muted">${title}</div><div class="big">${value}</div><div class="muted">${sub}</div></div>`}
 function databaseView(){
   const rows=[
@@ -420,14 +420,12 @@ body > #youtubePersistentPlayer:not(.youtube-on-live-tab){position:fixed!importa
 `;document.head.appendChild(st)}
 
 
-async function refreshGameRegistrationView(){render()}
-async function gameRegistrationsView(){
+let gameRegistrationEvents=[], gameAthleteRegistrations=[], gameRegistrationLoaded=false, gameRegistrationLoading=false;
+async function refreshGameRegistrationView(){if(gameRegistrationLoading)return;gameRegistrationLoading=true;try{const [evRes,regRes]=await Promise.all([supabase.from('game_registration_events').select('*').order('game_date',{ascending:false}),supabase.from('game_athlete_registrations').select('*').order('registered_at',{ascending:false})]);if(evRes.error)throw evRes.error;if(regRes.error)throw regRes.error;gameRegistrationEvents=evRes.data||[];gameAthleteRegistrations=regRes.data||[];gameRegistrationLoaded=true;}catch(e){console.error(e);toast('Não foi possível carregar inscrições: '+(e.message||e),'error')}finally{gameRegistrationLoading=false;render()}}
+function gameRegistrationsView(){
+ if(!gameRegistrationLoaded){if(!gameRegistrationLoading)Promise.resolve().then(refreshGameRegistrationView);return '<section class="panel"><h2>📝 Inscrições de Jogos</h2><p>Carregando jogos e inscrições...</p></section>'}
  const admin=state.profile?.role==='admin';
- const [evRes,regRes]=await Promise.all([
-  supabase.from('game_registration_events').select('*').order('game_date',{ascending:false}),
-  supabase.from('game_athlete_registrations').select('*').order('registered_at',{ascending:false})
- ]);
- const events=evRes.data||[], regs=regRes.data||[];
+ const events=gameRegistrationEvents, regs=gameAthleteRegistrations;
  const active=events.filter(e=>e.active && new Date()>=new Date(e.opens_at)&&new Date()<=new Date(e.closes_at));
  const categoryLabel={prata:'Prata',ouro:'Ouro',diamante:'Diamante'};
  const options=state.players.filter(p=>p.active!==false && p.birth_date && p.category).map(p=>`<option value="${p.id}">${esc(p.full_name||p.name)} — ${esc(p.birth_date)} — ${esc(categoryLabel[String(p.category).toLowerCase()]||p.category)}</option>`).join('');
@@ -458,7 +456,7 @@ async function submitGameRegistrationCreate(form){
  if(!(closes>opens)){toast('O fechamento deve ser posterior à abertura.','error');return}
  const {error}=await supabase.from('game_registration_events').insert({title:String(f.get('title')).trim(),game_date:f.get('game_date'),opens_at:opens.toISOString(),closes_at:closes.toISOString(),max_athletes:Number(f.get('max_athletes')),category,allowed_birth_years:[...new Set(years)],created_by:state.session?.user?.id,active:true});
  if(error){toast('Não foi possível criar o jogo: '+error.message,'error');return}
- toast('Jogo cadastrado.');render();
+ toast('Jogo cadastrado.');gameRegistrationLoaded=false;await refreshGameRegistrationView();
 }
 async function submitGameRegistrationJoin(form){
  const f=new FormData(form),eventId=form.dataset.eventId,playerId=String(f.get('player_id'));
@@ -467,7 +465,7 @@ async function submitGameRegistrationJoin(form){
  if(!e){toast('Jogo não encontrado.','error');return}
  const {error}=await supabase.from('game_athlete_registrations').insert({event_id:eventId,player_id:playerId,player_name:p.full_name||p.name,birth_date:p.birth_date,category:String(p.category).toLowerCase(),status:'Inscrito'});
  if(error){toast(error.message.includes('duplicate')?'Este atleta já está inscrito neste jogo.':'Inscrição não realizada: '+error.message,'error');return}
- toast('Inscrição realizada com sucesso.');render();
+ toast('Inscrição realizada com sucesso.');gameRegistrationLoaded=false;await refreshGameRegistrationView();
 }
 function content(){
   if(state.tab==='inscricoes_jogos') return gameRegistrationsView()
