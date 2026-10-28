@@ -9,7 +9,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 const app = document.querySelector('#app')
 
 const state = {
-  tab: 'dashboard', competition: null, competitions: [], matches: [], teams: [], players: [], referees: [], groups: [],
+  tab: (()=>{try{const saved=localStorage.getItem('ouro_prata_active_tab_v1');return saved||'dashboard'}catch{return 'dashboard'}})(), competition: null, competitions: [], matches: [], teams: [], players: [], referees: [], groups: [],
   selectedMatch: null, events: [], allEvents: [], lineups: [], votes: [], sponsors: [], media: [], session: null, profile: null, editingEventId: null,
   reportType: null, reportMatchId: null, siteAccessCount: 0, moderator: null, moderatorRequests: [], publicVotes: [],
   pendingLineup: {}, lineupDirty: false, matchStartLineupMatchId: null, matchStartLineup: {},
@@ -31,6 +31,7 @@ const flag = n => {
 const teamName = id => state.teams.find(t => t.id === id)?.name || '—'
 const playerName = id => { const p=state.players.find(x=>x.id===id); return p ? (p.full_name||p.name||'—') : '—' }
 const fmtDate = v => v ? new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}) : '—'
+try{const savedReportType=localStorage.getItem('ouro_prata_report_type_v1');if(savedReportType)state.reportType=savedReportType}catch{}
 const ADMIN_EMAIL = 'copadasnacoesouroeprata@gmail.com'
 const canOperate = () => !!state.session && ['admin','organizador','arbitro','operador'].includes(state.profile?.role)
 const getLineupStarterOverflowTeams = () => {
@@ -308,14 +309,11 @@ function syncYoutubePersistentPlayer(){
      const desktop=window.matchMedia('(min-width: 1024px)').matches;
      host.style.setProperty('position','fixed','important');
      const headerBottom=header?header.getBoundingClientRect().bottom:mainRect.top;
-     host.style.setProperty('top',Math.max(0,headerBottom+8)+'px','important');
-     /* V42: somente em computador, o vídeo fica compacto à direita, sem cobrir a área principal.
-        Tablet e celular preservam exatamente o comportamento anterior. */
-     const desktopPlayerWidth=desktop?Math.min(420,Math.max(300,main.clientWidth*0.42)):main.clientWidth;
-     host.style.setProperty('left',desktop?Math.max(mainRect.left,mainRect.right-desktopPlayerWidth)+'px':Math.max(0,mainRect.left)+'px','important');
+     host.style.setProperty('top',Math.max(0,headerBottom+4)+'px','important');
+     host.style.setProperty('left',Math.max(0,mainRect.left)+'px','important');
      host.style.setProperty('right','auto','important');host.style.setProperty('bottom','auto','important');
-     host.style.setProperty('width',Math.max(0,desktop?desktopPlayerWidth:main.clientWidth)+'px','important');
-     host.style.setProperty('max-width',Math.max(0,desktop?desktopPlayerWidth:main.clientWidth)+'px','important');
+     host.style.setProperty('width',Math.max(0,main.clientWidth)+'px','important');
+     host.style.setProperty('max-width',Math.max(0,main.clientWidth)+'px','important');
      host.style.setProperty('min-width','0','important');host.style.setProperty('height','auto','important');
      host.style.setProperty('margin','0','important');host.style.setProperty('padding',desktop?'6px':'8px','important');
      host.style.setProperty('box-sizing','border-box','important');host.style.setProperty('z-index','99999','important');
@@ -330,12 +328,11 @@ function syncYoutubePersistentPlayer(){
      const livePanel=main.querySelector('.youtube-live-panel');
      const reserve=()=>{
        if(state.tab!=='ao_vivo'||!host.isConnected||!main.isConnected)return;
-       const isDesktop=window.matchMedia('(min-width: 1024px)').matches;
        const playerHeight=host.getBoundingClientRect().height+14;
-       if(livePanel)livePanel.style.setProperty('margin-top',playerHeight+'px','important');
-       if(isDesktop){
-         host.style.setProperty('border-radius','10px','important');
-         host.style.setProperty('box-shadow','0 4px 18px #0004','important');
+       if(window.matchMedia('(min-width: 1024px)').matches){
+         if(livePanel)livePanel.style.setProperty('margin-top',playerHeight+'px','important');
+       }else if(livePanel){
+         livePanel.style.setProperty('margin-top',playerHeight+'px','important');
        }
      };
      reserve();
@@ -2550,7 +2547,7 @@ function ensureYoutubeCentralFlowStyles(){if(document.getElementById('youtube-ce
 function ensureYoutubeTabletLandscapeHeightV17(){if(document.getElementById('youtube-tablet-landscape-height-v17'))return;const st=document.createElement('style');st.id='youtube-tablet-landscape-height-v17';st.textContent='@media (orientation:landscape) and (min-width:900px) and (max-height:800px){body>#youtubePersistentPlayer.youtube-on-live-tab #youtubePersistentFrameSlot,main>#youtubePersistentPlayer.youtube-on-live-tab #youtubePersistentFrameSlot{height:46vh!important;max-height:420px!important;aspect-ratio:auto!important}body>#youtubePersistentPlayer.youtube-on-live-tab #youtubePersistentFrameSlot iframe,main>#youtubePersistentPlayer.youtube-on-live-tab #youtubePersistentFrameSlot iframe{height:100%!important;max-height:100%!important;aspect-ratio:auto!important}}';document.head.appendChild(st)}
 function ensurePublicMediaStyles(){if(document.getElementById('publicMediaStyles'))return;const st=document.createElement('style');st.id='publicMediaStyles';st.textContent='.media-public-submit{background:#f6faf8;border:1px solid #dce9e2;padding:14px;margin:12px 0}.media-public-submit label{display:block;font-weight:600;margin:8px 0;color:#294b3e}.media-public-submit input,.media-public-submit select{display:block;width:100%;box-sizing:border-box;margin-top:5px;padding:10px;border:1px solid #cbdad2;border-radius:8px;background:#fff}.media-approval-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #e1ebe5}.media-approval-actions{display:flex;gap:6px;flex-wrap:wrap}@media(max-width:650px){.media-approval-row{align-items:flex-start;flex-direction:column}}';document.head.appendChild(st)}
 function ensureLiveStandingsStyles(){if(document.getElementById('live-standings-styles'))return;const st=document.createElement('style');st.id='live-standings-styles';st.textContent='.live-standings-score{display:inline-block;margin-left:7px;padding:2px 6px;border-radius:6px;background:#fff0f0;color:#b91c1c;font-size:.86em;white-space:nowrap}.provisional-points{display:block;color:#b45309;font-size:10px;line-height:1.2}';document.head.appendChild(st)}
-function render(){ensureLiveStandingsStyles();ensurePublicMediaStyles();ensureYoutubeCentralFlowStyles();ensureYoutubeTabletLandscapeHeightV17();ensureCustomStyles();ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsCleanStyles();ensureYoutubeStyles();ensureYoutubeTopAreaFix();ensureYoutubePlayerFixV5();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;syncYoutubePersistentPlayer();bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+function render(){try{if(state.tab)localStorage.setItem('ouro_prata_active_tab_v1',state.tab);if(state.reportType)localStorage.setItem('ouro_prata_report_type_v1',state.reportType);else localStorage.removeItem('ouro_prata_report_type_v1')}catch{}ensureLiveStandingsStyles();ensurePublicMediaStyles();ensureYoutubeCentralFlowStyles();ensureYoutubeTabletLandscapeHeightV17();ensureCustomStyles();ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsCleanStyles();ensureYoutubeStyles();ensureYoutubeTopAreaFix();ensureYoutubePlayerFixV5();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;syncYoutubePersistentPlayer();bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
