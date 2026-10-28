@@ -308,11 +308,14 @@ function syncYoutubePersistentPlayer(){
      const desktop=window.matchMedia('(min-width: 1024px)').matches;
      host.style.setProperty('position','fixed','important');
      const headerBottom=header?header.getBoundingClientRect().bottom:mainRect.top;
-     host.style.setProperty('top',Math.max(0,headerBottom+4)+'px','important');
-     host.style.setProperty('left',Math.max(0,mainRect.left)+'px','important');
+     host.style.setProperty('top',Math.max(0,headerBottom+8)+'px','important');
+     /* V42: somente em computador, o vídeo fica compacto à direita, sem cobrir a área principal.
+        Tablet e celular preservam exatamente o comportamento anterior. */
+     const desktopPlayerWidth=desktop?Math.min(420,Math.max(300,main.clientWidth*0.42)):main.clientWidth;
+     host.style.setProperty('left',desktop?Math.max(mainRect.left,mainRect.right-desktopPlayerWidth)+'px':Math.max(0,mainRect.left)+'px','important');
      host.style.setProperty('right','auto','important');host.style.setProperty('bottom','auto','important');
-     host.style.setProperty('width',Math.max(0,main.clientWidth)+'px','important');
-     host.style.setProperty('max-width',Math.max(0,main.clientWidth)+'px','important');
+     host.style.setProperty('width',Math.max(0,desktop?desktopPlayerWidth:main.clientWidth)+'px','important');
+     host.style.setProperty('max-width',Math.max(0,desktop?desktopPlayerWidth:main.clientWidth)+'px','important');
      host.style.setProperty('min-width','0','important');host.style.setProperty('height','auto','important');
      host.style.setProperty('margin','0','important');host.style.setProperty('padding',desktop?'6px':'8px','important');
      host.style.setProperty('box-sizing','border-box','important');host.style.setProperty('z-index','99999','important');
@@ -327,11 +330,12 @@ function syncYoutubePersistentPlayer(){
      const livePanel=main.querySelector('.youtube-live-panel');
      const reserve=()=>{
        if(state.tab!=='ao_vivo'||!host.isConnected||!main.isConnected)return;
+       const isDesktop=window.matchMedia('(min-width: 1024px)').matches;
        const playerHeight=host.getBoundingClientRect().height+14;
-       if(window.matchMedia('(min-width: 1024px)').matches){
-         if(livePanel)livePanel.style.setProperty('margin-top',playerHeight+'px','important');
-       }else if(livePanel){
-         livePanel.style.setProperty('margin-top',playerHeight+'px','important');
+       if(livePanel)livePanel.style.setProperty('margin-top',playerHeight+'px','important');
+       if(isDesktop){
+         host.style.setProperty('border-radius','10px','important');
+         host.style.setProperty('box-shadow','0 4px 18px #0004','important');
        }
      };
      reserve();
