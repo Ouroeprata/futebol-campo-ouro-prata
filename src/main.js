@@ -201,6 +201,9 @@ function subscribe(){
       if(payload.eventType==='DELETE'){ if(i>=0) state.matches.splice(i,1) }
       else if(i>=0) state.matches[i]=payload.new; else state.matches.push(payload.new)
       if(state.selectedMatch?.id===payload.new?.id) await loadMatchDetails(payload.new.id,false)
+      // Recalcula os confrontos das fases seguintes com a classificação provisória,
+      // sempre que houver alteração no placar/status de uma partida.
+      await syncKnockoutBracket()
       render()
     })
     .on('postgres_changes',{event:'*',schema:'public',table:'match_events'}, async payload=>{
@@ -595,6 +598,8 @@ async function syncKnockoutBracket(){
   if(!state.competition||!state.matches.length)return;
   const matches=state.matches;
   const qf=matches.filter(m=>m.phase_type==='quartas').sort((a,b)=>(a.bracket_order||0)-(b.bracket_order||0));
+  // calcStandings considera jogos encerrados e ao_vivo da fase classificatória.
+  // Assim, partidas em andamento podem mudar provisoriamente os confrontos futuros.
   const standings=calcStandings();
   const rankingPairs=[
     [standings[0]?.team?.id||null,standings[7]?.team?.id||null],
