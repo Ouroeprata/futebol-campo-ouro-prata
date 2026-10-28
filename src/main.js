@@ -141,7 +141,7 @@ async function load(){
   const saved=localStorage.getItem('ouro_prata_competition_id')
   state.competition=state.competitions.find(x=>x.id===saved)||state.competitions[0]
   await loadCompetitionData(); await loadYoutubeStreams();
-  try{const savedMatchId=localStorage.getItem('ouro_prata_selected_match_id_v1');if(state.tab==='ao_vivo'&&savedMatchId&&state.matches.some(m=>String(m.id)===String(savedMatchId))){await loadMatchDetails(savedMatchId,false);state.selectedMatch=state.matches.find(m=>String(m.id)===String(savedMatchId))||state.selectedMatch}}catch(e){console.warn('Não foi possível restaurar a partida aberta:',e)}
+  try{const savedMatchId=localStorage.getItem('ouro_prata_selected_match_id_v1');if(savedMatchId&&state.matches.some(m=>String(m.id)===String(savedMatchId))){state.tab='ao_vivo';await loadMatchDetails(savedMatchId,false);state.selectedMatch=state.matches.find(m=>String(m.id)===String(savedMatchId))||state.selectedMatch}}catch(e){console.warn('Não foi possível restaurar a partida aberta:',e)}
   state.loading=false; render()
 }
 
@@ -2589,6 +2589,7 @@ async function openMatchFromButton(id){
     }
 
     state.selectedMatch=mr.data;
+    try{localStorage.setItem('ouro_prata_selected_match_id_v1',String(id));localStorage.setItem('ouro_prata_active_tab_v1','ao_vivo')}catch{}
 
     const [ev,lu,v]=await Promise.all([
       supabase
