@@ -11,7 +11,7 @@ const app = document.querySelector('#app')
 const state = {
   tab: 'dashboard', competition: null, competitions: [], matches: [], teams: [], players: [], referees: [], groups: [],
   selectedMatch: null, events: [], allEvents: [], lineups: [], votes: [], sponsors: [], media: [], session: null, profile: null, editingEventId: null,
-  reportType: null, reportMatchId: null, siteAccessCount: 0, moderator: null, moderatorRequests: [], publicVotes: [],
+  reportType: null, reportMatchId: null, siteAccessCount: 0, moderator: null, moderatorRequests: [], publicVotes: [], matchVotingConfigs: [], matchPublicVotes: [],
   pendingLineup: {}, lineupDirty: false, matchStartLineupMatchId: null, matchStartLineup: {},
   authMode: 'login', loading: false, youtubeStream: null, youtubeRequests: [], timerStartedAt: null, timerHalf: null, timerInterval: null, eventClockSeconds: 0, eventHalf: '1T', eventType: 'gol', eventTimerStartedAt: null, eventTimerInterval: null, editingSubId: null
 }
@@ -160,7 +160,14 @@ async function loadCompetitionData(){
   const pr=tids.length?await supabase.from('players').select('*').in('team_id',tids):{data:[]}; state.players=pr.data||[]
   const mids=state.matches.map(x=>x.id)
   const er=mids.length?await supabase.from('match_events').select('*').in('match_id',mids).order('created_at',{ascending:true}):{data:[]}; state.allEvents=er.data||[]
-  const vr=await supabase.rpc('get_championship_vote_counts',{p_competition_id:cid}); state.publicVotes=vr.error?[]:(vr.data||[]);
+  const [vr,mvc,mvv]=await Promise.all([
+    supabase.rpc('get_championship_vote_counts',{p_competition_id:cid}),
+    supabase.from('match_voting_configs').select('*').eq('competition_id',cid),
+    supabase.from('match_public_votes').select('match_id,player_id,team_id')
+  ]);
+  state.publicVotes=vr.error?[]:(vr.data||[]);
+  state.matchVotingConfigs=mvc.error?[]:(mvc.data||[]);
+  state.matchPublicVotes=mvv.error?[]:(mvv.data||[]);
   syncVotingResetState();
   state.matches.sort((x,y)=>new Date(x.scheduled_at||0)-new Date(y.scheduled_at||0))
   await ensureThirdPlaceMatch();
@@ -763,10 +770,68 @@ function publicVoteCard(type,title,description){
   const list=candidates.map(p=>`<button class="public-vote-option ${chosen===String(p.id)?'selected':''}" data-public-vote="${p.id}" data-public-vote-type="${type}" data-vote-search-text="${esc(publicVoteSearchText(p))}" ${disabled}><span class="public-vote-player">${p.photo_url?`<img src="${esc(p.photo_url)}" alt="">`:flag(teamName(p.team_id))}<span><b>${esc(p.full_name||p.name||'Atleta')}</b><small>${esc(teamName(p.team_id)||'')} · ${esc(cat(p.category)||'')}</small></span></span><strong>${counts[p.id]||0}</strong></button>`).join('');
   return `<div class="public-vote-card"><div class="public-vote-card-head"><div><span class="eyebrow">${type==='campeonato'?'🏆 CAMPEONATO':'🏅 FINAL'}</span><h3>${title}</h3><p class="muted">${description}</p></div><span class="tag">${Object.values(counts).reduce((a,b)=>a+b,0)} voto(s)</span></div>${type==='final'&&!candidates.length?`<div class="empty">A votação da final ficará disponível quando as duas equipes da final estiverem definidas.</div>`:candidates.length?`${search}<div class="public-vote-search-empty empty" data-vote-search-empty="${type}" hidden>Nenhum atleta ou time encontrado.</div><div class="public-vote-list" data-vote-list="${type}">${list}</div>`:`<div class="empty">Nenhum atleta disponível para votação.</div>`}<small class="public-vote-status">${chosen?'Seu voto nesta categoria já foi registrado.':win.label}</small></div>`
 }
+function matchVotingView(){
+  const admin=isAdmin();
+  const configs=state.matchVotingConfigs||[];
+  const votes=state.matchPublicVotes||[];
+  const matches=state.matches.slice().sort((a,b)=>new Date(b.scheduled_at||0)-new Date(a.scheduled_at||0));
+  const dt=v=>v?new Date(v).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'}):'—';
+  const panels=matches.map(m=>{
+    const cfg=configs.find(c=>String(c.match_id)===String(m.id));
+    const home=state.teams.find(t=>String(t.id)===String(m.home_team_id));
+    const away=state.teams.find(t=>String(t.id)===String(m.away_team_id));
+    const teams=[home,away].filter(Boolean);
+    const now=Date.now(),start=cfg?.opens_at?new Date(cfg.opens_at).getTime():Infinity,end=cfg?.closes_at?new Date(cfg.closes_at).getTime():-Infinity;
+    const open=!!cfg?.active&&now>=start&&now<=end;
+    const phase=!cfg?'Ainda não configurada':now<start?'Aguardando abertura':now>end?'Encerrada':cfg.active?'Aberta':'Inativa';
+    const cards=teams.map(team=>{
+      const roster=state.players.filter(p=>String(p.team_id)===String(team.id)).sort((a,b)=>String(a.full_name||a.name||'').localeCompare(String(b.full_name||b.name||''),'pt-BR'));
+      const myVote=votes.find(v=>String(v.match_id)===String(m.id)&&String(v.team_id)===String(team.id)&&String(v.device_id||'')===voteDeviceId());
+      const already=!!myVote||localStorage.getItem(`ouro_prata_match_vote_${state.competition.id}_${m.id}_${team.id}`)==='1';
+      return `<div class="match-vote-team"><h4>${flag(team.name)} ${esc(team.name)}</h4>${roster.length?roster.map(p=>`<label class="match-vote-player"><input type="radio" name="mv-${m.id}-${team.id}" value="${p.id}" ${already?'disabled':''}><span>${esc(p.full_name||p.name||'Atleta')}</span></label>`).join(''):'<p class="muted">Nenhum atleta cadastrado nesta equipe.</p>'}<button class="primary" data-match-vote="${m.id}" data-match-vote-team="${team.id}" ${!open||already||!roster.length?'disabled':''}>${already?'Voto já registrado':'Votar nesta equipe'}</button></div>`;
+    }).join('');
+    return `<article class="match-voting-card"><div class="match-voting-head"><div><h3>${esc(teamName(m.home_team_id))} x ${esc(teamName(m.away_team_id))}</h3><p class="muted">${dt(m.scheduled_at)} · ${esc(m.status||'')}</p><small>Votação: <b>${phase}</b>${cfg?` · ${dt(cfg.opens_at)} até ${dt(cfg.closes_at)}`:''}</small></div>${admin?`<button class="secondary" data-match-voting-config="${m.id}">⚙️ ${cfg?'Alterar período':'Configurar votação'}</button>`:''}</div><p class="muted">O público pode escolher 1 atleta de cada equipe. Cada aparelho registra no máximo 1 voto por equipe nesta partida.</p><div class="match-voting-teams">${cards}</div>${admin&&m.status==='encerrado'&&!cfg?'<p class="notice">Partida finalizada: o administrador pode configurar a votação e definir o período.</p>':''}</article>`;
+  }).join('');
+  return `<section class="panel"><div class="panelhead"><div><span class="eyebrow">VOTAÇÃO PÚBLICA</span><h2>🗳️ Melhor atleta por partida</h2><p class="muted">Escolha um atleta do Brasil e um atleta do Chile, ou de cada equipe da partida selecionada.</p></div></div><div class="match-voting-list">${panels||'<div class="empty">Nenhuma partida cadastrada neste campeonato.</div>'}</div></section>`;
+}
+function openMatchVotingConfig(matchId){
+  if(!isAdmin())return toast('Somente o administrador pode configurar a votação.','error');
+  const m=state.matches.find(x=>String(x.id)===String(matchId)); if(!m)return;
+  const cfg=(state.matchVotingConfigs||[]).find(c=>String(c.match_id)===String(matchId));
+  const start=cfg?.opens_at||new Date().toISOString(),end=cfg?.closes_at||new Date(Date.now()+86400000).toISOString();
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="matchVotingConfigModal"><div class="modalbox config-modal"><button class="close" data-close>×</button><div class="eyebrow">VOTAÇÃO POR PARTIDA</div><h2>${esc(teamName(m.home_team_id))} x ${esc(teamName(m.away_team_id))}</h2><label>Data e hora de início<input id="matchVoteStart" type="datetime-local" value="${localDateTimeInputValue(start)}" required></label><label>Data e hora de encerramento<input id="matchVoteEnd" type="datetime-local" value="${localDateTimeInputValue(end)}" required></label><label><input type="checkbox" id="matchVoteActive" ${cfg?.active===false?'':'checked'}> Ativar votação pública</label><div class="notice">O horário utilizado pelo sistema é o horário de Brasília (UTC−3).</div><div class="modal-actions"><button class="secondary" data-close>Cancelar</button><button class="primary" data-match-voting-save="${m.id}">💾 Salvar período</button></div></div></div>`);
+}
+async function saveMatchVotingConfig(matchId){
+  if(!isAdmin())return toast('Somente o administrador pode configurar a votação.','error');
+  const a=document.querySelector('#matchVoteStart')?.value,b=document.querySelector('#matchVoteEnd')?.value;
+  if(!a||!b)return toast('Informe início e encerramento.','error');
+  const start=new Date(a),end=new Date(b);if(!(end>start))return toast('O encerramento deve ser posterior ao início.','error');
+  const payload={competition_id:state.competition.id,match_id:matchId,opens_at:start.toISOString(),closes_at:end.toISOString(),active:!!document.querySelector('#matchVoteActive')?.checked,updated_at:new Date().toISOString()};
+  const {data,error}=await supabase.from('match_voting_configs').upsert(payload,{onConflict:'match_id'}).select().single();
+  if(error)return toast('Não foi possível salvar. Confira se a tabela match_voting_configs foi criada no Supabase: '+error.message,'error');
+  state.matchVotingConfigs=[...(state.matchVotingConfigs||[]).filter(c=>String(c.match_id)!==String(matchId)),data];
+  document.querySelector('#matchVotingConfigModal')?.remove();render();toast('Período da votação por partida salvo.','ok');
+}
+async function submitMatchPublicVote(matchId,teamId){
+  const radio=document.querySelector(`input[name="mv-${CSS.escape(String(matchId))}-${CSS.escape(String(teamId))}"]:checked`);
+  if(!radio)return toast('Selecione um atleta desta equipe.','error');
+  const cfg=(state.matchVotingConfigs||[]).find(c=>String(c.match_id)===String(matchId));
+  const now=Date.now();if(!cfg?.active||now<new Date(cfg.opens_at).getTime()||now>new Date(cfg.closes_at).getTime())return toast('A votação desta partida não está aberta.','error');
+  const player=state.players.find(p=>String(p.id)===String(radio.value));
+  if(!player||String(player.team_id)!==String(teamId))return toast('Atleta inválido para esta equipe.','error');
+  const deviceId=voteDeviceId();
+  const res=await supabase.rpc('register_match_public_vote',{p_competition_id:state.competition.id,p_match_id:matchId,p_team_id:teamId,p_player_id:player.id,p_device_id:deviceId});
+  if(res.error)return toast('Não foi possível registrar o voto. Confira a configuração SQL da votação por partida: '+res.error.message,'error');
+  if(!res.data?.ok)return toast(res.data?.message||'Voto não registrado.','error');
+  localStorage.setItem(`ouro_prata_match_vote_${state.competition.id}_${matchId}_${teamId}`,'1');
+  const refreshed=await supabase.from('match_public_votes').select('match_id,player_id,team_id');
+  if(!refreshed.error)state.matchPublicVotes=refreshed.data||[];
+  render();toast('Voto registrado com sucesso!','ok');
+}
 function publicVotingView(){
   const win=votingWindow();
   const adminButton=isAdmin()?'<div class="voting-admin-actions"><button class="secondary" data-voting-config>⚙️ Configurar período</button><button class="danger" data-voting-reset>🗑️ Zerar votação</button></div>':'';
-  return `<section class="panel public-voting-page"><div class="panelhead"><div><span class="eyebrow">VOTAÇÃO PÚBLICA</span><h2>🏆 Melhor atleta do campeonato</h2><p class="muted">Cada celular/navegador poderá registrar somente 01 voto para cada categoria: campeonato e final.</p></div><div class="panel-actions"><span class="status ${win.open?'ao_vivo':''}">${win.open?'● VOTAÇÃO ABERTA':'○ '+(win.phase==='before'?'AGUARDANDO ABERTURA':'ENCERRADA')}</span>${adminButton}</div></div><div class="public-voting-period"><b>Período:</b> ${win.start.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})} até ${win.end.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}. <span>São permitidos no máximo 02 votos por dispositivo: 01 em cada categoria.</span></div><div class="public-voting-grid">${publicVoteCard('campeonato','Melhor atleta do campeonato','Escolha 01 atleta entre todos os atletas inscritos na competição.')}${publicVoteCard('final','Melhor atleta da final','Escolha 01 atleta entre os atletas das duas equipes classificadas para a final.')}</div></section>`
+  return `${matchVotingView()}<section class="panel public-voting-page"><div class="panelhead"><div><span class="eyebrow">VOTAÇÃO PÚBLICA</span><h2>🏆 Melhor atleta do campeonato</h2><p class="muted">Cada celular/navegador poderá registrar somente 01 voto para cada categoria: campeonato e final.</p></div><div class="panel-actions"><span class="status ${win.open?'ao_vivo':''}">${win.open?'● VOTAÇÃO ABERTA':'○ '+(win.phase==='before'?'AGUARDANDO ABERTURA':'ENCERRADA')}</span>${adminButton}</div></div><div class="public-voting-period"><b>Período:</b> ${win.start.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})} até ${win.end.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}. <span>São permitidos no máximo 02 votos por dispositivo: 01 em cada categoria.</span></div><div class="public-voting-grid">${publicVoteCard('campeonato','Melhor atleta do campeonato','Escolha 01 atleta entre todos os atletas inscritos na competição.')}${publicVoteCard('final','Melhor atleta da final','Escolha 01 atleta entre os atletas das duas equipes classificadas para a final.')}</div></section>`
 }
 async function submitPublicVote(type,playerId,button){
   const win=votingWindow(); if(!win.open)return toast(win.label,'error');
@@ -2791,6 +2856,9 @@ document.addEventListener('click',async e=>{
   if(t.matches('[data-moderator-password]')){openModeratorPasswordModal();return}
   if(t.matches('[data-moderator-save-password]')){await changeModeratorPassword();return}
   if(t.matches('[data-save-competition]')){await saveCompetition(t.dataset.saveCompetition||'');return}
+  if(t.matches('[data-match-voting-config]')){openMatchVotingConfig(t.dataset.matchVotingConfig);return}
+  if(t.matches('[data-match-voting-save]')){await saveMatchVotingConfig(t.dataset.matchVotingSave);return}
+  if(t.matches('[data-match-vote]')){await submitMatchPublicVote(t.dataset.matchVote,t.dataset.matchVoteTeam);return}
   if(t.matches('[data-voting-config]')){openVotingConfig();return}
   if(t.matches('[data-voting-config-save]')){await saveVotingConfig();return}
   if(t.matches('[data-voting-reset]')){await resetPublicVoting();return}
@@ -2853,3 +2921,17 @@ document.addEventListener('change',async e=>{
 supabase.auth.onAuthStateChange(async()=>{setTimeout(load,0)})
 subscribe()
 load()
+
+function ensureMatchVotingStyles(){
+ if(document.getElementById('matchVotingStyles'))return;
+ const st=document.createElement('style');st.id='matchVotingStyles';st.textContent=`
+ .match-voting-list{display:grid;gap:16px}.match-voting-card{border:1px solid var(--line,#dce7e1);border-radius:12px;padding:16px;background:#fff}
+ .match-voting-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}.match-voting-head h3{margin:0 0 5px}
+ .match-voting-teams{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:12px}
+ .match-vote-team{border:1px solid #e0e8e3;border-radius:10px;padding:12px;background:#f8fbf9;min-width:0}
+ .match-vote-team h4{margin:0 0 10px}.match-vote-player{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid #e7eee9;font-size:14px}
+ .match-vote-player input{width:auto;flex-shrink:0}.match-vote-team button{margin-top:10px;width:100%}
+ @media(max-width:700px){.match-voting-teams{grid-template-columns:1fr}.match-voting-card{padding:11px}}
+ `;document.head.appendChild(st);
+}
+ensureMatchVotingStyles();
