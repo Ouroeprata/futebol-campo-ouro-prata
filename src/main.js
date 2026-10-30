@@ -1,4 +1,4 @@
-/* OURO E PRATA V54 — PRESERVAR ABA ATUAL AO ATUALIZAR. Base V52. */
+/* OURO E PRATA V55 — PRESERVAR ABA ATUAL AO ATUALIZAR. Base V52. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -2967,39 +2967,55 @@ function ensureReportsPrintWidthV52(){
 }
 
 
-function printCurrentReportV54(){
+
+function printCurrentReportV55(){
   const source=document.querySelector('.layout.reports-layout .report-preview');
   if(!source){window.print();return;}
-  document.getElementById('ouroPrintRootV54')?.remove();
-  const root=document.createElement('div');
-  root.id='ouroPrintRootV54';
-  root.appendChild(source.cloneNode(true));
-  document.body.appendChild(root);
-  const style=document.createElement('style');
-  style.id='ouroPrintStylesV54';
-  style.textContent=`
-    #ouroPrintRootV54{display:none}
-    @media print{
-      @page{size:A4 landscape;margin:7mm}
-      html,body,#app{width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}
-      body>*:not(#ouroPrintRootV54){display:none!important}
-      #ouroPrintRootV54{display:block!important;position:static!important;width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:0!important;background:#fff!important;color:#111!important}
-      #ouroPrintRootV54 *{visibility:visible!important;max-height:none!important;overflow:visible!important;box-sizing:border-box!important}
-      #ouroPrintRootV54 .no-print,#ouroPrintRootV54 [data-report-print],#ouroPrintRootV54 .report-title-row button{display:none!important}
-      #ouroPrintRootV54 .report-preview{display:block!important;width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important}
-      #ouroPrintRootV54 table{width:100%!important;max-width:none!important;border-collapse:collapse!important;table-layout:auto!important;break-inside:auto!important;page-break-inside:auto!important}
-      #ouroPrintRootV54 thead{display:table-header-group!important}
-      #ouroPrintRootV54 tfoot{display:table-footer-group!important}
-      #ouroPrintRootV54 tr{break-inside:avoid!important;page-break-inside:avoid!important}
-      #ouroPrintRootV54 th,#ouroPrintRootV54 td{font-size:8.5pt!important;line-height:1.2!important;padding:3px 5px!important;white-space:normal!important;overflow-wrap:anywhere!important}
-      #ouroPrintRootV54 h1,#ouroPrintRootV54 h2,#ouroPrintRootV54 h3{break-after:avoid!important;page-break-after:avoid!important}
-      #ouroPrintRootV54 .report-voting-summary{break-inside:avoid!important}
-    }
-  `;
-  document.head.appendChild(style);
-  const cleanup=()=>{root.remove();style.remove();window.removeEventListener('afterprint',cleanup)};
-  window.addEventListener('afterprint',cleanup);
-  window.setTimeout(()=>window.print(),300);
+  const frame=document.createElement('iframe');
+  frame.setAttribute('aria-hidden','true');
+  frame.title='Impressão do relatório';
+  frame.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
+  document.body.appendChild(frame);
+  const doc=frame.contentDocument;
+  doc.open();
+  doc.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Relatório Ouro e Prata</title>');
+  // Copia os estilos da aplicação para preservar o visual e os formatos dos relatórios.
+  [...document.querySelectorAll('link[rel="stylesheet"],style')].forEach(node=>{
+    try{doc.head.appendChild(node.cloneNode(true))}catch(e){}
+  });
+  doc.write(`<style>
+    @page{size:A4 landscape;margin:7mm}
+    html,body{display:block!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important;background:#fff!important;color:#111!important}
+    body{font-family:Arial,sans-serif}
+    #print-report-v55{display:block!important;position:static!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:0!important;box-sizing:border-box!important}
+    #print-report-v55 *{max-height:none!important;overflow:visible!important;box-sizing:border-box!important}
+    #print-report-v55 .no-print,#print-report-v55 [data-report-print],#print-report-v55 .report-title-row button,#print-report-v55 button{display:none!important}
+    #print-report-v55 .report-preview{display:block!important;position:static!important;width:100%!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important}
+    #print-report-v55 .tablewrap,#print-report-v55 .table-wrap,#print-report-v55 .report-games-wrap{display:block!important;width:100%!important;height:auto!important;max-height:none!important;overflow:visible!important}
+    #print-report-v55 table{display:table!important;width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;overflow:visible!important;border-collapse:collapse!important;table-layout:auto!important;break-inside:auto!important;page-break-inside:auto!important}
+    #print-report-v55 thead{display:table-header-group!important}
+    #print-report-v55 tfoot{display:table-footer-group!important}
+    #print-report-v55 tbody{display:table-row-group!important}
+    #print-report-v55 tr{display:table-row!important;height:auto!important;break-inside:avoid!important;page-break-inside:avoid!important}
+    #print-report-v55 th,#print-report-v55 td{font-size:8.5pt!important;line-height:1.2!important;padding:3px 5px!important;white-space:normal!important;overflow-wrap:anywhere!important}
+    #print-report-v55 img{max-width:100%!important}
+    #print-report-v55 h1,#print-report-v55 h2,#print-report-v55 h3{break-after:avoid!important;page-break-after:avoid!important}
+    *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  </style></head><body><main id="print-report-v55"></main></body></html>`);
+  doc.close();
+  const target=doc.getElementById('print-report-v55');
+  target.appendChild(source.cloneNode(true));
+  const cleanup=()=>{try{frame.remove()}catch(e){}};
+  frame.onload=()=>{};
+  // Aguarda imagens e layout do documento isolado antes de abrir a caixa de impressão.
+  setTimeout(()=>{
+    try{
+      frame.contentWindow.focus();
+      frame.contentWindow.print();
+      frame.contentWindow.onafterprint=cleanup;
+      setTimeout(cleanup,60000);
+    }catch(err){cleanup();window.print()}
+  },700);
 }
 
 function render(){
@@ -3159,7 +3175,7 @@ function bind(){document.querySelector('#gameRegistrationCreate')?.addEventListe
   document.querySelector('#eventTeam')?.addEventListener('change',fillEventPlayers);fillEventPlayers();
   document.querySelectorAll('[data-event-type]').forEach(btn=>btn.onclick=()=>{if(btn.disabled)return;const type=btn.dataset.eventType;state.eventType=type;const sel=document.querySelector('#eventType');if(sel)sel.value=type;document.querySelectorAll('[data-event-type]').forEach(x=>x.classList.toggle('selected',x.dataset.eventType===type));const sub=document.querySelector('#substitutionPlayers'),normal=document.querySelector('#normalEventPlayer');const isSub=type==='substituicao';if(sub)sub.style.display=isSub?'grid':'none';if(normal)normal.style.display=isSub?'none':'block';fillEventPlayers()});
 const eventButtons=[...document.querySelectorAll('[data-action="event"]')];eventButtons.slice(1).forEach(b=>b.remove());
-  document.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{const a=b.dataset.action;if(a==='start1')await startHalf('1T');if(a==='start2')await startHalf('2T');if(a==='pause')await pause();if(a==='resetMatchClock')await resetMatchClock();if(a==='finish')await finishMatch();if(a==='event')await addEvent();if(a==='sub')await addSub();if(a==='saveLineup')await saveLineup();if(a==='saveScoreCorrection')await saveScoreCorrection()});document.querySelectorAll('[data-vote]').forEach(b=>b.onclick=()=>vote(b.dataset.vote));document.querySelectorAll('[data-reopen-match]').forEach(b=>b.onclick=()=>reopenMatch(b.dataset.reopenMatch));document.querySelectorAll('[data-not-started]').forEach(b=>b.onclick=()=>markNotStarted(b.dataset.notStarted));document.querySelectorAll('[data-sponsor-new]').forEach(b=>b.onclick=()=>sponsorModal());document.querySelectorAll('[data-sponsor-edit]').forEach(b=>b.onclick=()=>sponsorModal(b.dataset.sponsorEdit));document.querySelectorAll('[data-sponsor-delete]').forEach(b=>b.onclick=()=>deleteSponsor(b.dataset.sponsorDelete));document.querySelectorAll('[data-media-new]').forEach(b=>b.onclick=()=>mediaModal());document.querySelectorAll('[data-media-delete]').forEach(b=>b.onclick=()=>deleteMedia(b.dataset.mediaDelete));document.querySelector('[data-public-media-submit]')?.addEventListener('click',submitPublicMedia);document.querySelectorAll('[data-media-approve]').forEach(b=>b.onclick=()=>moderateMedia(b.dataset.mediaApprove,true));document.querySelectorAll('[data-media-reject]').forEach(b=>b.onclick=()=>moderateMedia(b.dataset.mediaReject,false));document.querySelectorAll('[data-event-edit]').forEach(b=>b.onclick=()=>{state.editingEventId=b.dataset.eventEdit;render()});document.querySelectorAll('[data-event-delete]').forEach(b=>b.onclick=()=>deleteEvent(b.dataset.eventDelete));document.querySelectorAll('[data-event-save]').forEach(b=>b.onclick=()=>saveEventInline(b.dataset.eventSave));document.querySelectorAll('[data-event-update]').forEach(b=>b.onclick=()=>updateEvent(b.dataset.eventUpdate));document.querySelectorAll('[data-event-edit-cancel]').forEach(b=>b.onclick=()=>{state.editingEventId=null;render()});document.querySelectorAll('[data-public-vote]').forEach(b=>b.onclick=()=>submitPublicVote(b.dataset.publicVoteType,b.dataset.publicVote,b));document.querySelectorAll('[data-vote-search]').forEach(input=>{input.oninput=()=>{const type=input.dataset.voteSearch||'',q=String(input.value||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(),list=document.querySelector(`[data-vote-list=\"${type}\"]`),empty=document.querySelector(`[data-vote-search-empty=\"${type}\"]`),rows=list?[...list.querySelectorAll('[data-public-vote]')]:[];let visible=0;rows.forEach(row=>{const hay=String(row.dataset.voteSearchText||'');const match=!q||hay.includes(q);row.dataset.searchHidden=match?'0':'1';if(match)visible++});if(empty)empty.hidden=visible>0||!q;};});document.querySelectorAll('[data-vote-search-clear]').forEach(btn=>btn.onclick=()=>{const input=document.querySelector(`[data-vote-search=\"${btn.dataset.voteSearchClear}\"]`);if(input){input.value='';input.dispatchEvent(new Event('input'));input.focus();}});document.querySelectorAll('[data-report]').forEach(b=>b.onclick=async()=>{state.reportType=b.dataset.report;state.reportMatchId=null;render();if(b.dataset.report==='sumula'&&state.matches.length){await loadReportMatch(state.matches[0].id)}});document.querySelector('#reportMatchSelect')?.addEventListener('change',e=>loadReportMatch(e.target.value));bindAthleteReportFilters();bindCartoesReportFilters();document.querySelector('[data-sponsor-save]')?.addEventListener('click',e=>saveSponsor(e.target.dataset.sponsorSave||''));document.querySelector('[data-media-save]')?.addEventListener('click',saveMedia);document.querySelector('[data-configure-competition]')?.addEventListener('click',openCompetitionConfig);document.querySelector('[data-report-print]')?.addEventListener('click',printCurrentReportV54);document.querySelectorAll('[data-player-data]').forEach(b=>b.onclick=()=>playerDataModal(b.dataset.playerData));document.querySelectorAll('[data-lineup-present]').forEach(cb=>cb.onchange=()=>{const row=cb.closest('[data-player-row]');const btn=row?.querySelector('[data-lineup-status]');if(btn&&!cb.checked){btn.dataset.status='nao_compareceu';btn.textContent='Ausente';btn.className='statusbtn status-nao_compareceu';}else if(btn&&cb.checked&&btn.dataset.status==='nao_compareceu'){btn.dataset.status='reserva';btn.textContent='Reserva';btn.className='statusbtn status-reserva';}row?.classList.toggle('is-present',cb.checked);row?.classList.toggle('is-absent',!cb.checked);updateLineupCounts(row?.closest('.lineupteam'));state.lineupDirty=true});}
+  document.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{const a=b.dataset.action;if(a==='start1')await startHalf('1T');if(a==='start2')await startHalf('2T');if(a==='pause')await pause();if(a==='resetMatchClock')await resetMatchClock();if(a==='finish')await finishMatch();if(a==='event')await addEvent();if(a==='sub')await addSub();if(a==='saveLineup')await saveLineup();if(a==='saveScoreCorrection')await saveScoreCorrection()});document.querySelectorAll('[data-vote]').forEach(b=>b.onclick=()=>vote(b.dataset.vote));document.querySelectorAll('[data-reopen-match]').forEach(b=>b.onclick=()=>reopenMatch(b.dataset.reopenMatch));document.querySelectorAll('[data-not-started]').forEach(b=>b.onclick=()=>markNotStarted(b.dataset.notStarted));document.querySelectorAll('[data-sponsor-new]').forEach(b=>b.onclick=()=>sponsorModal());document.querySelectorAll('[data-sponsor-edit]').forEach(b=>b.onclick=()=>sponsorModal(b.dataset.sponsorEdit));document.querySelectorAll('[data-sponsor-delete]').forEach(b=>b.onclick=()=>deleteSponsor(b.dataset.sponsorDelete));document.querySelectorAll('[data-media-new]').forEach(b=>b.onclick=()=>mediaModal());document.querySelectorAll('[data-media-delete]').forEach(b=>b.onclick=()=>deleteMedia(b.dataset.mediaDelete));document.querySelector('[data-public-media-submit]')?.addEventListener('click',submitPublicMedia);document.querySelectorAll('[data-media-approve]').forEach(b=>b.onclick=()=>moderateMedia(b.dataset.mediaApprove,true));document.querySelectorAll('[data-media-reject]').forEach(b=>b.onclick=()=>moderateMedia(b.dataset.mediaReject,false));document.querySelectorAll('[data-event-edit]').forEach(b=>b.onclick=()=>{state.editingEventId=b.dataset.eventEdit;render()});document.querySelectorAll('[data-event-delete]').forEach(b=>b.onclick=()=>deleteEvent(b.dataset.eventDelete));document.querySelectorAll('[data-event-save]').forEach(b=>b.onclick=()=>saveEventInline(b.dataset.eventSave));document.querySelectorAll('[data-event-update]').forEach(b=>b.onclick=()=>updateEvent(b.dataset.eventUpdate));document.querySelectorAll('[data-event-edit-cancel]').forEach(b=>b.onclick=()=>{state.editingEventId=null;render()});document.querySelectorAll('[data-public-vote]').forEach(b=>b.onclick=()=>submitPublicVote(b.dataset.publicVoteType,b.dataset.publicVote,b));document.querySelectorAll('[data-vote-search]').forEach(input=>{input.oninput=()=>{const type=input.dataset.voteSearch||'',q=String(input.value||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(),list=document.querySelector(`[data-vote-list=\"${type}\"]`),empty=document.querySelector(`[data-vote-search-empty=\"${type}\"]`),rows=list?[...list.querySelectorAll('[data-public-vote]')]:[];let visible=0;rows.forEach(row=>{const hay=String(row.dataset.voteSearchText||'');const match=!q||hay.includes(q);row.dataset.searchHidden=match?'0':'1';if(match)visible++});if(empty)empty.hidden=visible>0||!q;};});document.querySelectorAll('[data-vote-search-clear]').forEach(btn=>btn.onclick=()=>{const input=document.querySelector(`[data-vote-search=\"${btn.dataset.voteSearchClear}\"]`);if(input){input.value='';input.dispatchEvent(new Event('input'));input.focus();}});document.querySelectorAll('[data-report]').forEach(b=>b.onclick=async()=>{state.reportType=b.dataset.report;state.reportMatchId=null;render();if(b.dataset.report==='sumula'&&state.matches.length){await loadReportMatch(state.matches[0].id)}});document.querySelector('#reportMatchSelect')?.addEventListener('change',e=>loadReportMatch(e.target.value));bindAthleteReportFilters();bindCartoesReportFilters();document.querySelector('[data-sponsor-save]')?.addEventListener('click',e=>saveSponsor(e.target.dataset.sponsorSave||''));document.querySelector('[data-media-save]')?.addEventListener('click',saveMedia);document.querySelector('[data-configure-competition]')?.addEventListener('click',openCompetitionConfig);document.querySelector('[data-report-print]')?.addEventListener('click',printCurrentReportV55);document.querySelectorAll('[data-player-data]').forEach(b=>b.onclick=()=>playerDataModal(b.dataset.playerData));document.querySelectorAll('[data-lineup-present]').forEach(cb=>cb.onchange=()=>{const row=cb.closest('[data-player-row]');const btn=row?.querySelector('[data-lineup-status]');if(btn&&!cb.checked){btn.dataset.status='nao_compareceu';btn.textContent='Ausente';btn.className='statusbtn status-nao_compareceu';}else if(btn&&cb.checked&&btn.dataset.status==='nao_compareceu'){btn.dataset.status='reserva';btn.textContent='Reserva';btn.className='statusbtn status-reserva';}row?.classList.toggle('is-present',cb.checked);row?.classList.toggle('is-absent',!cb.checked);updateLineupCounts(row?.closest('.lineupteam'));state.lineupDirty=true});}
 
 function moderatorEmail(username){return `${String(username||'').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'')}@moderadores.ouroprata.local`}
 async function moderatorSignup(){
