@@ -1,4 +1,4 @@
-/* OURO E PRATA V52 — ORGANIZAÇÃO DOS RELATÓRIOS E LIMPEZA DO BANCO DE DADOS. Base V46. */
+/* OURO E PRATA V53 — PRESERVAR ABA ATUAL AO ATUALIZAR. Base V52. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -127,6 +127,13 @@ async function updateSiteAccessCount(){
 }
 
 async function load(){
+  // V53: mantém a aba atual após atualizar/recarregar a página.
+  const validTabs=['dashboard','campeonatos','jogos','ao_vivo','times','atletas','arbitragem','grupos','classificacao','patrocinadores','midia','relatorios','votacao','banco_dados','moderadores','inscricoes_jogos'];
+  const savedTab=localStorage.getItem('ouro_prata_active_tab_v53');
+  const savedReportType=localStorage.getItem('ouro_prata_report_type_v53');
+  const savedMatchId=localStorage.getItem('ouro_prata_selected_match_v53');
+  if(savedTab && validTabs.includes(savedTab)) state.tab=savedTab;
+  if(state.tab==='relatorios' && savedReportType) state.reportType=savedReportType;
   state.loading=true
   await updateSiteAccessCount()
   const sessionRes=await supabase.auth.getSession(); state.session=sessionRes.data.session
@@ -140,7 +147,11 @@ async function load(){
   if(!state.competitions.length){state.competition=null;state.matches=[];state.teams=[];state.players=[];state.groups=[];state.sponsors=[];state.media=[];state.allEvents=[];state.loading=false;render();return}
   const saved=localStorage.getItem('ouro_prata_competition_id')
   state.competition=state.competitions.find(x=>x.id===saved)||state.competitions[0]
-  await loadCompetitionData(); await loadYoutubeStreams(); state.loading=false; render()
+  await loadCompetitionData();
+  if(state.tab==='ao_vivo' && savedMatchId){
+    await loadMatchDetails(savedMatchId,false);
+  }
+  await loadYoutubeStreams(); state.loading=false; render()
 }
 
 async function loadCompetitionData(){
@@ -2955,7 +2966,15 @@ function ensureReportsPrintWidthV52(){
   document.head.appendChild(st);
 }
 
-function render(){ensureLiveStandingsStyles();ensurePublicMediaStyles();ensureYoutubeCentralFlowStyles();ensureYoutubeTabletLandscapeHeightV17();ensureCustomStyles();
+function render(){
+  // Persistência feita em toda renderização, cobrindo navegação por menu, botões e relatórios.
+  try{
+    localStorage.setItem('ouro_prata_active_tab_v53',state.tab||'dashboard');
+    if(state.tab==='relatorios' && state.reportType) localStorage.setItem('ouro_prata_report_type_v53',state.reportType);
+    if(state.selectedMatch?.id) localStorage.setItem('ouro_prata_selected_match_v53',String(state.selectedMatch.id));
+    else if(state.tab!=='ao_vivo') localStorage.removeItem('ouro_prata_selected_match_v53');
+  }catch(e){console.warn('Não foi possível salvar a aba atual.',e)}
+  ensureLiveStandingsStyles();ensurePublicMediaStyles();ensureYoutubeCentralFlowStyles();ensureYoutubeTabletLandscapeHeightV17();ensureCustomStyles();
 ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsFlowScrollFix();ensureReportsCleanStyles();ensureReportsPortraitScrollV50();ensureReportsAllRowsScrollV51();ensureReportsPrintWidthV52();ensureYoutubeStyles();ensureYoutubeTopAreaFix();ensureYoutubePlayerFixV5();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;syncYoutubePersistentPlayer();bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
