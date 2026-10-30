@@ -878,7 +878,7 @@ function athleteReportFilters(){return ''}
 function athleteReportRow(p){const birth=p.birth_date||'';return `<tr data-athlete-report-row><td data-sort="${esc(String(p.registration_number??''))}"><b>${esc(p.registration_number??'—')}</b></td><td data-sort="${esc(p.full_name||p.name||'')}"><b>${esc(p.full_name||p.name||'—')}</b></td><td data-sort="${esc(p.nickname||'')}">${esc(p.nickname||'—')}</td><td data-sort="${esc(p.position||'')}">${esc(p.position||'—')}</td><td data-sort="${esc(birth)}">${birth?new Date(birth+'T00:00:00').toLocaleDateString('pt-BR'):'—'}</td><td data-sort="${esc(cat(p.category))}">${esc(cat(p.category))}</td><td data-sort="${esc(String(p.shirt_number??''))}"><b>${esc(p.shirt_number??'—')}</b></td><td data-sort="${esc(teamName(p.team_id)||'')}">${flag(teamName(p.team_id))} ${esc(teamName(p.team_id)||'—')}</td></tr>`}
 function athleteReportTable(players, caption=''){const cols=['Nº','Nome Completo','Apelido','Posição','Data Nascimento','Categoria','Camisa','Time'];const rows=players.map(athleteReportRow).join('');return `<div class="report-table-block" data-athlete-report-block>${caption?`<h3 class="report-team-title">${caption}</h3>`:''}<div class="tablewrap"><table class="report-athlete-table"><thead><tr>${cols.map((c,i)=>`<th class="report-sortable" data-sort-col="${i}" title="Clique para classificar">${c}<span class="report-sort-indicator"></span></th>`).join('')}</tr></thead><tbody>${rows||'<tr class="report-no-match"><td colspan="8" class="muted">Nenhum atleta encontrado.</td></tr>'}</tbody></table></div></div>`}
 /* V22.5.1 - Corrige duplicação Ouro/Prata/Diamante no cabeçalho dos relatórios */
-function reportsView(){if(state.reportType==='votos_campeonato')state.reportType='jogos';const buttons=['jogos','sumula','atletas','atletas_equipe','equipes','cartoes','artilheiros','votos_partidas','votacao_final','votos_atletas','classificacao','grupos'];const rawCname=state.competition?.name||'Campeonato';const cname=rawCname.replace(/\s*Ouro\s*\/\s*Prata\s*\/\s*Diamante\b/gi,'').replace(/\s{2,}/g,' ').trim();const year=state.competition?.season||'';const championshipHeader=`<div class="report-championship-header"><div class="report-championship-title">${esc(cname)} Ouro/Prata/Diamante ${esc(year)}</div></div>`;return `<section class="reports-page">${championshipHeader}<div class="report-tabs">${buttons.map(x=>`<button class="${state.reportType===x?'active':''}" data-report="${x}">${({jogos:'Jogos',sumula:'Súmula do Jogo',atletas:'Atletas',atletas_equipe:'Atletas por equipe',equipes:'Equipes',cartoes:'Cartões',artilheiros:'Artilheiros',votos_partidas:'Votação por partida',votacao_final:'Votação melhor atleta final',votos_atletas:'Banco de votos',classificacao:'Classificação',grupos:'Classificação por grupo'})[x]}</button>`).join('')}</div>${state.reportType?reportContent(state.reportType):''}</section>`}
+function reportsView(){if(!state.reportType||state.reportType==='votos_campeonato')state.reportType='jogos';const buttons=['jogos','sumula','atletas','atletas_equipe','equipes','cartoes','artilheiros','votos_partidas','votacao_final','votos_atletas','classificacao','grupos'];const rawCname=state.competition?.name||'Campeonato';const cname=rawCname.replace(/\s*Ouro\s*\/\s*Prata\s*\/\s*Diamante\b/gi,'').replace(/\s{2,}/g,' ').trim();const year=state.competition?.season||'';const championshipHeader=`<div class="report-championship-header"><div class="report-championship-title">${esc(cname)} Ouro/Prata/Diamante ${esc(year)}</div></div>`;return `<section class="reports-page">${championshipHeader}<div class="report-tabs">${buttons.map(x=>`<button class="${state.reportType===x?'active':''}" data-report="${x}">${({jogos:'Jogos',sumula:'Súmula do Jogo',atletas:'Atletas',atletas_equipe:'Atletas por equipe',equipes:'Equipes',cartoes:'Cartões',artilheiros:'Artilheiros',votos_partidas:'Votação por partida',votacao_final:'Votação melhor atleta final',votos_atletas:'Banco de votos',classificacao:'Classificação',grupos:'Classificação por grupo'})[x]}</button>`).join('')}</div>${state.reportType?reportContent(state.reportType):''}</section>`}
 async function loadReportMatch(id){if(!id){state.reportMatchId=null;state.selectedMatch=null;state.events=[];state.lineups=[];render();return}const mr=await supabase.from('matches').select('*').eq('id',id).maybeSingle();if(mr.error||!mr.data){toast(mr.error?.message||'Partida não encontrada.','error');return}state.reportMatchId=id;state.selectedMatch=mr.data;const [ev,lu]=await Promise.all([supabase.from('match_events').select('*').eq('match_id',id).order('created_at',{ascending:true}),supabase.from('match_lineups').select('*').eq('match_id',id)]);state.events=ev.data||[];state.lineups=lu.data||[];render()}
 function cartoesReport(){const map={};state.allEvents.filter(e=>['cartao_amarelo','cartao_vermelho'].includes(e.type)&&e.player_id).forEach(e=>{const k=e.player_id+'|'+e.type;map[k]=(map[k]||0)+1});const rows=Object.entries(map).map(([k,n])=>{const [id,t]=k.split('|');const tid=state.players.find(p=>p.id===id)?.team_id;const atleta=playerName(id);const equipe=teamName(tid);const tipo=t==='cartao_amarelo'?'Amarelo':'Vermelho';return `<tr data-cartao-row class="${t==='cartao_amarelo'?'cartao-row-amarelo':'cartao-row-vermelho'}"><td data-sort="${esc(atleta)}">${esc(atleta)}</td><td data-sort="${esc(equipe)}">${flag(equipe)} ${esc(equipe)}</td><td data-sort="${tipo}">${tipo}</td><td data-sort="${n}">${n}</td></tr>`}).join('');return `<div class="cartoes-report-block"><div class="tablewrap"><table class="report-compact-table cartoes-report-table"><thead><tr>${['Atleta','Equipe','Tipo','Quantidade'].map((c,i)=>`<th class="cartoes-sortable" data-cartoes-sort="${i}" title="Clique para classificar">${c}<span class="cartoes-sort-indicator"></span></th>`).join('')}</tr></thead><tbody>${rows||'<tr><td colspan="4" class="muted">Nenhum cartão registrado.</td></tr>'}</tbody></table></div></div>`}
 
@@ -2169,6 +2169,79 @@ function ensureAthleteToolbarStyles(){if(document.querySelector('#ouroAthleteToo
 .athlete-actions [data-player-export]{order:3!important}
 </style>`)}
 
+
+function ensureReportsFlowScrollFix(){
+  if(document.querySelector('#ouroReportsFlowScrollFix'))return;
+  document.head.insertAdjacentHTML('beforeend',`<style id="ouroReportsFlowScrollFix">
+    /* V49: rolagem natural, sem fixar altura nem ocultar o conteúdo dos relatórios */
+    html:has(.layout.reports-layout),
+    body:has(.layout.reports-layout),
+    #app:has(.layout.reports-layout){
+      height:auto!important;
+      min-height:100%!important;
+      overflow-y:auto!important;
+      overflow-x:hidden!important;
+    }
+    .layout.reports-layout{
+      min-height:100dvh!important;
+      height:auto!important;
+      overflow:visible!important;
+      align-items:start!important;
+    }
+    .layout.reports-layout>aside{
+      align-self:stretch!important;
+    }
+    .layout.reports-layout>main.reports-mode{
+      height:auto!important;
+      min-height:100dvh!important;
+      max-height:none!important;
+      overflow:visible!important;
+      padding:0 0 36px!important;
+      touch-action:pan-y!important;
+      -webkit-overflow-scrolling:touch!important;
+    }
+    .layout.reports-layout>main.reports-mode>.reports-page{
+      height:auto!important;
+      min-height:0!important;
+      overflow:visible!important;
+      padding:0 12px 36px!important;
+      box-sizing:border-box!important;
+    }
+    .layout.reports-layout .report-tabs{
+      display:flex!important;
+      flex-wrap:wrap!important;
+      align-items:stretch!important;
+      gap:8px!important;
+      width:100%!important;
+      overflow:visible!important;
+      white-space:normal!important;
+    }
+    .layout.reports-layout .report-tabs button{
+      flex:1 1 170px!important;
+      min-width:145px!important;
+      max-width:100%!important;
+      white-space:normal!important;
+      overflow-wrap:anywhere!important;
+    }
+    .layout.reports-layout .report-preview{
+      height:auto!important;
+      max-height:none!important;
+      overflow:visible!important;
+      margin-bottom:24px!important;
+    }
+    .layout.reports-layout .report-preview .tablewrap{
+      max-height:none!important;
+      overflow-x:auto!important;
+      overflow-y:visible!important;
+      -webkit-overflow-scrolling:touch!important;
+    }
+    @media(max-width:760px){
+      .layout.reports-layout>main.reports-mode>.reports-page{padding:0 8px 36px!important}
+      .layout.reports-layout .report-tabs button{flex:1 1 135px!important;min-width:120px!important}
+    }
+  </style>`);
+}
+
 function ensureReportsCleanStyles(){
   if(document.querySelector('#ouroReportsCleanStyles'))return;
   document.head.insertAdjacentHTML('beforeend',`<style id="ouroReportsCleanStyles">
@@ -2617,134 +2690,6 @@ function ensureReportsCleanStyles(){
 }
 
 
-function ensureMatchVotingReportScrollFix(){
-  if(document.getElementById('ouroMatchVotingReportScrollFix')) return;
-  const style=document.createElement('style');
-  style.id='ouroMatchVotingReportScrollFix';
-  style.textContent=`
-    /* V48 - Corrige rolagem vertical no relatório Votação por partida */
-    html:has(.layout.reports-layout),
-    body:has(.layout.reports-layout){
-      height:100%!important;
-      min-height:100%!important;
-      overflow:hidden!important;
-      overscroll-behavior:none!important;
-    }
-    .layout.reports-layout{
-      height:100dvh!important;
-      min-height:0!important;
-      overflow:hidden!important;
-    }
-    .layout.reports-layout>main.reports-mode{
-      height:100dvh!important;
-      max-height:100dvh!important;
-      min-height:0!important;
-      overflow-x:auto!important;
-      overflow-y:auto!important;
-      overscroll-behavior-y:contain!important;
-      -webkit-overflow-scrolling:touch!important;
-      touch-action:pan-y pan-x!important;
-      padding-bottom:28px!important;
-    }
-    .layout.reports-layout>main.reports-mode>.reports-page{
-      height:auto!important;
-      min-height:100%!important;
-      overflow:visible!important;
-      touch-action:pan-y!important;
-    }
-    .layout.reports-layout .report-preview{
-      height:auto!important;
-      min-height:0!important;
-      overflow:visible!important;
-      touch-action:pan-y!important;
-    }
-    .layout.reports-layout .report-preview:has(.report-voting-table){
-      padding-bottom:32px!important;
-    }
-    .layout.reports-layout .report-preview:has(.report-voting-table) .tablewrap{
-      max-height:none!important;
-      overflow-x:auto!important;
-      overflow-y:visible!important;
-      -webkit-overflow-scrolling:touch!important;
-    }
-    @media(max-width:900px){
-      .layout.reports-layout>main.reports-mode{
-        height:calc(100dvh - env(safe-area-inset-bottom, 0px))!important;
-        max-height:calc(100dvh - env(safe-area-inset-bottom, 0px))!important;
-        overflow-y:auto!important;
-      }
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-
-function ensureReportsScrollV49(){
-  if(document.getElementById('ouroReportsScrollV49')) return;
-  const style=document.createElement('style');
-  style.id='ouroReportsScrollV49';
-  style.textContent=`
-    @media (min-width:700px) and (orientation:landscape){
-      html:has(.layout.reports-layout),
-      body:has(.layout.reports-layout),
-      #app:has(.layout.reports-layout){
-        width:100%!important;height:100%!important;min-height:0!important;
-        overflow:hidden!important;overscroll-behavior:none!important;
-      }
-      .layout.reports-layout{
-        position:relative!important;display:block!important;
-        width:100vw!important;height:100dvh!important;min-height:0!important;
-        overflow:hidden!important;
-      }
-      .layout.reports-layout>aside{
-        position:fixed!important;left:0!important;top:0!important;bottom:0!important;
-        width:262px!important;height:100dvh!important;max-height:100dvh!important;
-        overflow-y:auto!important;overflow-x:hidden!important;z-index:1000!important;
-      }
-      .layout.reports-layout>main.reports-mode{
-        position:fixed!important;left:262px!important;right:0!important;
-        top:0!important;bottom:0!important;
-        width:auto!important;height:auto!important;max-height:none!important;
-        min-height:0!important;margin:0!important;padding:0 0 30px!important;
-        overflow-x:auto!important;overflow-y:scroll!important;
-        -webkit-overflow-scrolling:touch!important;
-        overscroll-behavior-y:contain!important;
-        touch-action:pan-y pan-x!important;
-        scrollbar-gutter:stable!important;
-      }
-      .layout.reports-layout>main.reports-mode>.reports-page{
-        display:block!important;position:relative!important;
-        height:auto!important;min-height:0!important;overflow:visible!important;
-        padding-bottom:36px!important;touch-action:pan-y!important;
-      }
-      .layout.reports-layout .report-preview,
-      .layout.reports-layout .report-preview:has(.report-voting-table){
-        height:auto!important;max-height:none!important;min-height:0!important;
-        overflow:visible!important;padding-bottom:36px!important;
-      }
-      .layout.reports-layout .report-preview .tablewrap{
-        max-height:none!important;overflow-x:auto!important;overflow-y:visible!important;
-        -webkit-overflow-scrolling:touch!important;
-      }
-    }
-    @media (min-width:500px) and (max-width:1100px) and (orientation:portrait){
-      .layout.reports-layout>main.reports-mode{
-        position:fixed!important;left:180px!important;right:0!important;
-        top:0!important;bottom:0!important;width:auto!important;height:auto!important;
-        max-height:none!important;min-height:0!important;margin:0!important;
-        overflow-x:auto!important;overflow-y:scroll!important;
-        -webkit-overflow-scrolling:touch!important;touch-action:pan-y pan-x!important;
-        overscroll-behavior-y:contain!important;padding-bottom:36px!important;
-      }
-      .layout.reports-layout>main.reports-mode>.reports-page{
-        height:auto!important;min-height:0!important;overflow:visible!important;
-        padding-bottom:36px!important;
-      }
-    }
-  `;
-  document.head.appendChild(style);
-}
-
 function ensureEventHalfStyles(){if(document.getElementById('event-half-styles'))return;const st=document.createElement('style');st.id='event-half-styles';st.textContent='.event-half-selector{display:flex;gap:8px;flex-wrap:wrap}.event-half-btn{transition:all .15s ease}.event-half-btn.event-half-active{background:#087f5b!important;color:#fff!important;border-color:#087f5b!important;box-shadow:0 0 0 2px rgba(8,127,91,.12) inset}.event-half-btn.event-half-active:hover{background:#066b4d!important;color:#fff!important}.event-half-btn:disabled{opacity:.55}';document.head.appendChild(st)}
 
 function ensureYoutubeTopAreaFix(){
@@ -2787,8 +2732,7 @@ function ensureYoutubeTabletLandscapeHeightV17(){if(document.getElementById('you
 function ensurePublicMediaStyles(){if(document.getElementById('publicMediaStyles'))return;const st=document.createElement('style');st.id='publicMediaStyles';st.textContent='.media-public-submit{background:#f6faf8;border:1px solid #dce9e2;padding:14px;margin:12px 0}.media-public-submit label{display:block;font-weight:600;margin:8px 0;color:#294b3e}.media-public-submit input,.media-public-submit select{display:block;width:100%;box-sizing:border-box;margin-top:5px;padding:10px;border:1px solid #cbdad2;border-radius:8px;background:#fff}.media-approval-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #e1ebe5}.media-approval-actions{display:flex;gap:6px;flex-wrap:wrap}@media(max-width:650px){.media-approval-row{align-items:flex-start;flex-direction:column}}';document.head.appendChild(st)}
 function ensureLiveStandingsStyles(){if(document.getElementById('live-standings-styles'))return;const st=document.createElement('style');st.id='live-standings-styles';st.textContent='.live-standings-score{display:inline-block;margin-left:7px;padding:2px 6px;border-radius:6px;background:#fff0f0;color:#b91c1c;font-size:.86em;white-space:nowrap}.provisional-points{display:block;color:#b45309;font-size:10px;line-height:1.2}';document.head.appendChild(st)}
 function render(){ensureLiveStandingsStyles();ensurePublicMediaStyles();ensureYoutubeCentralFlowStyles();ensureYoutubeTabletLandscapeHeightV17();ensureCustomStyles();
-ensureMatchVotingReportScrollFix();
-ensureReportsScrollV49();ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsCleanStyles();ensureYoutubeStyles();ensureYoutubeTopAreaFix();ensureYoutubePlayerFixV5();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;syncYoutubePersistentPlayer();bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsFlowScrollFix();ensureReportsCleanStyles();ensureYoutubeStyles();ensureYoutubeTopAreaFix();ensureYoutubePlayerFixV5();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;syncYoutubePersistentPlayer();bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
