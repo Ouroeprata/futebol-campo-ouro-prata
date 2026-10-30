@@ -1,4 +1,4 @@
-/* OURO E PRATA V63 — IMPRESSÃO ISOLADA, LARGURA TOTAL E TODAS AS PÁGINAS. Base V60. */
+/* OURO E PRATA V64 — CORREÇÃO DE PAGINAÇÃO A4 DOS RELATÓRIOS. Base V63. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -3006,12 +3006,56 @@ function printCurrentReportV63(){
     #ouro-print-document table{display:table!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;margin:0 0 4mm!important;table-layout:auto!important;border-collapse:collapse!important;break-inside:auto!important;page-break-inside:auto!important}
     #ouro-print-document thead{display:table-header-group!important}
     #ouro-print-document tbody{display:table-row-group!important;break-inside:auto!important;page-break-inside:auto!important}
-    #ouro-print-document tr{break-inside:avoid!important;page-break-inside:avoid!important;min-height:6mm!important}
-    #ouro-print-document th,#ouro-print-document td{font-size:9.5pt!important;line-height:1.3!important;padding:4px 6px!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;vertical-align:middle!important}
+    #ouro-print-document tr{break-inside:avoid!important;page-break-inside:avoid!important;min-height:0!important}
+    #ouro-print-document th,#ouro-print-document td{font-size:8pt!important;line-height:1.12!important;padding:2px 4px!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;vertical-align:middle!important}
     #ouro-print-document h2{font-size:16pt!important;margin:0 0 4mm!important}
     #ouro-print-document h3{font-size:12pt!important;margin:4mm 0 2mm!important}
-    #ouro-print-document .sumula-match{padding:5mm!important;margin-bottom:3mm!important}
-    #ouro-print-document .sumula-officials{padding:3mm!important;margin:3mm 0!important}
+    #ouro-print-document .sumula-match{padding:3mm!important;margin-bottom:2mm!important}
+    #ouro-print-document .sumula-officials{padding:2mm!important;margin:2mm 0!important;font-size:7.5pt!important}
+    /* Súmula: as duas equipes ficam lado a lado, em vez de gerar uma folha para cada equipe. */
+    #ouro-print-document .sumula-grid,
+    #ouro-print-document .sumula-grid-stacked{
+      display:grid!important;
+      grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      align-items:start!important;
+      gap:5mm!important;
+      width:100%!important;
+      min-width:0!important;
+      max-width:none!important;
+      margin:0 0 2mm!important;
+    }
+    #ouro-print-document .sumula-grid>div,
+    #ouro-print-document .sumula-grid-stacked>div{
+      display:block!important;
+      width:100%!important;
+      min-width:0!important;
+      max-width:none!important;
+      margin:0!important;
+      break-inside:avoid!important;
+      page-break-inside:avoid!important;
+    }
+    #ouro-print-document .sumula-grid table,
+    #ouro-print-document .sumula-grid-stacked table{
+      width:100%!important;
+      table-layout:fixed!important;
+      margin:0!important;
+    }
+    #ouro-print-document .sumula-grid th,
+    #ouro-print-document .sumula-grid td,
+    #ouro-print-document .sumula-grid-stacked th,
+    #ouro-print-document .sumula-grid-stacked td{
+      font-size:7pt!important;
+      line-height:1.05!important;
+      padding:1.5px 3px!important;
+      white-space:normal!important;
+      overflow-wrap:anywhere!important;
+    }
+    #ouro-print-document .sumula-grid h3,
+    #ouro-print-document .sumula-grid-stacked h3{
+      font-size:9pt!important;
+      margin:1mm 0!important;
+    }
+    #ouro-print-document .sumula-print>h3{font-size:9pt!important;margin:2mm 0 1mm!important}
     #ouro-print-document h1,#ouro-print-document h2,#ouro-print-document h3{break-after:avoid!important;page-break-after:avoid!important}
     #ouro-print-document .report-brand{display:flex!important;width:100%!important;max-width:none!important}
     #ouro-print-document .report-athlete-table,#ouro-print-document .report-compact-table,#ouro-print-document .report-voting-table{width:100%!important;min-width:0!important;max-width:none!important;table-layout:auto!important}
@@ -3021,7 +3065,7 @@ function printCurrentReportV63(){
   `;
 
   printWindow.document.open();
-  printWindow.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base href="${location.href}"><title>Relatório - Ouro e Prata V63</title>${styles}<style id="ouro-print-v63">${printCss}</style></head><body><div id="ouro-print-toolbar"><button type="button" id="ouro-print-action">🖨️ Imprimir / Salvar em PDF</button><span>Toque no botão e escolha “Salvar como PDF” nas opções de impressão.</span></div><main id="ouro-print-document">${clone.outerHTML}</main><script>document.getElementById('ouro-print-action').addEventListener('click',function(){try{window.focus();window.print();}catch(e){alert('Não foi possível abrir a impressão. Use o menu do navegador e escolha Imprimir.');}});<\/script></body></html>`);
+  printWindow.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base href="${location.href}"><title>Relatório - Ouro e Prata V64</title>${styles}<style id="ouro-print-v64">${printCss}</style></head><body><div id="ouro-print-toolbar"><button type="button" id="ouro-print-action">🖨️ Imprimir / Salvar em PDF</button><span>Toque no botão e escolha “Salvar como PDF” nas opções de impressão.</span></div><main id="ouro-print-document">${clone.outerHTML}</main><script>document.getElementById('ouro-print-action').addEventListener('click',function(){try{window.focus();window.print();}catch(e){alert('Não foi possível abrir a impressão. Use o menu do navegador e escolha Imprimir.');}});<\/script></body></html>`);
   printWindow.document.close();
 }
 
