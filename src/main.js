@@ -1,4 +1,4 @@
-/* OURO E PRATA V49 — ORGANIZAÇÃO DOS RELATÓRIOS E LIMPEZA DO BANCO DE DADOS. Base V46. */
+/* OURO E PRATA V51 — ORGANIZAÇÃO DOS RELATÓRIOS E LIMPEZA DO BANCO DE DADOS. Base V46. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -2731,8 +2731,172 @@ function ensureYoutubeCentralFlowStyles(){if(document.getElementById('youtube-ce
 function ensureYoutubeTabletLandscapeHeightV17(){if(document.getElementById('youtube-tablet-landscape-height-v17'))return;const st=document.createElement('style');st.id='youtube-tablet-landscape-height-v17';st.textContent='@media (orientation:landscape) and (min-width:900px) and (max-height:800px){body>#youtubePersistentPlayer.youtube-on-live-tab #youtubePersistentFrameSlot,main>#youtubePersistentPlayer.youtube-on-live-tab #youtubePersistentFrameSlot{height:46vh!important;max-height:420px!important;aspect-ratio:auto!important}body>#youtubePersistentPlayer.youtube-on-live-tab #youtubePersistentFrameSlot iframe,main>#youtubePersistentPlayer.youtube-on-live-tab #youtubePersistentFrameSlot iframe{height:100%!important;max-height:100%!important;aspect-ratio:auto!important}}';document.head.appendChild(st)}
 function ensurePublicMediaStyles(){if(document.getElementById('publicMediaStyles'))return;const st=document.createElement('style');st.id='publicMediaStyles';st.textContent='.media-public-submit{background:#f6faf8;border:1px solid #dce9e2;padding:14px;margin:12px 0}.media-public-submit label{display:block;font-weight:600;margin:8px 0;color:#294b3e}.media-public-submit input,.media-public-submit select{display:block;width:100%;box-sizing:border-box;margin-top:5px;padding:10px;border:1px solid #cbdad2;border-radius:8px;background:#fff}.media-approval-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #e1ebe5}.media-approval-actions{display:flex;gap:6px;flex-wrap:wrap}@media(max-width:650px){.media-approval-row{align-items:flex-start;flex-direction:column}}';document.head.appendChild(st)}
 function ensureLiveStandingsStyles(){if(document.getElementById('live-standings-styles'))return;const st=document.createElement('style');st.id='live-standings-styles';st.textContent='.live-standings-score{display:inline-block;margin-left:7px;padding:2px 6px;border-radius:6px;background:#fff0f0;color:#b91c1c;font-size:.86em;white-space:nowrap}.provisional-points{display:block;color:#b45309;font-size:10px;line-height:1.2}';document.head.appendChild(st)}
+
+function ensureReportsPortraitScrollV50(){
+  if(document.getElementById('ouroReportsPortraitScrollV50'))return;
+  const st=document.createElement('style');
+  st.id='ouroReportsPortraitScrollV50';
+  st.textContent=`
+    /* V50 - Tablet em posição vertical: a área principal é o único scroll vertical */
+    @media (min-width:500px) and (max-width:1100px) and (orientation:portrait){
+      html:has(.layout.reports-layout),
+      body:has(.layout.reports-layout),
+      #app:has(.layout.reports-layout){
+        height:100%!important;
+        min-height:0!important;
+        overflow:hidden!important;
+        overscroll-behavior:none!important;
+      }
+      .layout.reports-layout{
+        display:block!important;
+        position:relative!important;
+        width:100%!important;
+        height:100dvh!important;
+        min-height:0!important;
+        max-height:100dvh!important;
+        overflow:hidden!important;
+      }
+      .layout.reports-layout>aside{
+        position:fixed!important;
+        left:0!important;
+        top:0!important;
+        bottom:0!important;
+        height:100dvh!important;
+        max-height:100dvh!important;
+        overflow-y:auto!important;
+        overscroll-behavior:contain!important;
+      }
+      .layout.reports-layout>main.reports-mode{
+        display:block!important;
+        position:fixed!important;
+        left:180px!important;
+        top:0!important;
+        right:0!important;
+        bottom:0!important;
+        width:auto!important;
+        height:100dvh!important;
+        min-height:0!important;
+        max-height:100dvh!important;
+        margin:0!important;
+        padding:14px 14px calc(28px + env(safe-area-inset-bottom, 0px))!important;
+        box-sizing:border-box!important;
+        overflow-x:auto!important;
+        overflow-y:scroll!important;
+        -webkit-overflow-scrolling:touch!important;
+        overscroll-behavior-y:contain!important;
+        touch-action:pan-y pan-x!important;
+        scrollbar-gutter:stable!important;
+      }
+      .layout.reports-layout>main.reports-mode>.reports-page{
+        display:block!important;
+        position:relative!important;
+        height:auto!important;
+        min-height:0!important;
+        max-height:none!important;
+        overflow:visible!important;
+        padding:0 0 36px!important;
+        touch-action:pan-y!important;
+      }
+      .layout.reports-layout .report-preview{
+        height:auto!important;
+        max-height:none!important;
+        overflow:visible!important;
+      }
+      .layout.reports-layout .report-preview .tablewrap{
+        max-height:none!important;
+        overflow-x:auto!important;
+        overflow-y:visible!important;
+        -webkit-overflow-scrolling:touch!important;
+      }
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+
+function ensureReportsAllRowsScrollV51(){
+  if(document.getElementById('ouroReportsAllRowsScrollV51'))return;
+  const st=document.createElement('style');
+  st.id='ouroReportsAllRowsScrollV51';
+  st.textContent=`
+    /* V51 - Todos os relatórios: permitir que a lista/tabela cresça até o último registro */
+    .layout.reports-layout>main.reports-mode{
+      min-height:0!important;
+      max-height:none!important;
+      overscroll-behavior-y:contain!important;
+      -webkit-overflow-scrolling:touch!important;
+      scrollbar-width:auto!important;
+      touch-action:pan-y pan-x!important;
+      padding-bottom:calc(110px + env(safe-area-inset-bottom, 0px))!important;
+    }
+    .layout.reports-layout>main.reports-mode>.reports-page,
+    .layout.reports-layout .report-preview,
+    .layout.reports-layout .report-preview>.panel,
+    .layout.reports-layout .report-preview>.card,
+    .layout.reports-layout .report-preview>.report-table-block{
+      height:auto!important;
+      min-height:0!important;
+      max-height:none!important;
+      overflow:visible!important;
+      contain:none!important;
+    }
+    .layout.reports-layout .report-preview .tablewrap,
+    .layout.reports-layout .report-preview .table-wrap{
+      height:auto!important;
+      min-height:0!important;
+      max-height:none!important;
+      overflow-x:auto!important;
+      overflow-y:visible!important;
+      -webkit-overflow-scrolling:touch!important;
+      touch-action:pan-x pan-y!important;
+    }
+    .layout.reports-layout .report-athlete-table,
+    .layout.reports-layout .report-compact-table,
+    .layout.reports-layout .report-voting-table{
+      height:auto!important;
+      max-height:none!important;
+      overflow:visible!important;
+    }
+    @media (min-width:500px) and (max-width:1800px) and (pointer:coarse){
+      html:has(.layout.reports-layout),
+      body:has(.layout.reports-layout),
+      #app:has(.layout.reports-layout){
+        min-height:0!important;
+        height:100%!important;
+        overflow:hidden!important;
+      }
+      .layout.reports-layout{
+        min-height:0!important;
+        height:100dvh!important;
+        max-height:100dvh!important;
+        overflow:hidden!important;
+      }
+      .layout.reports-layout>main.reports-mode{
+        position:fixed!important;
+        top:0!important;
+        bottom:0!important;
+        height:auto!important;
+        max-height:none!important;
+        overflow-x:auto!important;
+        overflow-y:auto!important;
+        padding-bottom:calc(120px + env(safe-area-inset-bottom, 0px))!important;
+        box-sizing:border-box!important;
+      }
+      .layout.reports-layout>main.reports-mode>.reports-page{
+        display:block!important;
+        position:relative!important;
+        height:auto!important;
+        max-height:none!important;
+        overflow:visible!important;
+        padding-bottom:36px!important;
+      }
+    }
+  `;
+  document.head.appendChild(st);
+}
+
 function render(){ensureLiveStandingsStyles();ensurePublicMediaStyles();ensureYoutubeCentralFlowStyles();ensureYoutubeTabletLandscapeHeightV17();ensureCustomStyles();
-ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsFlowScrollFix();ensureReportsCleanStyles();ensureYoutubeStyles();ensureYoutubeTopAreaFix();ensureYoutubePlayerFixV5();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;syncYoutubePersistentPlayer();bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsFlowScrollFix();ensureReportsCleanStyles();ensureReportsPortraitScrollV50();ensureReportsAllRowsScrollV51();ensureYoutubeStyles();ensureYoutubeTopAreaFix();ensureYoutubePlayerFixV5();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;syncYoutubePersistentPlayer();bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
