@@ -1,4 +1,4 @@
-/* OURO E PRATA V48 — ORGANIZAÇÃO DOS RELATÓRIOS E LIMPEZA DO BANCO DE DADOS. Base V46. */
+/* OURO E PRATA V49 — ORGANIZAÇÃO DOS RELATÓRIOS E LIMPEZA DO BANCO DE DADOS. Base V46. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -2678,6 +2678,73 @@ function ensureMatchVotingReportScrollFix(){
   document.head.appendChild(style);
 }
 
+
+function ensureReportsScrollV49(){
+  if(document.getElementById('ouroReportsScrollV49')) return;
+  const style=document.createElement('style');
+  style.id='ouroReportsScrollV49';
+  style.textContent=`
+    @media (min-width:700px) and (orientation:landscape){
+      html:has(.layout.reports-layout),
+      body:has(.layout.reports-layout),
+      #app:has(.layout.reports-layout){
+        width:100%!important;height:100%!important;min-height:0!important;
+        overflow:hidden!important;overscroll-behavior:none!important;
+      }
+      .layout.reports-layout{
+        position:relative!important;display:block!important;
+        width:100vw!important;height:100dvh!important;min-height:0!important;
+        overflow:hidden!important;
+      }
+      .layout.reports-layout>aside{
+        position:fixed!important;left:0!important;top:0!important;bottom:0!important;
+        width:262px!important;height:100dvh!important;max-height:100dvh!important;
+        overflow-y:auto!important;overflow-x:hidden!important;z-index:1000!important;
+      }
+      .layout.reports-layout>main.reports-mode{
+        position:fixed!important;left:262px!important;right:0!important;
+        top:0!important;bottom:0!important;
+        width:auto!important;height:auto!important;max-height:none!important;
+        min-height:0!important;margin:0!important;padding:0 0 30px!important;
+        overflow-x:auto!important;overflow-y:scroll!important;
+        -webkit-overflow-scrolling:touch!important;
+        overscroll-behavior-y:contain!important;
+        touch-action:pan-y pan-x!important;
+        scrollbar-gutter:stable!important;
+      }
+      .layout.reports-layout>main.reports-mode>.reports-page{
+        display:block!important;position:relative!important;
+        height:auto!important;min-height:0!important;overflow:visible!important;
+        padding-bottom:36px!important;touch-action:pan-y!important;
+      }
+      .layout.reports-layout .report-preview,
+      .layout.reports-layout .report-preview:has(.report-voting-table){
+        height:auto!important;max-height:none!important;min-height:0!important;
+        overflow:visible!important;padding-bottom:36px!important;
+      }
+      .layout.reports-layout .report-preview .tablewrap{
+        max-height:none!important;overflow-x:auto!important;overflow-y:visible!important;
+        -webkit-overflow-scrolling:touch!important;
+      }
+    }
+    @media (min-width:500px) and (max-width:1100px) and (orientation:portrait){
+      .layout.reports-layout>main.reports-mode{
+        position:fixed!important;left:180px!important;right:0!important;
+        top:0!important;bottom:0!important;width:auto!important;height:auto!important;
+        max-height:none!important;min-height:0!important;margin:0!important;
+        overflow-x:auto!important;overflow-y:scroll!important;
+        -webkit-overflow-scrolling:touch!important;touch-action:pan-y pan-x!important;
+        overscroll-behavior-y:contain!important;padding-bottom:36px!important;
+      }
+      .layout.reports-layout>main.reports-mode>.reports-page{
+        height:auto!important;min-height:0!important;overflow:visible!important;
+        padding-bottom:36px!important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function ensureEventHalfStyles(){if(document.getElementById('event-half-styles'))return;const st=document.createElement('style');st.id='event-half-styles';st.textContent='.event-half-selector{display:flex;gap:8px;flex-wrap:wrap}.event-half-btn{transition:all .15s ease}.event-half-btn.event-half-active{background:#087f5b!important;color:#fff!important;border-color:#087f5b!important;box-shadow:0 0 0 2px rgba(8,127,91,.12) inset}.event-half-btn.event-half-active:hover{background:#066b4d!important;color:#fff!important}.event-half-btn:disabled{opacity:.55}';document.head.appendChild(st)}
 
 function ensureYoutubeTopAreaFix(){
@@ -2720,7 +2787,8 @@ function ensureYoutubeTabletLandscapeHeightV17(){if(document.getElementById('you
 function ensurePublicMediaStyles(){if(document.getElementById('publicMediaStyles'))return;const st=document.createElement('style');st.id='publicMediaStyles';st.textContent='.media-public-submit{background:#f6faf8;border:1px solid #dce9e2;padding:14px;margin:12px 0}.media-public-submit label{display:block;font-weight:600;margin:8px 0;color:#294b3e}.media-public-submit input,.media-public-submit select{display:block;width:100%;box-sizing:border-box;margin-top:5px;padding:10px;border:1px solid #cbdad2;border-radius:8px;background:#fff}.media-approval-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #e1ebe5}.media-approval-actions{display:flex;gap:6px;flex-wrap:wrap}@media(max-width:650px){.media-approval-row{align-items:flex-start;flex-direction:column}}';document.head.appendChild(st)}
 function ensureLiveStandingsStyles(){if(document.getElementById('live-standings-styles'))return;const st=document.createElement('style');st.id='live-standings-styles';st.textContent='.live-standings-score{display:inline-block;margin-left:7px;padding:2px 6px;border-radius:6px;background:#fff0f0;color:#b91c1c;font-size:.86em;white-space:nowrap}.provisional-points{display:block;color:#b45309;font-size:10px;line-height:1.2}';document.head.appendChild(st)}
 function render(){ensureLiveStandingsStyles();ensurePublicMediaStyles();ensureYoutubeCentralFlowStyles();ensureYoutubeTabletLandscapeHeightV17();ensureCustomStyles();
-ensureMatchVotingReportScrollFix();ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsCleanStyles();ensureYoutubeStyles();ensureYoutubeTopAreaFix();ensureYoutubePlayerFixV5();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;syncYoutubePersistentPlayer();bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+ensureMatchVotingReportScrollFix();
+ensureReportsScrollV49();ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsCleanStyles();ensureYoutubeStyles();ensureYoutubeTopAreaFix();ensureYoutubePlayerFixV5();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;syncYoutubePersistentPlayer();bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
