@@ -1,4 +1,4 @@
-/* OURO E PRATA V68 — AJUSTE SOMENTE DA ALTURA/FLUXO VERTICAL DA IMPRESSÃO. Base V67. */
+/* OURO E PRATA V69 — AJUSTE SOMENTE DA ALTURA/FLUXO VERTICAL DA IMPRESSÃO. Base V67. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -3007,7 +3007,7 @@ function printCurrentReportV65(){
     #ouro-print-document table{display:table!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;max-height:none!important;margin:0 0 2mm!important;table-layout:auto!important;border-collapse:collapse!important;break-inside:auto!important;page-break-inside:auto!important;}
     #ouro-print-document thead{display:table-header-group!important;break-inside:avoid!important;page-break-inside:avoid!important}
     #ouro-print-document tbody{display:table-row-group!important;break-inside:auto!important;page-break-inside:auto!important}
-    #ouro-print-document tr{break-inside:avoid!important;page-break-inside:avoid!important;min-height:0!important;height:auto!important}
+    #ouro-print-document tr{display:table-row!important;break-inside:auto!important;page-break-inside:auto!important;min-height:0!important;height:auto!important;orphans:1!important;widows:1!important}
     #ouro-print-document th,#ouro-print-document td{font-size:8pt!important;line-height:1.12!important;padding:2px 4px!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;vertical-align:middle!important}
     #ouro-print-document h2{font-size:16pt!important;margin:0 0 4mm!important}
     #ouro-print-document h3{font-size:12pt!important;margin:4mm 0 2mm!important}
@@ -3066,7 +3066,7 @@ function printCurrentReportV65(){
   `;
 
   printWindow.document.open();
-  printWindow.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base href="${location.href}"><title>Relatório - Ouro e Prata V68</title>${styles}<style id="ouro-print-v68">${printCss}</style></head><body><div id="ouro-print-toolbar"><button type="button" id="ouro-print-action">🖨️ Imprimir / Salvar em PDF</button><span>Toque no botão e escolha “Salvar como PDF” nas opções de impressão.</span></div><main id="ouro-print-document">${clone.outerHTML}</main><script>document.getElementById('ouro-print-action').addEventListener('click',function(){try{window.focus();window.print();}catch(e){alert('Não foi possível abrir a impressão. Use o menu do navegador e escolha Imprimir.');}});<\/script></body></html>`);
+  printWindow.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base href="${location.href}"><title>Relatório - Ouro e Prata V69</title>${styles}<style id="ouro-print-v68">${printCss}</style></head><body><div id="ouro-print-toolbar"><button type="button" id="ouro-print-action">🖨️ Imprimir / Salvar em PDF</button><span>Toque no botão e escolha “Salvar como PDF” nas opções de impressão.</span></div><main id="ouro-print-document">${clone.outerHTML}</main><script>document.getElementById('ouro-print-action').addEventListener('click',function(){try{window.focus();window.print();}catch(e){alert('Não foi possível abrir a impressão. Use o menu do navegador e escolha Imprimir.');}});<\/script></body></html>`);
   printWindow.document.close();
 }
 
