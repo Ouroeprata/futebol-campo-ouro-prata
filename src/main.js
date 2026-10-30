@@ -1,4 +1,4 @@
-/* OURO E PRATA V55 — PRESERVAR ABA ATUAL AO ATUALIZAR. Base V52. */
+/* OURO E PRATA V61 — IMPRESSÃO ISOLADA, LARGURA TOTAL E TODAS AS PÁGINAS. Base V60. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -2972,56 +2972,67 @@ function ensureReportsPrintWidthV52(){
 function printCurrentReportV60(){
   const source=document.querySelector('.layout.reports-layout .report-preview');
   if(!source){window.print();return;}
-  // Imprime no próprio documento da aplicação. O iframe oculto da V60 podia
-  // calcular a área imprimível com a largura/escala do tablet, reduzindo o relatório.
-  document.getElementById('ouro-print-root-v60')?.remove();
-  document.getElementById('ouro-print-style-v60')?.remove();
-  const root=document.createElement('main');
-  root.id='ouro-print-root-v60';
-  root.appendChild(source.cloneNode(true));
-  document.body.appendChild(root);
-  const style=document.createElement('style');
-  style.id='ouro-print-style-v60';
-  style.textContent=`
-    #ouro-print-root-v60{display:none}
-    @media print{
-      @page{size:A4 landscape;margin:7mm}
-      html,body{display:block!important;width:auto!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important;background:#fff!important}
-      body.ouro-printing-report>*:not(#ouro-print-root-v60){display:none!important}
-      body.ouro-printing-report>#ouro-print-root-v60{display:block!important;position:static!important;float:none!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important;box-sizing:border-box!important}
-      #ouro-print-root-v60,#ouro-print-root-v60 *{box-sizing:border-box!important;max-height:none!important;transform:none!important;zoom:1!important}
-      #ouro-print-root-v60 .report-preview{display:block!important;position:static!important;float:none!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important;border:0!important;box-shadow:none!important;transform:none!important;zoom:1!important}
-      #ouro-print-root-v60 .report-title-row button,#ouro-print-root-v60 .no-print,#ouro-print-root-v60 [data-report-print],#ouro-print-root-v60 .report-tabs{display:none!important}
-      #ouro-print-root-v60 .tablewrap,#ouro-print-root-v60 .table-wrap,#ouro-print-root-v60 .report-games-wrap{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;max-height:none!important;overflow:visible!important}
-      #ouro-print-root-v60 .report-table-block,#ouro-print-root-v60 .report-content,#ouro-print-root-v60 .report-section,#ouro-print-root-v60 .report-team-section,#ouro-print-root-v60 .panel,#ouro-print-root-v60 .card{display:block!important;position:static!important;float:none!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;break-before:auto!important;page-break-before:auto!important;break-after:auto!important;page-break-after:auto!important;break-inside:auto!important;page-break-inside:auto!important}
-      #ouro-print-root-v60 table{display:table!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;table-layout:auto!important;border-collapse:collapse!important;break-before:auto!important;page-break-before:auto!important;break-after:auto!important;page-break-after:auto!important;break-inside:auto!important;page-break-inside:auto!important}
-      #ouro-print-root-v60 thead{display:table-header-group!important}
-      #ouro-print-root-v60 tbody{display:table-row-group!important;break-inside:auto!important;page-break-inside:auto!important}
-      #ouro-print-root-v60 tr{break-inside:auto!important;page-break-inside:auto!important}
-      #ouro-print-root-v60 th,#ouro-print-root-v60 td{font-size:8.5pt!important;line-height:1.2!important;padding:3px 5px!important;white-space:normal!important;overflow-wrap:anywhere!important}
-      #ouro-print-root-v60 img{max-width:100%!important;height:auto}
-      #ouro-print-root-v60 h1,#ouro-print-root-v60 h2,#ouro-print-root-v60 h3{break-after:avoid!important;page-break-after:avoid!important}
-      #ouro-print-root-v60 .report-athletes-by-team-continuous,#ouro-print-root-v60 .report-athletes-by-team-continuous .tablewrap,#ouro-print-root-v60 .report-athletes-by-team-table{display:block!important;width:100%!important;height:auto!important;max-height:none!important;overflow:visible!important;break-inside:auto!important;page-break-inside:auto!important}
-      #ouro-print-root-v60 .report-athletes-by-team-table{display:table!important}
-      *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-    }
-  `;
-  document.head.appendChild(style);
-  document.body.classList.add('ouro-printing-report');
-  let cleaned=false;
-  const cleanup=()=>{
-    if(cleaned)return;cleaned=true;
-    document.body.classList.remove('ouro-printing-report');
-    root.remove();style.remove();
-    window.removeEventListener('afterprint',cleanup);
-  };
-  window.addEventListener('afterprint',cleanup,{once:true});
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    try{window.focus();window.print();}
-    catch(err){cleanup();toast('Não foi possível abrir a impressão: '+(err.message||err),'error');}
-  }));
-}
 
+  // A impressão é aberta em um documento independente para não herdar as
+  // larguras, colunas, alturas e áreas roláveis da interface do tablet.
+  const printWindow=window.open('','_blank');
+  if(!printWindow){
+    toast('O navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente novamente.','error');
+    return;
+  }
+
+  const clone=source.cloneNode(true);
+  clone.querySelectorAll('.no-print,[data-report-print],.report-tabs').forEach(el=>el.remove());
+  const styles=[...document.querySelectorAll('link[rel="stylesheet"],style')].map(el=>{
+    if(el.tagName==='LINK')return `<link rel="stylesheet" href="${String(el.href).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}">`;
+    return `<style>${el.textContent.replace(/<\/style/gi,'<\\/style')}</style>`;
+  }).join('\n');
+
+  const printCss=`
+    @page{size:A4 landscape;margin:8mm}
+    html,body{display:block!important;width:auto!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important;background:#fff!important}
+    *,*::before,*::after{box-sizing:border-box!important;transform:none!important;zoom:1!important;max-height:none!important}
+    body{font-family:Arial,Helvetica,sans-serif!important;color:#111!important;font-size:9pt!important}
+    #ouro-print-document{display:block!important;position:static!important;float:none!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important}
+    #ouro-print-document .report-preview{display:block!important;position:static!important;float:none!important;clear:both!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important;border:0!important;box-shadow:none!important}
+    #ouro-print-document .report-title-row{display:flex!important;width:100%!important;max-width:none!important;justify-content:flex-start!important;align-items:center!important}
+    #ouro-print-document .report-title-row button,#ouro-print-document .no-print,#ouro-print-document [data-report-print],#ouro-print-document .report-tabs,#ouro-print-document .athlete-report-tools,#ouro-print-document .athlete-report-filters,#ouro-print-document .athlete-report-sort{display:none!important}
+    #ouro-print-document .tablewrap,#ouro-print-document .table-wrap,#ouro-print-document .report-games-wrap{display:block!important;position:static!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important}
+    #ouro-print-document .report-table-block,#ouro-print-document .report-content,#ouro-print-document .report-section,#ouro-print-document .report-team-section,#ouro-print-document .panel,#ouro-print-document .card,#ouro-print-document .report-athletes-by-team-continuous{display:block!important;position:static!important;float:none!important;clear:both!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:none!important;margin-left:0!important;margin-right:0!important;overflow:visible!important;break-inside:auto!important;page-break-inside:auto!important}
+    #ouro-print-document table{display:table!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;margin:0 0 3mm!important;table-layout:auto!important;border-collapse:collapse!important;break-inside:auto!important;page-break-inside:auto!important}
+    #ouro-print-document thead{display:table-header-group!important}
+    #ouro-print-document tbody{display:table-row-group!important;break-inside:auto!important;page-break-inside:auto!important}
+    #ouro-print-document tr{break-inside:avoid!important;page-break-inside:avoid!important}
+    #ouro-print-document th,#ouro-print-document td{font-size:8pt!important;line-height:1.15!important;padding:2px 4px!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important}
+    #ouro-print-document h1,#ouro-print-document h2,#ouro-print-document h3{break-after:avoid!important;page-break-after:avoid!important}
+    #ouro-print-document .report-brand{display:flex!important;width:100%!important;max-width:none!important}
+    #ouro-print-document .report-athlete-table,#ouro-print-document .report-compact-table,#ouro-print-document .report-voting-table{width:100%!important;min-width:0!important;max-width:none!important;table-layout:auto!important}
+    #ouro-print-document img{max-width:100%!important;height:auto!important}
+    *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  `;
+
+  printWindow.document.open();
+  printWindow.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base href="${location.href}"><title>Relatório - Ouro e Prata</title>${styles}<style id="ouro-print-v61">${printCss}</style></head><body><main id="ouro-print-document">${clone.outerHTML}</main></body></html>`);
+  printWindow.document.close();
+
+  let started=false;
+  const startPrint=()=>{
+    if(started||printWindow.closed)return;
+    started=true;
+    const finish=()=>{try{printWindow.close();}catch(e){}};
+    printWindow.onafterprint=()=>setTimeout(finish,500);
+    try{printWindow.focus();printWindow.print();}
+    catch(err){finish();toast('Não foi possível abrir a impressão: '+(err.message||err),'error');}
+  };
+  const waitForAssets=()=>{
+    const imgs=[...printWindow.document.images];
+    Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;})))
+      .then(()=>printWindow.document.fonts?.ready||Promise.resolve())
+      .then(()=>requestAnimationFrame(()=>requestAnimationFrame(startPrint)));
+  };
+  if(printWindow.document.readyState==='complete')waitForAssets();
+  else printWindow.addEventListener('load',waitForAssets,{once:true});
+}
 function render(){
   // Persistência feita em toda renderização, cobrindo navegação por menu, botões e relatórios.
   try{
