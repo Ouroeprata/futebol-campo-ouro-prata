@@ -1,4 +1,4 @@
-/* OURO E PRATA V65 — AJUSTE EXCLUSIVO DA LARGURA NA IMPRESSÃO. Base V64. */
+/* OURO E PRATA V66 — CORREÇÃO DA ÁREA ÚTIL NA IMPRESSÃO. Base V65. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -2997,8 +2997,8 @@ function printCurrentReportV65(){
     #ouro-print-toolbar{display:flex;position:sticky;top:0;z-index:99999;gap:12px;align-items:center;padding:12px 14px;margin:0 0 12px;background:#075b3e;color:#fff;font:600 15px Arial,sans-serif;box-shadow:0 2px 8px #0003}
     #ouro-print-toolbar button{appearance:none;border:0;border-radius:8px;background:#fff;color:#075b3e;font-weight:700;font-size:15px;padding:12px 18px;min-height:44px;cursor:pointer}
     #ouro-print-toolbar span{font-size:12px;font-weight:400}
-    #ouro-print-document{display:block!important;position:static!important;float:none!important;width:281mm!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important}
-    #ouro-print-document .report-preview{display:block!important;position:static!important;float:none!important;clear:both!important;width:281mm!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important;border:0!important;box-shadow:none!important}
+    #ouro-print-document{display:block!important;position:static!important;float:none!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important}
+    #ouro-print-document .report-preview{display:block!important;position:static!important;float:none!important;clear:both!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important;border:0!important;box-shadow:none!important}
     #ouro-print-document .report-title-row{display:flex!important;width:100%!important;max-width:none!important;justify-content:flex-start!important;align-items:center!important}
     #ouro-print-document .report-title-row button,#ouro-print-document .no-print,#ouro-print-document [data-report-print],#ouro-print-document .report-tabs,#ouro-print-document .athlete-report-tools,#ouro-print-document .athlete-report-filters,#ouro-print-document .athlete-report-sort{display:none!important}
     #ouro-print-document .tablewrap,#ouro-print-document .table-wrap,#ouro-print-document .report-games-wrap{display:block!important;position:static!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important}
@@ -3061,11 +3061,11 @@ function printCurrentReportV65(){
     #ouro-print-document .report-athlete-table,#ouro-print-document .report-compact-table,#ouro-print-document .report-voting-table{width:100%!important;min-width:0!important;max-width:none!important;table-layout:auto!important}
     #ouro-print-document img{max-width:100%!important;height:auto!important}
     *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-    @media print{#ouro-print-toolbar{display:none!important}html,body{margin:0!important;padding:0!important}#ouro-print-document{width:281mm!important}}
+    @media print{#ouro-print-toolbar{display:none!important}html,body{margin:0!important;padding:0!important}#ouro-print-document{width:100%!important}}
   `;
 
   printWindow.document.open();
-  printWindow.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base href="${location.href}"><title>Relatório - Ouro e Prata V65</title>${styles}<style id="ouro-print-v65">${printCss}</style></head><body><div id="ouro-print-toolbar"><button type="button" id="ouro-print-action">🖨️ Imprimir / Salvar em PDF</button><span>Toque no botão e escolha “Salvar como PDF” nas opções de impressão.</span></div><main id="ouro-print-document">${clone.outerHTML}</main><script>document.getElementById('ouro-print-action').addEventListener('click',function(){try{window.focus();window.print();}catch(e){alert('Não foi possível abrir a impressão. Use o menu do navegador e escolha Imprimir.');}});<\/script></body></html>`);
+  printWindow.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base href="${location.href}"><title>Relatório - Ouro e Prata V66</title>${styles}<style id="ouro-print-v65">${printCss}</style></head><body><div id="ouro-print-toolbar"><button type="button" id="ouro-print-action">🖨️ Imprimir / Salvar em PDF</button><span>Toque no botão e escolha “Salvar como PDF” nas opções de impressão.</span></div><main id="ouro-print-document">${clone.outerHTML}</main><script>document.getElementById('ouro-print-action').addEventListener('click',function(){try{window.focus();window.print();}catch(e){alert('Não foi possível abrir a impressão. Use o menu do navegador e escolha Imprimir.');}});<\/script></body></html>`);
   printWindow.document.close();
 }
 
