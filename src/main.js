@@ -1,4 +1,4 @@
-/* OURO E PRATA V51 — ORGANIZAÇÃO DOS RELATÓRIOS E LIMPEZA DO BANCO DE DADOS. Base V46. */
+/* OURO E PRATA V52 — ORGANIZAÇÃO DOS RELATÓRIOS E LIMPEZA DO BANCO DE DADOS. Base V46. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -2895,8 +2895,68 @@ function ensureReportsAllRowsScrollV51(){
   document.head.appendChild(st);
 }
 
+
+function ensureReportsPrintWidthV52(){
+  if(document.getElementById('ouroReportsPrintWidthV52'))return;
+  const st=document.createElement('style');
+  st.id='ouroReportsPrintWidthV52';
+  st.textContent=`
+    @media print{
+      @page{size:A4 landscape!important;margin:6mm!important}
+      html,body,#app,.layout,.layout.reports-layout,
+      .layout.reports-layout>main.reports-mode,
+      .layout.reports-layout>main.reports-mode>.reports-page,
+      .reports-page,.report-preview{
+        width:100%!important;
+        min-width:0!important;
+        max-width:none!important;
+        margin-left:0!important;
+        margin-right:0!important;
+        padding-left:0!important;
+        padding-right:0!important;
+        box-sizing:border-box!important;
+      }
+      html,body,#app,.layout,.layout.reports-layout{
+        overflow:visible!important;
+      }
+      .layout.reports-layout{display:block!important}
+      .layout.reports-layout>main.reports-mode{
+        display:block!important;
+        position:static!important;
+        height:auto!important;
+        max-height:none!important;
+        overflow:visible!important;
+      }
+      .reports-page,.report-preview,.report-preview .tablewrap{
+        overflow:visible!important;
+        break-inside:auto!important;
+      }
+      .report-preview table,
+      .report-athlete-table,.report-compact-table,.report-voting-table,
+      .cartoes-report-table{
+        width:100%!important;
+        min-width:0!important;
+        max-width:none!important;
+        table-layout:auto!important;
+        border-collapse:collapse!important;
+      }
+      .report-athlete-table th,.report-athlete-table td,
+      .report-compact-table th,.report-compact-table td,
+      .report-voting-table th,.report-voting-table td,
+      .cartoes-report-table th,.cartoes-report-table td{
+        font-size:9px!important;
+        padding:3px 5px!important;
+        line-height:1.15!important;
+        overflow-wrap:anywhere!important;
+      }
+      .report-brand,.report-title-row{width:100%!important}
+    }
+  `;
+  document.head.appendChild(st);
+}
+
 function render(){ensureLiveStandingsStyles();ensurePublicMediaStyles();ensureYoutubeCentralFlowStyles();ensureYoutubeTabletLandscapeHeightV17();ensureCustomStyles();
-ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsFlowScrollFix();ensureReportsCleanStyles();ensureReportsPortraitScrollV50();ensureReportsAllRowsScrollV51();ensureYoutubeStyles();ensureYoutubeTopAreaFix();ensureYoutubePlayerFixV5();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;syncYoutubePersistentPlayer();bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsFlowScrollFix();ensureReportsCleanStyles();ensureReportsPortraitScrollV50();ensureReportsAllRowsScrollV51();ensureReportsPrintWidthV52();ensureYoutubeStyles();ensureYoutubeTopAreaFix();ensureYoutubePlayerFixV5();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;syncYoutubePersistentPlayer();bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
