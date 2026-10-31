@@ -1,4 +1,4 @@
-/* OURO E PRATA V72 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
+/* OURO E PRATA V73 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -957,10 +957,10 @@ function liveSheet(){
     ${controlBar(m)}
     ${correctionPanel(m)}
     <div class="sheet-content-stack">
-      ${lineupPanel(m)}
-      ${canLiveOperate()?`<div class="save-lineup-bar"><button class="secondary save-lineup-btn" data-action="saveLineup" ${m.status==='encerrado'?'disabled':''}>💾 Salvar situação dos atletas</button></div>`:''}
       ${publicMode?'':eventPanel(m)}
       ${eventTimeline(m)}
+      ${lineupPanel(m)}
+      ${canLiveOperate()?`<div class="save-lineup-bar"><button class="secondary save-lineup-btn" data-action="saveLineup" ${m.status==='encerrado'?'disabled':''}>💾 Salvar situação dos atletas</button></div>`:''}
     </div>
   </div>`;
 }
