@@ -2161,6 +2161,96 @@ function ensureTabletPortraitV22(){
     .verify-player-btn{width:26px!important;min-width:26px!important;padding:4px 1px!important}
   }
 
+  /* V91: override final para celular; a regra anterior V15 voltava a dividir as equipes */
+  @media (max-width:600px){
+    .lineup-columns{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr)!important;
+      gap:10px!important;
+      width:100%!important;
+      min-width:0!important;
+    }
+    .lineupteam,.lineup-list{width:100%!important;min-width:0!important;max-width:100%!important}
+    .lineup-player-row{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr) 54px 66px 104px 32px!important;
+      align-items:center!important;
+      gap:4px!important;
+      width:100%!important;
+      min-width:0!important;
+      box-sizing:border-box!important;
+      padding:8px 5px!important;
+    }
+    .presence-control{
+      display:flex!important;
+      align-items:center!important;
+      gap:5px!important;
+      width:100%!important;
+      min-width:0!important;
+      overflow:hidden!important;
+    }
+    .presence-control input,.presence-box{
+      flex:0 0 18px!important;
+      width:18px!important;
+      min-width:18px!important;
+    }
+    .player-name-wrap{
+      display:block!important;
+      flex:1 1 auto!important;
+      width:auto!important;
+      min-width:0!important;
+      max-width:100%!important;
+      overflow:hidden!important;
+    }
+    .player-name-wrap b{
+      display:block!important;
+      width:100%!important;
+      min-width:0!important;
+      font-size:11px!important;
+      line-height:1.25!important;
+      white-space:normal!important;
+      overflow-wrap:break-word!important;
+      word-break:normal!important;
+    }
+    .lineup-nickname{
+      display:block!important;
+      width:54px!important;
+      min-width:54px!important;
+      max-width:54px!important;
+      font-size:9px!important;
+      white-space:nowrap!important;
+      overflow:hidden!important;
+      text-overflow:ellipsis!important;
+    }
+    .lineup-category{
+      display:block!important;
+      width:66px!important;
+      min-width:66px!important;
+      max-width:66px!important;
+      box-sizing:border-box!important;
+      font-size:9px!important;
+      padding:5px 2px!important;
+      white-space:nowrap!important;
+      text-align:center!important;
+    }
+    .lineup-player-row .statusbtn{
+      display:block!important;
+      width:104px!important;
+      min-width:104px!important;
+      max-width:104px!important;
+      box-sizing:border-box!important;
+      padding:7px 3px!important;
+      font-size:10px!important;
+      white-space:nowrap!important;
+    }
+    .lineup-player-row .verify-player-btn{
+      width:32px!important;
+      min-width:32px!important;
+      max-width:32px!important;
+      padding:5px 2px!important;
+    }
+  }
+
 </style>`);
 }
 
