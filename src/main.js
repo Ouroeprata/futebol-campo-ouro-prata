@@ -1,4 +1,4 @@
-/* OURO E PRATA V80 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
+/* OURO E PRATA V81 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -1698,6 +1698,17 @@ function ensureMobileFixV15(){
   .match-col-teams>div,.match-col-teams>div b{font-size:13px!important}
   .match-col-teams>strong{font-size:18px!important}
   .team-flag{width:26px!important}
+}
+
+/* V81: botões para iniciar cada tempo no mesmo tamanho dos seletores 1º/2º Tempo */
+.live-sheet .controlbar button[data-action="start1"],
+.live-sheet .controlbar button[data-action="start2"]{
+  min-height:54px!important;
+  padding:12px 22px!important;
+  font-size:clamp(18px,2.2vw,23px)!important;
+  font-weight:700!important;
+  border-radius:10px!important;
+  line-height:1.2!important;
 }
 </style>`);
 }
