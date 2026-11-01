@@ -770,8 +770,10 @@ function publicVotingCandidates(type){
   const fm=finalMatch(); if(!fm?.home_team_id||!fm?.away_team_id)return [];
   const tids=new Set([String(fm.home_team_id),String(fm.away_team_id)]);
   const lineupStatus=getCurrentSubstitutionStatusMap(fm.id);
+  const admin=isAdmin();
   return state.players.filter(p=>{
     if(!tids.has(String(p.team_id)))return false;
+    if(admin)return true; // Administrador consulta todos os atletas das equipes finalistas.
     const status=String(lineupStatus[String(p.id)]||'').trim().toLowerCase();
     return ['titular','reserva'].includes(status);
   }).sort((a,b)=>String(a.full_name||a.name||'').localeCompare(String(b.full_name||b.name||''),'pt-BR'));
@@ -782,15 +784,15 @@ function publicVoteCard(type,title,description){
   // Os nomes dos atletas só são exibidos durante o período oficial de votação.
   const admin=isAdmin();
   const adminAfterClose=admin&&win.phase==='after';
-  const candidatesVisible=win.open;
+  const candidatesVisible=win.open||admin;
   const closed=!win.open||!!chosen;
   const disabled=closed?'disabled':'';
   const search=candidatesVisible&&candidates.length?`<div class="public-vote-search"><span class="public-vote-search-icon">🔎</span><input type="search" inputmode="search" autocomplete="off" placeholder="Buscar atleta, sobrenome ou time..." aria-label="Buscar atleta, sobrenome ou time" data-vote-search="${type}"><button type="button" class="public-vote-search-clear" data-vote-search-clear="${type}" title="Limpar busca">×</button></div>`:'';
   const list=(candidatesVisible?candidates:[]).map(p=>`<button class="public-vote-option ${chosen===String(p.id)?'selected':''}" data-public-vote="${p.id}" data-public-vote-type="${type}" data-vote-search-text="${esc(publicVoteSearchText(p))}" ${disabled}><span class="public-vote-player">${p.photo_url?`<img src="${esc(p.photo_url)}" alt="">`:flag(teamName(p.team_id))}<span><b>${esc(p.full_name||p.name||'Atleta')}</b><small>${esc(teamName(p.team_id)||'')} · ${esc(cat(p.category)||'')}</small></span></span><strong>${counts[p.id]||0}</strong></button>`).join('');
-  const phaseNotice=!win.open?`<div class="empty">${win.phase==='before'?'Os nomes dos atletas serão exibidos somente durante o período de votação.':'Votação encerrada. O resultado está disponível exclusivamente em Relatórios.'}</div>`:'';
+  const phaseNotice=!win.open&&!admin?`<div class="empty">${win.phase==='before'?'Os nomes dos atletas serão exibidos somente durante o período de votação.':'Votação encerrada. O resultado está disponível exclusivamente em Relatórios.'}</div>`:'';
   const totalVotes=Object.values(counts).reduce((a,b)=>a+b,0);
   const publicClosedNotice='';
-  return `<div class="public-vote-card"><div class="public-vote-card-head"><div><span class="eyebrow">${type==='campeonato'?'🏆 CAMPEONATO':'🏅 FINAL'}</span><h3>${title}</h3><p class="muted">${description}</p></div>${win.open?`<span class="tag">${totalVotes} voto(s)</span>`:''}</div>${win.open?phaseNotice:''}${!win.open?'':type==='final'&&!candidates.length?`<div class="empty">A votação da final ficará disponível quando as duas equipes da final estiverem definidas.</div>`:candidates.length?`${search}<div class="public-vote-search-empty empty" data-vote-search-empty="${type}" hidden>Nenhum atleta ou time encontrado.</div><div class="public-vote-list" data-vote-list="${type}">${list}</div>`:`<div class="empty">Nenhum atleta disponível para votação.</div>`}${win.open?`<small class="public-vote-status">${chosen?'Seu voto nesta categoria já foi registrado.':win.label}</small>`:''}</div>`
+  return `<div class="public-vote-card"><div class="public-vote-card-head"><div><span class="eyebrow">${type==='campeonato'?'🏆 CAMPEONATO':'🏅 FINAL'}</span><h3>${title}</h3><p class="muted">${description}</p></div>${win.open||admin?`<span class="tag">${totalVotes} voto(s)</span>`:''}</div>${!win.open&&!admin?phaseNotice:''}${!candidatesVisible?'':type==='final'&&!candidates.length?`<div class="empty">A votação da final ficará disponível quando as duas equipes da final estiverem definidas.</div>`:candidates.length?`${search}<div class="public-vote-search-empty empty" data-vote-search-empty="${type}" hidden>Nenhum atleta ou time encontrado.</div><div class="public-vote-list" data-vote-list="${type}">${list}</div>`:`<div class="empty">Nenhum atleta disponível para votação.</div>`}${win.open&&!admin?`<small class="public-vote-status">${chosen?'Seu voto nesta categoria já foi registrado.':win.label}</small>`:''}</div>`
 }
 function matchVotingView(){
   const admin=isAdmin();
@@ -806,7 +808,7 @@ function matchVotingView(){
     const phase=!cfg?'Ainda não configurada':now<start?'Aguardando abertura':now>end?'Encerrada':cfg.active?'Aberta':'Inativa';
     const finished=String(m.status||'').toLowerCase()==='encerrado';
     const adminAfterClose=admin&&!open&&phase==='Encerrada';
-    const candidatesVisible=open||adminAfterClose;
+    const candidatesVisible=open||admin;
     const cards=teams.map(team=>{
       const matchLineupRows=(state.lineups||[]).filter(l=>String(l.match_id)===String(m.id));
       const lineupStatus=getCurrentSubstitutionStatusMap(m.id);
@@ -814,6 +816,7 @@ function matchVotingView(){
       // podem receber votos. Ausente, Suspenso e atletas sem situação definida são bloqueados.
       const roster=state.players.filter(p=>{
         if(String(p.team_id)!==String(team.id))return false;
+        if(admin)return true; // Administrador visualiza todos os atletas da equipe.
         const status=String(lineupStatus[String(p.id)]||'').trim().toLowerCase();
         return ['titular','reserva'].includes(status);
       }).sort((a,b)=>String(a.full_name||a.name||'').localeCompare(String(b.full_name||b.name||''),'pt-BR'));
@@ -822,16 +825,16 @@ function matchVotingView(){
       const teamVotes=votes.filter(v=>String(v.match_id)===String(m.id)&&String(v.team_id)===String(team.id));
       const countByPlayer={};teamVotes.forEach(v=>{countByPlayer[String(v.player_id)]=(countByPlayer[String(v.player_id)]||0)+1});
       const adminMode=adminAfterClose;
-      const radioDisabled=!adminMode&&(already||!open);
+      const radioDisabled=admin||already||!open;
       const choices=(candidatesVisible?roster:[]).map(p=>`<label class="match-vote-player"><input type="radio" name="mv-${m.id}-${team.id}" value="${p.id}" ${radioDisabled?'disabled':''}><span>${p.nickname?`<b>${esc(p.nickname)}</b> — `:''}${esc(p.full_name||p.name||'Atleta')}</span><strong class="match-vote-count">${countByPlayer[String(p.id)]||0} voto(s)</strong></label>`).join('');
-      const action=adminMode
-        ? `<button class="primary" data-match-admin-vote="${m.id}" data-match-admin-vote-team="${team.id}" ${!roster.length?'disabled':''}>Registrar atleta escolhido</button>`
-        : `<button class="primary" data-match-vote="${m.id}" data-match-vote-team="${team.id}" ${!open||already||!roster.length?'disabled':''}>${already?'Voto já registrado':'Confirmar voto nesta equipe'}</button>`;
+      const action=!admin&&open
+        ? `<button class="primary" data-match-vote="${m.id}" data-match-vote-team="${team.id}" ${already||!roster.length?'disabled':''}>${already?'Voto já registrado':'Confirmar voto nesta equipe'}</button>`
+        : '';
       const hiddenNotice='';
       return `<div class="match-vote-team"><h4>${flag(team.name)} ${esc(team.name)}</h4>${hiddenNotice}${candidatesVisible?(choices||'<p class="muted">Nenhum atleta apto para votação: confira a Súmula / Escalação e marque os atletas como Titular ou Reserva.</p>'):''}${candidatesVisible?action:''}${already&&!adminMode?'<small class="public-vote-status">Este aparelho já votou nesta equipe nesta partida.</small>':''}</div>`;
     }).join('');
     const matchTotal=votes.filter(v=>String(v.match_id)===String(m.id)).length;
-    if(!open&&!admin&&!adminAfterClose){
+    if(!open&&!admin){
       return '';
     }
     return `<article class="match-voting-card" id="match-voting-${m.id}"><div class="match-voting-head"><div><h3>${esc(teamName(m.home_team_id))} x ${esc(teamName(m.away_team_id))}</h3><p class="muted">${dt(m.scheduled_at)} · ${esc(m.status||'')}</p><small>Votação pública: <b>${phase}</b>${cfg?` · ${dt(cfg.opens_at)} até ${dt(cfg.closes_at)}`:''}${open||admin?` · <b>Votos registrados: ${matchTotal}</b>`:''}</small></div>${admin?`<div class="panel-actions"><button class="secondary" data-match-voting-config="${m.id}">⚙️ ${cfg?'Alterar período':'Configurar período'}</button><button class="danger" data-match-voting-reset="${m.id}">🗑️ Zerar votos desta partida</button></div>`:''}</div><div class="match-voting-teams">${cards}</div></article>`;
