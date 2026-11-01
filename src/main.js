@@ -768,8 +768,13 @@ function publicVoteCounts(type){const out={};(state.publicVotes||[]).filter(v=>v
 function publicVotingCandidates(type){
   if(type==='campeonato')return state.players.slice().sort((a,b)=>String(a.full_name||a.name||'').localeCompare(String(b.full_name||b.name||''),'pt-BR'));
   const fm=finalMatch(); if(!fm?.home_team_id||!fm?.away_team_id)return [];
-  const tids=new Set([fm.home_team_id,fm.away_team_id]);
-  return state.players.filter(p=>tids.has(p.team_id)).sort((a,b)=>String(a.full_name||a.name||'').localeCompare(String(b.full_name||b.name||''),'pt-BR'));
+  const tids=new Set([String(fm.home_team_id),String(fm.away_team_id)]);
+  const lineupStatus=getCurrentSubstitutionStatusMap(fm.id);
+  return state.players.filter(p=>{
+    if(!tids.has(String(p.team_id)))return false;
+    const status=String(lineupStatus[String(p.id)]||'').trim().toLowerCase();
+    return ['titular','reserva'].includes(status);
+  }).sort((a,b)=>String(a.full_name||a.name||'').localeCompare(String(b.full_name||b.name||''),'pt-BR'));
 }
 function publicVoteSearchText(p){return [p.full_name,p.name,p.nickname,teamName(p.team_id)].filter(Boolean).join(' ').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
 function publicVoteCard(type,title,description){
@@ -805,13 +810,10 @@ function matchVotingView(){
     const cards=teams.map(team=>{
       const matchLineupRows=(state.lineups||[]).filter(l=>String(l.match_id)===String(m.id));
       const lineupStatus=getCurrentSubstitutionStatusMap(m.id);
-      // Em votações públicas de partidas diferentes da partida atualmente aberta, a escalação
-      // pode ainda não estar carregada no estado local. Nesse caso, não esconder todo o elenco.
-      // Quando há escalação salva para esta partida, respeitar Titular/Reserva e bloquear Ausente/Suspenso.
-      const hasSavedLineup=matchLineupRows.length>0;
+      // Somente atletas explicitamente marcados como Titular ou Reserva na súmula
+      // podem receber votos. Ausente, Suspenso e atletas sem situação definida são bloqueados.
       const roster=state.players.filter(p=>{
         if(String(p.team_id)!==String(team.id))return false;
-        if(!hasSavedLineup)return true;
         const status=String(lineupStatus[String(p.id)]||'').trim().toLowerCase();
         return ['titular','reserva'].includes(status);
       }).sort((a,b)=>String(a.full_name||a.name||'').localeCompare(String(b.full_name||b.name||''),'pt-BR'));
