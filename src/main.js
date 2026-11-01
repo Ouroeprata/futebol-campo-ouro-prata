@@ -1,4 +1,4 @@
-/* OURO E PRATA V82 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
+/* OURO E PRATA V83 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -1721,6 +1721,14 @@ function ensureMobileFixV15(){
  .event-half-selector .event-half-btn{min-width:0!important;padding:9px 12px!important;font-size:16px!important}
  .event-timer-actions{gap:4px!important}
  .event-timer-actions .smallbtn{padding:8px 10px!important;font-size:14px!important}
+}
+
+/* V83: visor do cronômetro de ocorrência mais estreito */
+.event-clock-layout{grid-template-columns:auto minmax(150px,260px) auto!important;justify-content:space-between!important}
+.event-clock-layout .event-clock{width:100%!important;min-width:0!important;max-width:260px!important;justify-self:center!important;padding-left:10px!important;padding-right:10px!important}
+@media(max-width:700px){
+ .event-clock-layout{grid-template-columns:minmax(0,1fr) auto!important}
+ .event-clock-layout .event-clock{width:100%!important;max-width:190px!important;min-width:0!important;justify-self:start!important}
 }
 </style>`);
 }
