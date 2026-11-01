@@ -1807,6 +1807,107 @@ function ensureMobileFixV15(){
   }
 }
 
+
+/* V92: correção estrutural da altura e alinhamento das linhas no celular vertical */
+@media (max-width:600px) and (orientation:portrait){
+  .lineup-columns{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:10px!important;
+    width:100%!important;
+  }
+  .lineupteam,.lineup-list{width:100%!important;min-width:0!important;max-width:100%!important}
+  .lineup-player-row{
+    display:flex!important;
+    flex-flow:row nowrap!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:5px!important;
+    height:auto!important;
+    min-height:54px!important;
+    max-height:none!important;
+    padding:7px 5px!important;
+    box-sizing:border-box!important;
+    overflow:visible!important;
+  }
+  .lineup-player-row .presence-control{
+    display:flex!important;
+    flex:1 1 auto!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    gap:5px!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:auto!important;
+    overflow:visible!important;
+    margin:0!important;
+  }
+  .lineup-player-row .presence-control .presence-box{
+    display:block!important;
+    flex:0 0 18px!important;
+    width:18px!important;
+    height:18px!important;
+    min-width:18px!important;
+  }
+  .lineup-player-row .player-name-wrap{
+    display:block!important;
+    flex:1 1 auto!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:auto!important;
+    overflow:visible!important;
+    white-space:normal!important;
+  }
+  .lineup-player-row .player-name-wrap b{
+    display:block!important;
+    width:auto!important;
+    height:auto!important;
+    min-width:0!important;
+    margin:0!important;
+    font-size:11px!important;
+    line-height:1.25!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    word-break:normal!important;
+  }
+  .lineup-player-row .lineup-nickname{
+    flex:0 0 48px!important;
+    width:48px!important;
+    min-width:48px!important;
+    max-width:48px!important;
+    font-size:9px!important;
+  }
+  .lineup-player-row .lineup-category{
+    flex:0 0 62px!important;
+    width:62px!important;
+    min-width:62px!important;
+    max-width:62px!important;
+    padding:5px 2px!important;
+    font-size:8px!important;
+    box-sizing:border-box!important;
+  }
+  .lineup-player-row .statusbtn{
+    flex:0 0 88px!important;
+    width:88px!important;
+    min-width:88px!important;
+    max-width:88px!important;
+    padding:7px 2px!important;
+    font-size:9px!important;
+    white-space:nowrap!important;
+    box-sizing:border-box!important;
+  }
+  .lineup-player-row .verify-player-btn{
+    flex:0 0 30px!important;
+    width:30px!important;
+    min-width:30px!important;
+    max-width:30px!important;
+    padding:5px 1px!important;
+  }
+}
+
 </style>`);
 }
 
