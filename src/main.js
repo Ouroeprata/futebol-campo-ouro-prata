@@ -777,7 +777,7 @@ function publicVoteCard(type,title,description){
   // Os nomes dos atletas só são exibidos durante o período oficial de votação.
   const admin=isAdmin();
   const adminAfterClose=admin&&win.phase==='after';
-  const candidatesVisible=win.open||adminAfterClose;
+  const candidatesVisible=win.open;
   const closed=!win.open||!!chosen;
   const disabled=closed?'disabled':'';
   const search=candidatesVisible&&candidates.length?`<div class="public-vote-search"><span class="public-vote-search-icon">🔎</span><input type="search" inputmode="search" autocomplete="off" placeholder="Buscar atleta, sobrenome ou time..." aria-label="Buscar atleta, sobrenome ou time" data-vote-search="${type}"><button type="button" class="public-vote-search-clear" data-vote-search-clear="${type}" title="Limpar busca">×</button></div>`:'';
@@ -785,7 +785,7 @@ function publicVoteCard(type,title,description){
   const phaseNotice=!win.open?`<div class="empty">${win.phase==='before'?'Os nomes dos atletas serão exibidos somente durante o período de votação.':'Votação encerrada. O resultado está disponível exclusivamente em Relatórios.'}</div>`:'';
   const totalVotes=Object.values(counts).reduce((a,b)=>a+b,0);
   const publicClosedNotice='';
-  return `<div class="public-vote-card"><div class="public-vote-card-head"><div><span class="eyebrow">${type==='campeonato'?'🏆 CAMPEONATO':'🏅 FINAL'}</span><h3>${title}</h3><p class="muted">${description}</p></div>${win.open||admin?`<span class="tag">${totalVotes} voto(s)</span>`:''}</div>${!win.open&&!admin?'':phaseNotice}${!win.open?'':type==='final'&&!candidates.length?`<div class="empty">A votação da final ficará disponível quando as duas equipes da final estiverem definidas.</div>`:candidates.length?`${search}<div class="public-vote-search-empty empty" data-vote-search-empty="${type}" hidden>Nenhum atleta ou time encontrado.</div><div class="public-vote-list" data-vote-list="${type}">${list}</div>`:`<div class="empty">Nenhum atleta disponível para votação.</div>`}${win.open||admin?`<small class="public-vote-status">${chosen?'Seu voto nesta categoria já foi registrado.':win.label}</small>`:''}</div>`
+  return `<div class="public-vote-card"><div class="public-vote-card-head"><div><span class="eyebrow">${type==='campeonato'?'🏆 CAMPEONATO':'🏅 FINAL'}</span><h3>${title}</h3><p class="muted">${description}</p></div>${win.open?`<span class="tag">${totalVotes} voto(s)</span>`:''}</div>${win.open?phaseNotice:''}${!win.open?'':type==='final'&&!candidates.length?`<div class="empty">A votação da final ficará disponível quando as duas equipes da final estiverem definidas.</div>`:candidates.length?`${search}<div class="public-vote-search-empty empty" data-vote-search-empty="${type}" hidden>Nenhum atleta ou time encontrado.</div><div class="public-vote-list" data-vote-list="${type}">${list}</div>`:`<div class="empty">Nenhum atleta disponível para votação.</div>`}${win.open?`<small class="public-vote-status">${chosen?'Seu voto nesta categoria já foi registrado.':win.label}</small>`:''}</div>`
 }
 function matchVotingView(){
   const admin=isAdmin();
@@ -894,8 +894,11 @@ async function resetMatchVotes(matchId){
 }
 function publicVotingView(){
   const win=votingWindow();
-  const adminButton=isAdmin()?'<div class="voting-admin-actions"><button class="secondary" data-voting-config>⚙️ Configurar período da votação da final</button></div>':'';
-  return `${matchVotingView()}<section class="panel public-voting-page"><div class="panelhead"><div><span class="eyebrow">VOTAÇÃO DA FINAL</span><h2>🏅 Melhor atleta da final</h2><p class="muted">Esta votação permanece separada da votação por partida. A votação de melhor atleta do campeonato foi removida.</p></div><div class="panel-actions"><span class="status ${win.open?'ao_vivo':''}">${win.open?'● VOTAÇÃO ABERTA':'○ '+(win.phase==='before'?'AGUARDANDO ABERTURA':'ENCERRADA')}</span>${adminButton}</div></div><div class="public-voting-period"><b>Período:</b> ${win.start.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})} até ${win.end.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}.</div><div class="public-voting-grid">${publicVoteCard('final','Melhor atleta da final','Escolha 01 atleta entre os atletas das duas equipes classificadas para a final.')}</div></section>`;
+  const admin=isAdmin();
+  const adminButton=admin?'<div class="voting-admin-actions"><button class="secondary" data-voting-config>⚙️ Configurar período da votação da final</button></div>':'';
+  const matchPanel=matchVotingView();
+  if(!win.open&&!admin)return matchPanel;
+  return `${matchPanel}<section class="panel public-voting-page"><div class="panelhead"><div><span class="eyebrow">VOTAÇÃO DA FINAL</span><h2>🏅 Melhor atleta da final</h2><p class="muted">Esta votação permanece separada da votação por partida. A votação de melhor atleta do campeonato foi removida.</p></div><div class="panel-actions"><span class="status ${win.open?'ao_vivo':''}">${win.open?'● VOTAÇÃO ABERTA':'○ '+(win.phase==='before'?'AGUARDANDO ABERTURA':'ENCERRADA')}</span>${adminButton}</div></div><div class="public-voting-period"><b>Período:</b> ${win.start.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})} até ${win.end.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}.</div><div class="public-voting-grid">${publicVoteCard('final','Melhor atleta da final','Escolha 01 atleta entre os atletas das duas equipes classificadas para a final.')}</div></section>`;
 }
 async function submitPublicVote(type,playerId,button){
   const win=votingWindow(); if(!win.open)return toast(win.label,'error');
