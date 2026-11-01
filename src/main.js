@@ -1,4 +1,4 @@
-/* OURO E PRATA V76 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
+/* OURO E PRATA V77 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -995,7 +995,7 @@ function eventPanel(m){
   const disabled=locked||!canLiveOperate();
   const types=[['gol','⚽','Gol'],['gol_contra','🥅','Gol Contra'],['cartao_amarelo','🟨','Cartão Amarelo'],['cartao_vermelho','🟥','Cartão Vermelho'],['substituicao','🔄','Substituição']];
   return `<div class="eventpanel ${locked?'eventpanel-locked':''}">
-    <div class="panelhead"><div><h3>Registrar ocorrência</h3><span class="muted">Eventos da partida</span></div><span class="tag">${state.events.length} eventos</span></div>
+    <div class="panelhead"><div><h3>Eventos da partida</h3><span class="muted">Registro de eventos</span></div><span class="tag">${state.events.length} eventos</span></div>
     ${locked?'<div class="notice event-locked-notice">🔒 <b>Partida encerrada.</b> Não é permitido incluir ou alterar ocorrências. Para correções, utilize <b>Reabrir partida</b>.</div>':''}
     ${!locked&&!canLiveOperate()?'<div class="notice">🔒 Faça login com perfil autorizado para registrar ocorrências.</div>':''}
     <div class="event-section"><label>Tempo da ocorrência</label>
@@ -2725,7 +2725,7 @@ function ensureReportsCleanStyles(){
 }
 
 
-function ensureEventHalfStyles(){if(document.getElementById('event-half-styles'))return;const st=document.createElement('style');st.id='event-half-styles';st.textContent='.event-half-selector{display:flex;gap:8px;flex-wrap:wrap}.event-half-btn{transition:all .15s ease}.event-half-btn.event-half-active{background:#087f5b!important;color:#fff!important;border-color:#087f5b!important;box-shadow:0 0 0 2px rgba(8,127,91,.12) inset}.event-half-btn.event-half-active:hover{background:#066b4d!important;color:#fff!important}.event-half-btn:disabled{opacity:.55}';document.head.appendChild(st)}
+function ensureEventHalfStyles(){if(document.getElementById('event-half-styles'))return;const st=document.createElement('style');st.id='event-half-styles';st.textContent='.event-half-selector{display:flex;gap:10px;flex-wrap:wrap}.event-half-btn{transition:all .15s ease;min-width:150px!important;min-height:54px!important;padding:12px 22px!important;font-size:clamp(18px,2.2vw,23px)!important;font-weight:700!important;border-radius:10px!important}.event-half-btn.event-half-active{background:#087f5b!important;color:#fff!important;border-color:#087f5b!important;box-shadow:0 0 0 2px rgba(8,127,91,.12) inset}.event-half-btn.event-half-active:hover{background:#066b4d!important;color:#fff!important}.event-half-btn:disabled{opacity:.55}';document.head.appendChild(st)}
 
 function ensureYoutubeTopAreaFix(){
  let st=document.getElementById('youtube-top-area-fix');
