@@ -1748,6 +1748,65 @@ function ensureMobileFixV15(){
 .live-voting-shortcut button{min-height:44px;padding:10px 18px;font-weight:700}
 .match-voting-card{scroll-margin-top:18px}
 @media(max-width:600px){.live-voting-shortcut{justify-content:stretch}.live-voting-shortcut button{width:100%;white-space:normal}}
+
+/* V90: corrigir escalação em celular — equipes empilhadas para liberar largura aos nomes */
+@media (max-width:600px){
+  .lineup-columns{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:10px!important;
+  }
+  .lineupteam{
+    width:100%!important;
+    min-width:0!important;
+  }
+  .lineup-player-row{
+    grid-template-columns:minmax(0,1fr) 58px 62px 88px 30px!important;
+    gap:4px!important;
+    padding:7px 5px!important;
+    min-width:0!important;
+  }
+  .presence-control{min-width:0!important;gap:5px!important}
+  .presence-control .player-name-wrap{min-width:0!important;flex:1 1 auto!important}
+  .player-name-wrap b{
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    word-break:normal!important;
+    font-size:11px!important;
+    line-height:1.2!important;
+  }
+  .lineup-nickname{
+    min-width:0!important;
+    max-width:58px!important;
+    font-size:9px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  .lineup-category{
+    width:62px!important;
+    min-width:62px!important;
+    max-width:62px!important;
+    box-sizing:border-box!important;
+    font-size:8px!important;
+    padding:5px 2px!important;
+    white-space:nowrap!important;
+  }
+  .lineup-player-row .statusbtn{
+    width:88px!important;
+    min-width:88px!important;
+    max-width:88px!important;
+    box-sizing:border-box!important;
+    font-size:9px!important;
+    padding:7px 2px!important;
+    white-space:nowrap!important;
+  }
+  .verify-player-btn{
+    width:30px!important;
+    min-width:30px!important;
+    padding:5px 1px!important;
+  }
+}
+
 </style>`);
 }
 
