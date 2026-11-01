@@ -1,4 +1,4 @@
-/* OURO E PRATA V73 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
+/* OURO E PRATA V74 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -146,7 +146,10 @@ async function load(){
   state.competitions=cr.data||[]
   if(!state.competitions.length){state.competition=null;state.matches=[];state.teams=[];state.players=[];state.groups=[];state.sponsors=[];state.media=[];state.allEvents=[];state.loading=false;render();return}
   const saved=localStorage.getItem('ouro_prata_competition_id')
-  state.competition=state.competitions.find(x=>x.id===saved)||state.competitions[0]
+  // V74: ao abrir o site, prioriza sempre o campeonato marcado como Ativo.
+  // O campeonato Em preparação só será usado se não houver nenhum Ativo.
+  const activeCompetition=state.competitions.find(x=>String(x.status||'').trim().toLowerCase()==='active')
+  state.competition=activeCompetition||state.competitions.find(x=>x.id===saved)||state.competitions[0]
   await loadCompetitionData();
   if(state.tab==='ao_vivo' && savedMatchId){
     await loadMatchDetails(savedMatchId,false);
