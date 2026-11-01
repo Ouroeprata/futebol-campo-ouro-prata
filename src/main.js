@@ -1,4 +1,4 @@
-/* OURO E PRATA V74 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
+/* OURO E PRATA V75 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -803,12 +803,12 @@ function matchVotingView(){
       const radioDisabled=!adminMode&&(already||!open);
       const choices=roster.map(p=>`<label class="match-vote-player"><input type="radio" name="mv-${m.id}-${team.id}" value="${p.id}" ${radioDisabled?'disabled':''}><span>${p.nickname?`<b>${esc(p.nickname)}</b> — `:''}${esc(p.full_name||p.name||'Atleta')}</span><strong class="match-vote-count">${countByPlayer[String(p.id)]||0} voto(s)</strong></label>`).join('');
       const action=adminMode
-        ? `<button class="primary" data-match-admin-vote="${m.id}" data-match-admin-vote-team="${team.id}" ${!roster.length?'disabled':''}>Registrar voto do administrador</button>`
+        ? `<button class="primary" data-match-admin-vote="${m.id}" data-match-admin-vote-team="${team.id}" ${!roster.length?'disabled':''}>Registrar atleta escolhido</button>`
         : `<button class="primary" data-match-vote="${m.id}" data-match-vote-team="${team.id}" ${!open||already||!roster.length?'disabled':''}>${already?'Voto já registrado':'Confirmar voto nesta equipe'}</button>`;
       return `<div class="match-vote-team"><h4>${flag(team.name)} ${esc(team.name)} <small class="match-vote-total">${teamVotes.length} voto(s)</small></h4>${choices||'<p class="muted">Nenhum atleta cadastrado nesta equipe.</p>'}${action}${already&&!adminMode?'<small class="public-vote-status">Este aparelho já votou nesta equipe nesta partida.</small>':''}</div>`;
     }).join('');
     const matchTotal=votes.filter(v=>String(v.match_id)===String(m.id)).length;
-    return `<article class="match-voting-card"><div class="match-voting-head"><div><h3>${esc(teamName(m.home_team_id))} x ${esc(teamName(m.away_team_id))}</h3><p class="muted">${dt(m.scheduled_at)} · ${esc(m.status||'')}</p><small>Votação pública: <b>${phase}</b>${cfg?` · ${dt(cfg.opens_at)} até ${dt(cfg.closes_at)}`:''} · <b>Votos registrados: ${matchTotal}</b></small></div>${admin?`<div class="panel-actions"><button class="secondary" data-match-voting-config="${m.id}">⚙️ ${cfg?'Alterar período':'Configurar período'}</button><button class="danger" data-match-voting-reset="${m.id}">🗑️ Zerar votos desta partida</button></div>`:''}</div><p class="muted">O público pode votar em 1 atleta de cada equipe, com limite de um voto por aparelho em cada equipe. ${admin&&finished?'Como a partida está encerrada, o administrador pode registrar um atleta escolhido de cada equipe.':''}</p><div class="match-voting-teams">${cards}</div></article>`;
+    return `<article class="match-voting-card"><div class="match-voting-head"><div><h3>${esc(teamName(m.home_team_id))} x ${esc(teamName(m.away_team_id))}</h3><p class="muted">${dt(m.scheduled_at)} · ${esc(m.status||'')}</p><small>Votação pública: <b>${phase}</b>${cfg?` · ${dt(cfg.opens_at)} até ${dt(cfg.closes_at)}`:''} · <b>Votos registrados: ${matchTotal}</b></small></div>${admin?`<div class="panel-actions"><button class="secondary" data-match-voting-config="${m.id}">⚙️ ${cfg?'Alterar período':'Configurar período'}</button><button class="danger" data-match-voting-reset="${m.id}">🗑️ Zerar votos desta partida</button></div>`:''}</div><div class="match-voting-teams">${cards}</div></article>`;
   }).join('');
   return `<section class="panel"><div class="panelhead"><div><span class="eyebrow">VOTAÇÃO POR PARTIDA</span><h2>🗳️ Melhor atleta de cada partida</h2><p class="muted">A relação de atletas é carregada do cadastro das equipes. Os votos ficam registrados no banco de dados e aparecem em Relatórios.</p></div></div><div class="match-voting-list">${panels||'<div class="empty">Nenhuma partida cadastrada neste campeonato.</div>'}</div></section>`;
 }
