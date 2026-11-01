@@ -1,4 +1,4 @@
-/* OURO E PRATA V86 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
+/* OURO E PRATA V87 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -794,7 +794,8 @@ function matchVotingView(){
     const phase=!cfg?'Ainda não configurada':now<start?'Aguardando abertura':now>end?'Encerrada':cfg.active?'Aberta':'Inativa';
     const finished=String(m.status||'').toLowerCase()==='encerrado';
     const cards=teams.map(team=>{
-      const roster=state.players.filter(p=>String(p.team_id)===String(team.id)).sort((a,b)=>String(a.full_name||a.name||'').localeCompare(String(b.full_name||b.name||''),'pt-BR'));
+      const lineupStatus=getCurrentSubstitutionStatusMap(m.id);
+      const roster=state.players.filter(p=>String(p.team_id)===String(team.id)&&['titular','reserva'].includes(String(lineupStatus[String(p.id)]||''))).sort((a,b)=>String(a.full_name||a.name||'').localeCompare(String(b.full_name||b.name||''),'pt-BR'));
       const localKey=`ouro_prata_match_vote_${state.competition.id}_${m.id}_${team.id}`;
       const already=false; // Supabase é a fonte da verdade; após reset, aparelhos podem votar novamente.
       const teamVotes=votes.filter(v=>String(v.match_id)===String(m.id)&&String(v.team_id)===String(team.id));
@@ -805,7 +806,7 @@ function matchVotingView(){
       const action=adminMode
         ? `<button class="primary" data-match-admin-vote="${m.id}" data-match-admin-vote-team="${team.id}" ${!roster.length?'disabled':''}>Registrar atleta escolhido</button>`
         : `<button class="primary" data-match-vote="${m.id}" data-match-vote-team="${team.id}" ${!open||already||!roster.length?'disabled':''}>${already?'Voto já registrado':'Confirmar voto nesta equipe'}</button>`;
-      return `<div class="match-vote-team"><h4>${flag(team.name)} ${esc(team.name)} <small class="match-vote-total">${teamVotes.length} voto(s)</small></h4>${choices||'<p class="muted">Nenhum atleta cadastrado nesta equipe.</p>'}${action}${already&&!adminMode?'<small class="public-vote-status">Este aparelho já votou nesta equipe nesta partida.</small>':''}</div>`;
+      return `<div class="match-vote-team"><h4>${flag(team.name)} ${esc(team.name)} <small class="match-vote-total">${teamVotes.length} voto(s)</small></h4>${choices||'<p class="muted">Nenhum atleta apto para votação: confira a Súmula / Escalação e marque os atletas como Titular ou Reserva.</p>'}${action}${already&&!adminMode?'<small class="public-vote-status">Este aparelho já votou nesta equipe nesta partida.</small>':''}</div>`;
     }).join('');
     const matchTotal=votes.filter(v=>String(v.match_id)===String(m.id)).length;
     return `<article class="match-voting-card" id="match-voting-${m.id}"><div class="match-voting-head"><div><h3>${esc(teamName(m.home_team_id))} x ${esc(teamName(m.away_team_id))}</h3><p class="muted">${dt(m.scheduled_at)} · ${esc(m.status||'')}</p><small>Votação pública: <b>${phase}</b>${cfg?` · ${dt(cfg.opens_at)} até ${dt(cfg.closes_at)}`:''} · <b>Votos registrados: ${matchTotal}</b></small></div>${admin?`<div class="panel-actions"><button class="secondary" data-match-voting-config="${m.id}">⚙️ ${cfg?'Alterar período':'Configurar período'}</button><button class="danger" data-match-voting-reset="${m.id}">🗑️ Zerar votos desta partida</button></div>`:''}</div><div class="match-voting-teams">${cards}</div></article>`;
