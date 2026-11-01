@@ -1808,102 +1808,88 @@ function ensureMobileFixV15(){
 }
 
 
-/* V92: correção estrutural da altura e alinhamento das linhas no celular vertical */
+/* V93 FINAL: largura mínima real para a coluna do nome em celular vertical */
 @media (max-width:600px) and (orientation:portrait){
-  .lineup-columns{
-    display:flex!important;
-    flex-direction:column!important;
-    align-items:stretch!important;
-    gap:10px!important;
+  .lineuppanel .lineup-columns{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
     width:100%!important;
+    min-width:0!important;
   }
-  .lineupteam,.lineup-list{width:100%!important;min-width:0!important;max-width:100%!important}
-  .lineup-player-row{
-    display:flex!important;
-    flex-flow:row nowrap!important;
+  .lineuppanel .lineupteam{
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+  }
+  .lineuppanel .lineup-player-row{
+    display:grid!important;
+    grid-template-columns:minmax(130px,1fr) 48px 62px 88px 30px!important;
+    grid-auto-columns:auto!important;
     align-items:center!important;
-    justify-content:space-between!important;
-    gap:5px!important;
+    gap:4px!important;
+    width:100%!important;
+    min-width:0!important;
     height:auto!important;
-    min-height:54px!important;
-    max-height:none!important;
+    min-height:52px!important;
     padding:7px 5px!important;
     box-sizing:border-box!important;
-    overflow:visible!important;
   }
-  .lineup-player-row .presence-control{
+  .lineuppanel .lineup-player-row>.presence-control{
+    grid-column:1!important;
     display:flex!important;
-    flex:1 1 auto!important;
     flex-direction:row!important;
     align-items:center!important;
     gap:5px!important;
-    width:auto!important;
+    width:100%!important;
     min-width:0!important;
     max-width:none!important;
-    height:auto!important;
     overflow:visible!important;
-    margin:0!important;
   }
-  .lineup-player-row .presence-control .presence-box{
+  .lineuppanel .lineup-player-row>.lineup-nickname{grid-column:2!important}
+  .lineuppanel .lineup-player-row>.lineup-category{grid-column:3!important}
+  .lineuppanel .lineup-player-row>.statusbtn{grid-column:4!important}
+  .lineuppanel .lineup-player-row>.verify-player-btn{grid-column:5!important}
+  .lineuppanel .presence-control input{position:absolute!important}
+  .lineuppanel .presence-control .presence-box{
     display:block!important;
     flex:0 0 18px!important;
     width:18px!important;
-    height:18px!important;
     min-width:18px!important;
   }
-  .lineup-player-row .player-name-wrap{
+  .lineuppanel .presence-control .player-name-wrap{
     display:block!important;
     flex:1 1 auto!important;
     width:auto!important;
     min-width:0!important;
     max-width:none!important;
-    height:auto!important;
     overflow:visible!important;
-    white-space:normal!important;
   }
-  .lineup-player-row .player-name-wrap b{
+  .lineuppanel .presence-control .player-name-wrap b{
     display:block!important;
     width:auto!important;
-    height:auto!important;
     min-width:0!important;
-    margin:0!important;
     font-size:11px!important;
     line-height:1.25!important;
     white-space:normal!important;
-    overflow-wrap:anywhere!important;
+    overflow-wrap:break-word!important;
     word-break:normal!important;
   }
-  .lineup-player-row .lineup-nickname{
-    flex:0 0 48px!important;
-    width:48px!important;
-    min-width:48px!important;
-    max-width:48px!important;
+  .lineuppanel .lineup-nickname{
+    width:48px!important;min-width:0!important;max-width:48px!important;
+    white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
     font-size:9px!important;
   }
-  .lineup-player-row .lineup-category{
-    flex:0 0 62px!important;
-    width:62px!important;
-    min-width:62px!important;
-    max-width:62px!important;
-    padding:5px 2px!important;
-    font-size:8px!important;
-    box-sizing:border-box!important;
+  .lineuppanel .lineup-category{
+    width:62px!important;min-width:0!important;max-width:62px!important;
+    padding:5px 2px!important;font-size:8px!important;
+    white-space:nowrap!important;overflow:hidden!important;
   }
-  .lineup-player-row .statusbtn{
-    flex:0 0 88px!important;
-    width:88px!important;
-    min-width:88px!important;
-    max-width:88px!important;
-    padding:7px 2px!important;
-    font-size:9px!important;
-    white-space:nowrap!important;
-    box-sizing:border-box!important;
+  .lineuppanel .lineup-player-row>.statusbtn{
+    width:88px!important;min-width:0!important;max-width:88px!important;
+    padding:7px 2px!important;font-size:9px!important;white-space:nowrap!important;
   }
-  .lineup-player-row .verify-player-btn{
-    flex:0 0 30px!important;
-    width:30px!important;
-    min-width:30px!important;
-    max-width:30px!important;
+  .lineuppanel .lineup-player-row>.verify-player-btn{
+    width:30px!important;min-width:0!important;max-width:30px!important;
     padding:5px 1px!important;
   }
 }
@@ -2260,96 +2246,6 @@ function ensureTabletPortraitV22(){
     .lineup-nickname{font-size:8px!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important}
     .player-name-wrap b{font-size:10px!important;overflow-wrap:anywhere!important}
     .verify-player-btn{width:26px!important;min-width:26px!important;padding:4px 1px!important}
-  }
-
-  /* V91: override final para celular; a regra anterior V15 voltava a dividir as equipes */
-  @media (max-width:600px){
-    .lineup-columns{
-      display:grid!important;
-      grid-template-columns:minmax(0,1fr)!important;
-      gap:10px!important;
-      width:100%!important;
-      min-width:0!important;
-    }
-    .lineupteam,.lineup-list{width:100%!important;min-width:0!important;max-width:100%!important}
-    .lineup-player-row{
-      display:grid!important;
-      grid-template-columns:minmax(0,1fr) 54px 66px 104px 32px!important;
-      align-items:center!important;
-      gap:4px!important;
-      width:100%!important;
-      min-width:0!important;
-      box-sizing:border-box!important;
-      padding:8px 5px!important;
-    }
-    .presence-control{
-      display:flex!important;
-      align-items:center!important;
-      gap:5px!important;
-      width:100%!important;
-      min-width:0!important;
-      overflow:hidden!important;
-    }
-    .presence-control input,.presence-box{
-      flex:0 0 18px!important;
-      width:18px!important;
-      min-width:18px!important;
-    }
-    .player-name-wrap{
-      display:block!important;
-      flex:1 1 auto!important;
-      width:auto!important;
-      min-width:0!important;
-      max-width:100%!important;
-      overflow:hidden!important;
-    }
-    .player-name-wrap b{
-      display:block!important;
-      width:100%!important;
-      min-width:0!important;
-      font-size:11px!important;
-      line-height:1.25!important;
-      white-space:normal!important;
-      overflow-wrap:break-word!important;
-      word-break:normal!important;
-    }
-    .lineup-nickname{
-      display:block!important;
-      width:54px!important;
-      min-width:54px!important;
-      max-width:54px!important;
-      font-size:9px!important;
-      white-space:nowrap!important;
-      overflow:hidden!important;
-      text-overflow:ellipsis!important;
-    }
-    .lineup-category{
-      display:block!important;
-      width:66px!important;
-      min-width:66px!important;
-      max-width:66px!important;
-      box-sizing:border-box!important;
-      font-size:9px!important;
-      padding:5px 2px!important;
-      white-space:nowrap!important;
-      text-align:center!important;
-    }
-    .lineup-player-row .statusbtn{
-      display:block!important;
-      width:104px!important;
-      min-width:104px!important;
-      max-width:104px!important;
-      box-sizing:border-box!important;
-      padding:7px 3px!important;
-      font-size:10px!important;
-      white-space:nowrap!important;
-    }
-    .lineup-player-row .verify-player-btn{
-      width:32px!important;
-      min-width:32px!important;
-      max-width:32px!important;
-      padding:5px 2px!important;
-    }
   }
 
 </style>`);
