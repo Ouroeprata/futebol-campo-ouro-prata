@@ -2077,6 +2077,31 @@ function ensureTabletPortraitV22(){
   .media-card{min-width:0!important;max-width:100%!important}
   .live-sheet,.public-live-sheet{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
 }
+
+  /* V89: compactar somente as colunas Categoria e Situação na escalação em tablet vertical */
+  @media (orientation:portrait) and (min-width:601px) and (max-width:1100px){
+    .lineup-columns{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+    .lineup-player-row{
+      grid-template-columns:minmax(0,1fr) 46px 58px 64px 26px!important;
+      gap:3px!important;padding:6px 4px!important;min-width:0!important;
+    }
+    .lineup-category{
+      width:58px!important;min-width:0!important;max-width:58px!important;
+      box-sizing:border-box!important;font-size:8px!important;
+      padding:4px 1px!important;white-space:nowrap!important;
+      overflow:hidden!important;text-overflow:ellipsis!important;
+    }
+    .lineup-player-row .statusbtn{
+      width:64px!important;min-width:64px!important;max-width:64px!important;
+      box-sizing:border-box!important;font-size:8px!important;
+      padding:5px 1px!important;white-space:nowrap!important;
+      overflow:hidden!important;text-overflow:clip!important;
+    }
+    .lineup-nickname{font-size:8px!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important}
+    .player-name-wrap b{font-size:10px!important;overflow-wrap:anywhere!important}
+    .verify-player-btn{width:26px!important;min-width:26px!important;padding:4px 1px!important}
+  }
+
 </style>`);
 }
 
