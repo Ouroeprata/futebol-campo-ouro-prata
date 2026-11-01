@@ -1,4 +1,4 @@
-/* OURO E PRATA V77 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
+/* OURO E PRATA V78 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -995,7 +995,6 @@ function eventPanel(m){
   const disabled=locked||!canLiveOperate();
   const types=[['gol','⚽','Gol'],['gol_contra','🥅','Gol Contra'],['cartao_amarelo','🟨','Cartão Amarelo'],['cartao_vermelho','🟥','Cartão Vermelho'],['substituicao','🔄','Substituição']];
   return `<div class="eventpanel ${locked?'eventpanel-locked':''}">
-    <div class="panelhead"><div><h3>Eventos da partida</h3><span class="muted">Registro de eventos</span></div><span class="tag">${state.events.length} eventos</span></div>
     ${locked?'<div class="notice event-locked-notice">🔒 <b>Partida encerrada.</b> Não é permitido incluir ou alterar ocorrências. Para correções, utilize <b>Reabrir partida</b>.</div>':''}
     ${!locked&&!canLiveOperate()?'<div class="notice">🔒 Faça login com perfil autorizado para registrar ocorrências.</div>':''}
     <div class="event-section"><label>Tempo da ocorrência</label>
