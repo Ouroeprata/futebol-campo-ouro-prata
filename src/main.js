@@ -1,4 +1,4 @@
-/* OURO E PRATA V87 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
+/* OURO E PRATA V88 — PRESERVAR CRONÔMETROS E REGISTROS AO ATUALIZAR A PÁGINA. Base V70. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -794,8 +794,18 @@ function matchVotingView(){
     const phase=!cfg?'Ainda não configurada':now<start?'Aguardando abertura':now>end?'Encerrada':cfg.active?'Aberta':'Inativa';
     const finished=String(m.status||'').toLowerCase()==='encerrado';
     const cards=teams.map(team=>{
+      const matchLineupRows=(state.lineups||[]).filter(l=>String(l.match_id)===String(m.id));
       const lineupStatus=getCurrentSubstitutionStatusMap(m.id);
-      const roster=state.players.filter(p=>String(p.team_id)===String(team.id)&&['titular','reserva'].includes(String(lineupStatus[String(p.id)]||''))).sort((a,b)=>String(a.full_name||a.name||'').localeCompare(String(b.full_name||b.name||''),'pt-BR'));
+      // Em votações públicas de partidas diferentes da partida atualmente aberta, a escalação
+      // pode ainda não estar carregada no estado local. Nesse caso, não esconder todo o elenco.
+      // Quando há escalação salva para esta partida, respeitar Titular/Reserva e bloquear Ausente/Suspenso.
+      const hasSavedLineup=matchLineupRows.length>0;
+      const roster=state.players.filter(p=>{
+        if(String(p.team_id)!==String(team.id))return false;
+        if(!hasSavedLineup)return true;
+        const status=String(lineupStatus[String(p.id)]||'').trim().toLowerCase();
+        return ['titular','reserva'].includes(status);
+      }).sort((a,b)=>String(a.full_name||a.name||'').localeCompare(String(b.full_name||b.name||''),'pt-BR'));
       const localKey=`ouro_prata_match_vote_${state.competition.id}_${m.id}_${team.id}`;
       const already=false; // Supabase é a fonte da verdade; após reset, aparelhos podem votar novamente.
       const teamVotes=votes.filter(v=>String(v.match_id)===String(m.id)&&String(v.team_id)===String(team.id));
