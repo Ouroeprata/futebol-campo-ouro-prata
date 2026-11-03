@@ -343,14 +343,29 @@ function syncYoutubePersistentPlayer(){
      host.style.setProperty('right','auto','important');host.style.setProperty('bottom','auto','important');
      host.style.setProperty('width',Math.max(0,main.clientWidth)+'px','important');
      host.style.setProperty('max-width',Math.max(0,main.clientWidth)+'px','important');
-     host.style.setProperty('min-width','0','important');host.style.setProperty('height','auto','important');
+     host.style.setProperty('min-width','0','important');
+     host.style.setProperty('height',desktop?'auto':'auto','important');
      host.style.setProperty('margin','0','important');host.style.setProperty('padding',desktop?'6px':'8px','important');
-     host.style.setProperty('box-sizing','border-box','important');host.style.setProperty('z-index','99999','important');
+     host.style.setProperty('box-sizing','border-box','important');host.style.setProperty('z-index',desktop?'40':'99999','important');
      host.style.setProperty('border-radius','0 0 12px 12px','important');
      slot.style.setProperty('display','block','important');
      slot.style.setProperty('width','100%','important');slot.style.setProperty('max-width','100%','important');
-     slot.style.setProperty('height','auto','important');slot.style.setProperty('aspect-ratio','16 / 9','important');
-     slot.style.removeProperty('max-height');
+     if(desktop){
+       /* Computador: vídeo ocupa toda a largura, mas fica limitado à faixa superior
+          entre o cabeçalho e os controles da Central ao vivo. */
+       const desktopVideoHeight=Math.max(190,Math.min(340,Math.round(window.innerHeight*0.36)));
+       host.style.setProperty('height',(desktopVideoHeight+12)+'px','important');
+       host.style.setProperty('max-height',(desktopVideoHeight+12)+'px','important');
+       slot.style.setProperty('height',desktopVideoHeight+'px','important');
+       slot.style.setProperty('max-height',desktopVideoHeight+'px','important');
+       slot.style.setProperty('aspect-ratio','auto','important');
+     }else{
+       host.style.setProperty('height','auto','important');
+       host.style.removeProperty('max-height');
+       slot.style.setProperty('height','auto','important');
+       slot.style.setProperty('aspect-ratio','16 / 9','important');
+       slot.style.removeProperty('max-height');
+     }
      slot.style.setProperty('overflow','hidden','important');
      const iframe=slot.querySelector('iframe');
      if(iframe){iframe.style.setProperty('display','block','important');iframe.style.setProperty('width','100%','important');iframe.style.setProperty('height','100%','important');iframe.style.setProperty('border','0','important');}
@@ -358,11 +373,7 @@ function syncYoutubePersistentPlayer(){
      const reserve=()=>{
        if(state.tab!=='ao_vivo'||!host.isConnected||!main.isConnected)return;
        const playerHeight=host.getBoundingClientRect().height+14;
-       if(window.matchMedia('(min-width: 1024px)').matches){
-         if(livePanel)livePanel.style.setProperty('margin-top',playerHeight+'px','important');
-       }else if(livePanel){
-         livePanel.style.setProperty('margin-top',playerHeight+'px','important');
-       }
+       if(livePanel)livePanel.style.setProperty('margin-top',playerHeight+'px','important');
      };
      reserve();
      const frame=slot.querySelector('iframe');
