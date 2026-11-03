@@ -964,12 +964,28 @@ function scorersAllPhases(){
   return map;
 }
 function votesByAthleteReport(){
-  const matchCounts=new Map();
-  (state.matchPublicVotes||[]).forEach(v=>{const id=String(v.player_id||'');if(!id)return;matchCounts.set(id,(matchCounts.get(id)||0)+1)});
+  const matchVotes=state.matchPublicVotes||[];
+  const matchCounts=new Map(),grouped=new Map(),leaders=new Map(),computedCounts=new Map();
+  matchVotes.forEach(v=>{
+    const id=String(v.player_id||'');if(!id)return;
+    matchCounts.set(id,(matchCounts.get(id)||0)+1);
+    const key=[v.match_id,v.team_id,id].map(String).join('|');
+    grouped.set(key,(grouped.get(key)||0)+1);
+  });
+  // Voto computado: o atleta mais votado de cada equipe em cada partida recebe 1;
+  // em caso de empate na liderança, cada atleta empatado recebe 1.
+  for(const [key,count] of grouped){
+    const parts=key.split('|'),teamMatch=parts.slice(0,2).join('|');
+    leaders.set(teamMatch,Math.max(leaders.get(teamMatch)||0,count));
+  }
+  for(const [key,count] of grouped){
+    const parts=key.split('|'),playerId=parts[2],teamMatch=parts.slice(0,2).join('|');
+    if(count===leaders.get(teamMatch))computedCounts.set(playerId,(computedCounts.get(playerId)||0)+1);
+  }
   const finalCounts={};(state.publicVotes||[]).filter(v=>v.vote_type==='final').forEach(v=>finalCounts[String(v.player_id)]=(finalCounts[String(v.player_id)]||0)+(Number(v.total)||0));
-  const rows=state.players.map(p=>{const partida=matchCounts.get(String(p.id))||0,final=finalCounts[String(p.id)]||0;return {p,partida,final,total:partida+final}}).sort((a,b)=>b.total-a.total||String(a.p.full_name||a.p.name||'').localeCompare(String(b.p.full_name||b.p.name||''),'pt-BR'));
-  const total=rows.reduce((sum,r)=>sum+r.total,0),voted=rows.filter(r=>r.total>0).length;
-  return `<div class="report-voting-summary"><span>Total de votos registrados: <b>${total.toLocaleString('pt-BR')}</b></span><span>Atletas que receberam votos: <b>${voted}</b></span><span>Atletas cadastrados: <b>${rows.length}</b></span></div><div class="tablewrap"><table class="report-compact-table report-voting-table"><thead><tr><th>#</th><th>Atleta</th><th>Apelido</th><th>Equipe</th><th>Votos por partida</th><th>Votos da final</th><th>Total</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.p.full_name||r.p.name||'—')}</td><td>${esc(r.p.nickname||'—')}</td><td>${flag(teamName(r.p.team_id))} ${esc(teamName(r.p.team_id))}</td><td>${r.partida}</td><td>${r.final}</td><td><b>${r.total}</b></td></tr>`).join('')||'<tr><td colspan="7" class="muted">Nenhum atleta cadastrado.</td></tr>'}</tbody></table></div><p class="muted">O relatório soma os votos por partida armazenados em match_public_votes e mantém a votação da final existente. Atletas sem votos aparecem com zero.</p>`;
+  const rows=state.players.map(p=>{const id=String(p.id),partida=matchCounts.get(id)||0,computados=computedCounts.get(id)||0,final=finalCounts[id]||0;return {p,partida,computados,final,total:partida+final}}).sort((a,b)=>b.total-a.total||String(a.p.full_name||a.p.name||'').localeCompare(String(b.p.full_name||b.p.name||''),'pt-BR'));
+  const total=rows.reduce((sum,r)=>sum+r.total,0),voted=rows.filter(r=>r.total>0).length,computedTotal=rows.reduce((sum,r)=>sum+r.computados,0);
+  return `<div class="report-voting-summary"><span>Total de votos registrados: <b>${total.toLocaleString('pt-BR')}</b></span><span>Votos computados: <b>${computedTotal.toLocaleString('pt-BR')}</b></span><span>Atletas que receberam votos: <b>${voted}</b></span><span>Atletas cadastrados: <b>${rows.length}</b></span></div><div class="tablewrap"><table class="report-compact-table report-voting-table"><colgroup><col style="width:4%"><col style="width:22%"><col style="width:13%"><col style="width:18%"><col style="width:13%"><col style="width:10%"><col style="width:10%"><col style="width:10%"></colgroup><thead><tr><th>#</th><th>Atleta</th><th>Apelido</th><th>Equipe</th><th>Votos por partida</th><th>Votos computados</th><th>Votos da final</th><th>Total</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.p.full_name||r.p.name||'—')}</td><td>${esc(r.p.nickname||'—')}</td><td>${flag(teamName(r.p.team_id))} ${esc(teamName(r.p.team_id))}</td><td>${r.partida}</td><td><b>${r.computados}</b></td><td>${r.final}</td><td><b>${r.total}</b></td></tr>`).join('')||'<tr><td colspan="8" class="muted">Nenhum atleta cadastrado.</td></tr>'}</tbody></table></div><p class="muted">Votos por partida mostra a quantidade de votos públicos recebidos. Votos computados considera 1 voto para o atleta mais votado de cada equipe em cada partida; em caso de empate, cada atleta empatado recebe 1. Votos da final mantém a contagem da votação final. O Total permanece como a soma dos votos públicos por partida e da final, sem somar novamente os votos computados. Atletas sem votos aparecem com zero.</p>`;
 }
 function votesByMatchReport(){
   const votes=state.matchPublicVotes||[],grouped=new Map(),leaders=new Map();
