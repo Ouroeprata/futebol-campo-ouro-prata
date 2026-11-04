@@ -1,4 +1,4 @@
-/* OURO E PRATA V114 — SELEÇÃO DA COPA: POSIÇÃO DO ATLETA E GOLEIRO OBRIGATÓRIO. Base: V113. */
+/* OURO E PRATA V115 — CORREÇÃO DA CONTAGEM DO GOLEIRO NA SELEÇÃO DA COPA. Base: V114. */
 import { createClient } from '@supabase/supabase-js'
 import './style.css'
 import logoOuroPrata from './logo_ouro_prata.jpg'
@@ -952,12 +952,15 @@ function copaSelectionWindow(type){
  if(now<a)return {cfg,open:false,label:`Abre em ${fmtDate(cfg.opens_at)}.`};if(now>b)return {cfg,open:false,label:`Encerrada em ${fmtDate(cfg.closes_at)}.`};return {cfg,open:true,label:`Aberta até ${fmtDate(cfg.closes_at)}.`};
 }
 function copaSelectionCandidates(type){return state.players.filter(p=>{const c=String(p.category||'').trim().toLowerCase();return type==='diamante'?c==='diamante':c==='ouro'||c==='prata'}).sort((a,b)=>String(a.full_name||a.name||'').localeCompare(String(b.full_name||b.name||''),'pt-BR'));}
-function copaIsGoalkeeper(player){const pos=String(player?.position||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim();return /^(goleiro|goleira)(\\b|$)/.test(pos)||pos==='gol'||pos==='gk';}
+function copaIsGoalkeeper(player){
+ const pos=String(player?.position||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+ return /(^|[^a-z])(goleiro|goleira|goalkeeper)([^a-z]|$)/.test(pos)||/^(gol|gk|gr)$/.test(pos);
+}
 function copaSelectionView(){
  const device=voteDeviceId();
  const panels=[['ouro_prata','Seleção Ouro + Prata'],['diamante','Seleção Diamante']].map(([type,label])=>{
   const win=copaSelectionWindow(type),players=copaSelectionCandidates(type),ballots=(state.selectionBallots||[]).filter(x=>x.selection_type===type),already=ballots.some(x=>x.device_id===device),counts={};
-  ballots.forEach(b=>(b.player_ids||[]).forEach(id=>counts[id]=(counts[id]||0)+1));
+  ballots.forEach(b=>(Array.isArray(b.player_ids)?b.player_ids:[]).forEach(id=>{const key=String(id);counts[key]=(counts[key]||0)+1;}));
   const rows=players.map(p=>`<label class="copa-player"><input type="checkbox" name="copa-${type}" value="${esc(p.id)}" data-copa-goalkeeper="${copaIsGoalkeeper(p)?'1':'0'}" ${!win.open||already?'disabled':''}><span><b>${esc(p.full_name||p.name||'—')}</b><small>${esc(p.nickname||'')} · ${esc(p.position||'Posição não informada')} · ${esc(cat(p.category))} · ${esc(teamName(p.team_id))}</small></span><em>${counts[p.id]||0} voto(s)</em></label>`).join('');
   return `<article class="panel copa-card"><div class="panelhead"><div><h2>${label}</h2><p class="muted">${win.label}</p></div>${isAdmin()?`<button class="secondary" data-copa-config="${type}">⚙️ Período</button>`:''}</div><p class="muted">${players.length} atletas elegíveis · ${ballots.length} votos registrados</p>${already?'<div class="notice">Este dispositivo já votou nesta seleção.</div>':win.open?`<p>Marque exatamente 11 atletas, sendo <b>obrigatoriamente 1 goleiro</b>:</p><div class="copa-list">${rows||'<div class="empty">Nenhum atleta elegível.</div>'}</div><div class="copa-actions"><b data-copa-count="${type}">0 de 11 selecionados · 0/1 goleiro</b><button class="primary" data-copa-submit="${type}" disabled>Confirmar seleção</button></div>`:'<div class="notice">Votação indisponível no momento.</div>'}${isAdmin()?`<details><summary>Apuração — administrador</summary><ol>${Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,11).map(([id,n])=>`<li>${esc(playerName(id))}: ${n}</li>`).join('')||'<li>Sem votos.</li>'}</ol></details>`:''}</article>`;
  }).join('');
