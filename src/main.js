@@ -1058,7 +1058,7 @@ function liveSheet(){
         ${publicInfo}
         <div class="officials">${official(m.referee_id,'Árbitro')}${official(m.assistant_1_id,'Assistente 1')}${official(m.assistant_2_id,'Assistente 2')}${official(m.fourth_official_id,'Mesário')}</div>
       </div>
-      <div class="clock"><div id="matchClock">${matchClock(m)}</div><small>${state.timerHalf==='2T'?'2º TEMPO':state.timerHalf==='1T'?'1º TEMPO':m.status==='encerrado'?'ENCERRADO':'PARADO'}</small></div>
+      <div class="clock"><div class="digital-wall-clock" id="digitalWallClock">${new Date().toLocaleTimeString('pt-BR',{hour12:false})}</div><div id="matchClock">${matchClock(m)}</div><small>${state.timerHalf==='2T'?'2º TEMPO':state.timerHalf==='1T'?'1º TEMPO':m.status==='encerrado'?'ENCERRADO':'PARADO'}</small></div>
     </div>
     ${controlBar(m)}
     ${correctionPanel(m)}
@@ -1070,6 +1070,30 @@ function liveSheet(){
       ${canLiveOperate()?`<div class="save-lineup-bar"><button class="secondary save-lineup-btn" data-action="saveLineup" ${m.status==='encerrado'?'disabled':''}>💾 Salvar situação dos atletas</button></div>`:''}
     </div>
   </div>`;
+}
+let digitalClockInterval=null;
+function updateDigitalWallClock(){
+  const el=document.querySelector('#digitalWallClock');
+  if(el)el.textContent=new Date().toLocaleTimeString('pt-BR',{hour12:false});
+}
+function startDigitalWallClock(){
+  stopDigitalWallClock();
+  const el=document.getElementById('digitalWallClock');
+  if(!el)return;
+  el.style.cssText='display:block!important;visibility:visible!important;opacity:1!important;position:relative!important;width:100%!important;min-height:26px!important;margin:0 0 7px!important;padding:4px 6px!important;box-sizing:border-box!important;background:#e8f5ed!important;border:1px solid #9bcbb0!important;border-radius:7px!important;color:#075b36!important;font-family:Arial,sans-serif!important;font-size:20px!important;font-weight:900!important;line-height:1.25!important;letter-spacing:2px!important;text-align:center!important;font-variant-numeric:tabular-nums!important;';
+  updateDigitalWallClock();
+  digitalClockInterval=setInterval(updateDigitalWallClock,1000);
+}
+function stopDigitalWallClock(){
+  if(digitalClockInterval)clearInterval(digitalClockInterval);
+  digitalClockInterval=null;
+}
+function ensureDigitalWallClockStyles(){
+  if(document.getElementById('digitalWallClockStyles'))return;
+  const style=document.createElement('style');
+  style.id='digitalWallClockStyles';
+  style.textContent=`#digitalWallClock.digital-wall-clock{display:block!important;visibility:visible!important;opacity:1!important;min-height:26px!important;margin:0 0 7px!important;padding:4px 6px!important;box-sizing:border-box!important;background:#e8f5ed!important;border:1px solid #9bcbb0!important;border-radius:7px!important;color:#075b36!important;font-family:Arial,sans-serif!important;font-size:20px!important;font-weight:900!important;line-height:1.25!important;letter-spacing:2px!important;text-align:center!important;font-variant-numeric:tabular-nums!important}.clock #matchClock{font-variant-numeric:tabular-nums}`;
+  document.head.appendChild(style);
 }
 function matchClock(m){if(state.timerHalf)return fmtSec(elapsedSeconds(m));if(m?.status==='encerrado')return fmtSec((m.second_half_elapsed_seconds||0)+(m.first_half_elapsed_seconds||0));return '00:00'}
 function liveRuntimeKey(matchId){return `ouro_prata_live_runtime_v71_${state.competition?.id||'sem_competicao'}_${matchId}`}
@@ -3449,7 +3473,7 @@ function render(){
     else if(state.tab!=='ao_vivo') localStorage.removeItem('ouro_prata_selected_match_v53');
   }catch(e){console.warn('Não foi possível salvar a aba atual.',e)}
   ensureLiveStandingsStyles();ensurePublicMediaStyles();ensureYoutubeCentralFlowStyles();ensureYoutubeTabletLandscapeHeightV17();ensureCustomStyles();
-ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsFlowScrollFix();ensureReportsCleanStyles();ensureReportsPortraitScrollV50();ensureReportsAllRowsScrollV51();ensureReportsPrintWidthV52();ensureYoutubeStyles();ensureYoutubeTopAreaFix();ensureYoutubePlayerFixV5();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;syncYoutubePersistentPlayer();bind();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
+ensureEventHalfStyles();ensureSumulaStyles();ensureMediaCompactV17();ensureMobileFixV15();ensureMobileFixV16();ensureTabletPortraitV19();ensureTabletPortraitV20();ensureTabletPortraitV22();ensureAthleteToolbarStyles();ensureDatabaseStyles();ensureTabletLandscapePanelStyles();ensureMediaTabletLandscapeStyles();ensureMediaTabletLandscapeV23();ensureReportsFlowScrollFix();ensureReportsCleanStyles();ensureReportsPortraitScrollV50();ensureReportsAllRowsScrollV51();ensureReportsPrintWidthV52();ensureYoutubeStyles();ensureYoutubeTopAreaFix();ensureYoutubePlayerFixV5();const isReports=state.tab==='relatorios';app.innerHTML=`<div class="layout ${isReports?'reports-layout':''}">${nav()}<main class="${isReports?'reports-mode':''}">${isReports?'':header()}${state.loading?'<section class="panel"><div class="empty">Carregando dados...</div></section>':content()}</main></div>`;syncYoutubePersistentPlayer();ensureDigitalWallClockStyles();bind();if(document.getElementById('digitalWallClock'))startDigitalWallClock();else stopDigitalWallClock();if(state.timerStartedAt)startTicker();if(state.eventTimerStartedAt)startEventTicker()}
 
 async function openMatchFromButton(id){
   try{
