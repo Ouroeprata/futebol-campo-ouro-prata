@@ -1312,7 +1312,7 @@ function render(){
   const c=camp(),papel=S.isMaster?'Máster':S.isAdmin?'Administrador':S.monOk?'Monitor':S.sindOk?'Sindicato · '+S.sindPerfil.sindicato:S.uid?'Visitante':'';
   $('#champ').innerHTML=`${S.camps.length?`<select data-chg="camp-sel" aria-label="Campeonato">${[...S.camps].sort((a,b)=>(b.ano||0)-(a.ano||0)).map(x=>`<option value="${x.id}"${x.id===S.cid?' selected':''}>${esc(x.nome)}</option>`).join('')}</select>`:''}${can('campeonatos','incluir')?`<button type="button" class="btn sm" data-act="camp-novo" style="background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.4)">Novo campeonato</button>`:''}${papel?`<span class="who">${papel}</span>`:''}${S.uid?`<button type="button" class="btn sm" data-act="logout" style="background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.4)">Sair</button>`:`<button type="button" class="btn sm" data-act="login" style="background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.4)">Entrar</button>`}`;
   $('#menu').innerHTML=TABS.map(([k,t])=>`<button type="button" data-act="aba" data-t="${k}"${S.tab===k?' aria-current="page"':''}>${esc(t)}</button>`).join('');
-  document.title='JOCOPAR v75';
+  document.title='JOCOPAR v76';
   $('#main').innerHTML=!S.ready?empty('Carregando','Buscando os dados do campeonato…'):(S.tab!=='monitores'&&S.tab!=='campeonatos'&&S.cid&&!c)?empty('Carregando',''):(V[S.tab]||V.painel)();
   if(fid){const e=document.getElementById(fid);if(e){e.focus();try{e.setSelectionRange(ss,ss)}catch(_){}}}
 }
@@ -1649,7 +1649,7 @@ A['re-novo']=d=>{const ed=d.id?meusRes().find(x=>x.id===d.id):null;const tipo=ed
   const sopt=soptDe(vv&&vv.categoria_id);
   const selS=(lab,n)=>F(lab,n,vv?(n==='sa'?vv.sind_a:vv.sind_b)||'':'',{required:true,options:sopt,blank:'Selecione…'});
   const edL=a=>((ed&&ed.linhas)||[]).find(l=>(l.aid&&l.aid===a.id)||(!l.aid&&nkS(l.atleta)===nkS(a.nome)));
-  const reLista=()=>{const f=$('#mform'),box=f&&f.querySelector('#re_lista');if(!box||tipo==='jogo')return;
+  const reLista=()=>{const f=$('#mform'),box=f&&f.querySelector('#re_lista');if(!box||tipo==='jogo')return;try{
     const sa=f.elements.sa.value,cc=f.elements.cat.value,c=cat(cc);
     if(!sa||!c){box.innerHTML='<p class="small muted">Escolha a categoria e o sindicato para ver os atletas inscritos.</p>';return}
     const keep={};f.querySelectorAll('#re_lista input').forEach(i=>{if(i.value!=='')keep[i.name]=i.value});
@@ -1660,15 +1660,15 @@ A['re-novo']=d=>{const ed=d.id?meusRes().find(x=>x.id===d.id):null;const tipo=ed
       :`<div class="item"><div class="main"><b>${esc(a.nome)}</b></div><input name="t_${a.id}" value="${esc(val(a,'t'))}" placeholder="hh:mm:ss" maxlength="11" style="width:130px" aria-label="Tempo de ${esc(a.nome)}"></div>`;
     const naoAb=nao.some(a=>['p1','p2','t'].some(k=>val(a,k)!==''));
     box.innerHTML=`<b class="small">Atletas inscritos de ${esc(noMk(sTxt(sind(sa))))} (${ins.length})</b><div class="stack" style="margin:6px 0">${ins.length?ins.map(row).join(''):'<p class="muted small">Nenhum atleta inscrito neste sindicato nesta categoria.</p>'}</div>`
-      +(nao.length?`<details${naoAb||!ins.length?' open':''}><summary class="small"><b>Atletas não inscritos neste sindicato (${nao.length})</b> · preencha para incluir</summary><div class="stack" style="margin-top:6px">${nao.map(row).join('')}</div></details>`:'')};
+      +(nao.length?`<details${naoAb||!ins.length?' open':''}><summary class="small"><b>Atletas não inscritos neste sindicato (${nao.length})</b> · preencha para incluir</summary><div class="stack" style="margin-top:6px">${nao.map(row).join('')}</div></details>`:'')}catch(err){console.warn(err);box.innerHTML='<p class="small" style="color:#b00020">Não foi possível carregar os atletas ('+esc(String(err&&err.message||err))+'). Atualize a página e tente de novo.</p>'}};
   openModal({title:(ed?'Alterar envio · ':'Enviar · ')+RE_TIPOS[tipo],sem:true,submit:ed?'Salvar alteração':'Enviar para aprovação',wide:tipo==='pinos',
    onchange:e=>{if(tipo==='jogo'||!['sa','cat'].includes(e.target.name))return;const f=$('#mform');
      if(e.target.name==='cat'){const sel=f.elements.sa,atual=sel.value,op=soptDe(e.target.value);sel.innerHTML='<option value="">'+(e.target.value&&!op.length?'Nenhum sindicato participante nesta categoria':'Selecione…')+'</option>'+op.map(([v,t])=>`<option value="${esc(v)}"${v===atual?' selected':''}>${esc(t)}</option>`).join('');if(!op.some(x=>x[0]===atual))sel.value=''}
      reLista()},
-   render:()=>`<div class="form">${tipo==='jogo'?`${selS('Sindicato','sa')}${F('Gols/pontos do 1º','pa',ed?ed.placar_a:'',{type:'number',min:0,required:true})}${selS('x Sindicato','sb')}${F('Gols/pontos do 2º','pb',ed?ed.placar_b:'',{type:'number',min:0,required:true})}`:''}
+   render:()=>{if(tipo!=='jogo')setTimeout(reLista,0);return `<div class="form">${tipo==='jogo'?`${selS('Sindicato','sa')}${F('Gols/pontos do 1º','pa',ed?ed.placar_a:'',{type:'number',min:0,required:true})}${selS('x Sindicato','sb')}${F('Gols/pontos do 2º','pb',ed?ed.placar_b:'',{type:'number',min:0,required:true})}`:''}
    ${F('Modalidade/Categoria','cat',vv?vv.categoria_id:'',{required:true,full:true,options:cats.map(c=>[c.id,catNome(c)]),blank:'Selecione…'})}${tipo!=='jogo'?selS('Sindicato (só os participantes da categoria)','sa'):''}${tipo==='tempos'?'':F('Grupo (opcional)','grupo',vv?vv.grupo||'':'')}
    ${tipo==='tempos'?F('Fase','fase',ed&&ed.linhas&&ed.linhas[0]&&ed.linhas[0].fase?FASES.indexOf(ed.linhas[0].fase):FASES.length-1,{options:FASES.map((f,k)=>[k,f])}):''}${tipo!=='jogo'?'<div class="full" id="re_lista"></div>':''}
-   ${F('Enviado por','por',ed?ed.enviado_por:'',{required:true,full:true})}</div><p class="small muted">${tipo==='jogo'?'':'Ao escolher a categoria e o sindicato, aparecem os atletas inscritos. Preencha só os que participaram; se houver atleta que não está inscrito, abra a lista “não inscritos” e inclua.'}</p><p class="small muted">O resultado só vale depois que o administrador aprovar.</p>`,
+   ${F('Enviado por','por',ed?ed.enviado_por:'',{required:true,full:true})}</div><p class="small muted">${tipo==='jogo'?'':'Ao escolher a categoria e o sindicato, aparecem os atletas inscritos. Preencha só os que participaram; se houver atleta que não está inscrito, abra a lista “não inscritos” e inclua.'}</p><p class="small muted">O resultado só vale depois que o administrador aprovar.</p>`},
    onSubmit:async fd=>{const c=cat(fd.get('cat')),sn=id=>sTxt(sind(id));
     if(!c){toast('Escolha a modalidade/categoria.',true);return false}
     const r={tipo,cid:S.cid,categoria_id:c.id,categoria:catNome(c).slice(0,160),grupo:(fd.get('grupo')||'').trim().slice(0,60)||null,sind_a:fd.get('sa'),sind_a_nome:sn(fd.get('sa')).slice(0,120),enviado_por:fd.get('por').trim().slice(0,100)};
